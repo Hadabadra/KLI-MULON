@@ -13,11 +13,23 @@
     const r = await call("storage.get", { key: "settings" });
     if (r.success && r.data && typeof r.data === "object") ST = { ...ST, ...r.data, hist: Array.isArray(r.data.hist) ? r.data.hist : [], likes: Array.isArray(r.data.likes) ? r.data.likes : [] };
   }
+  // צבעי אוצריא -> אסימוני --color-* של העיצוב (1.1.1: ב-1.1.0 נכתבו שמות ישנים ולכן הצבעים לא הותאמו)
+  const TOK = { primary: "primary", onPrimary: "on-primary", surface: "surface", onSurface: "on-surface", onSurfaceVariant: "on-surface-variant",
+    surfaceContainerLow: "surface-container-low", surfaceContainer: "surface-container", surfaceContainerHigh: "surface-container-high",
+    surfaceContainerHighest: "surface-container-highest", outline: "outline", outlineVariant: "outline-variant" };
   function theme(t) {
-    const c = t && t.colorScheme; if (!c) return; const s = document.documentElement.style;
-    const set = (k, v) => v && s.setProperty(k, v);
-    set("--bg", c.surface); set("--fg", c.onSurface); set("--pri", c.primary); set("--card", c.surfaceContainerLow || c.surface);
-    set("--line", c.outline); set("--chip", c.surfaceContainer); set("--mut", c.onSurfaceVariant);
+    const c = t && (t.colorScheme || t); if (!c || typeof c !== "object") return; const st = document.documentElement.style;
+    for (const [k, v] of Object.entries(TOK)) if (typeof c[k] === "string" && c[k]) st.setProperty("--color-" + v, c[k]);
+    if (c.primary) st.setProperty("--color-primary-subtle", "color-mix(in srgb, " + c.primary + " 13%, transparent)");
+    if (!c.outlineVariant && c.outline) st.setProperty("--color-outline-variant", "color-mix(in srgb, " + c.outline + " 45%, transparent)");
+    const mix = (x, y, n) => `color-mix(in srgb, ${x} ${n}%, ${y})`;
+    if (c.surface && !c.surfaceContainerLow) st.setProperty("--color-surface-container-low", mix(c.surfaceContainerHigh || c.onSurface, c.surface, c.surfaceContainerHigh ? 40 : 4));
+    if (c.surface && !c.surfaceContainer) st.setProperty("--color-surface-container", mix(c.surfaceContainerHigh || c.onSurface, c.surface, c.surfaceContainerHigh ? 70 : 7));
+    if (c.onSurface && !c.onSurfaceVariant) st.setProperty("--color-on-surface-variant", mix(c.onSurface, c.surface || "transparent", 72));
+    const ty = t.typography || {};
+    if (ty.fontFamily) st.setProperty("--font-main", `'${ty.fontFamily}', 'FrankRuhlCLM', 'David', serif`);
+    if (ty.uiFontFamily) st.setProperty("--font-ui", `'${ty.uiFontFamily}', 'Rubik', system-ui, sans-serif`);
+    if (t.mode) document.documentElement.dataset.theme = t.mode;
   }
 
   const sv = p => `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
@@ -144,12 +156,13 @@
   const unf = s => s.replace(/[ךםןףץ]/g, c => ({ ך: "כ", ם: "מ", ן: "נ", ף: "פ", ץ: "צ" }[c]));
   function showAbout() {
     mode = "about"; tabs();
-    $("#out").innerHTML = `<div class="about"><h2>מילון כליקודש</h2><p>גרסה 1.1.0 · ${D.keys.length.toLocaleString("he")} ערכים</p>
+    $("#out").innerHTML = `<div class="about"><h2>מילון כליקודש</h2><p>גרסה 1.1.1 · ${D.keys.length.toLocaleString("he")} ערכים</p>
      <h3>על המילון</h3><p>קישורי הכרטסות מבוססים על רשימת שמות הערכים של התוסף "עינים למקרא" מאת חד בדרא (שמות בלבד; התוכן נשאר אצלם). התוסף נבנה על פי מאגר המילון של פרויקט כליקודש (KleiKodeshProject), בקובץ הנושא את השם milon-klei-kodesh (גרסת המאגר: 13.10.2026). כל ההגדרות, הנרדפים, הניגודים וראשי התיבות לקוחים ממנו, והמקור של כל הגדרה מצוין בערך עצמו. אין בתוסף תוכן מילוני נוסף.</p>
      <p class="note"><b>שימו לב:</b> המאגר עדיין צריך סינון, ותהליך הסינון טרם הסתיים. ייתכנו בו ערכים לא מילוניים (כגון שמות פרטיים), הגדרות כפולות או לא מדויקות, וערכים חסרים.</p>
      <p class="note">השורשים והבניינים אינם חלק מהמאגר. הם הערכה אוטומטית של התוסף ועלולים לטעות.</p>
      <h3>תוכנית עבודה ושיפורים מתוכננים</h3><details class="more"><summary>הצג את מסמך התכנון</summary><div class="rmdoc">${window.KK_ROADMAP || "<p>המסמך אינו זמין.</p>"}</div></details>
      <h3>יומן שינויים</h3><ul>
+      <li><b>1.1.1</b> — תיקון: צבעי אוצריא (ערכת הנושא, בהיר/כהה) מוחלים שוב על התוסף.</li>
       <li><b>1.1.0</b> — מראה חדש תואם אוצריא; הפירושים מוצגים כאריחים; סרגל האותיות מתקפל (כמו ב"עינים למקרא") ומיקומו נקבע בלשונית ההגדרות; מסך מועדפים; תיקון הכפתור "פסוקים ומפרשים קשורים" שלא החזיר תוצאות.</li>
       <li><b>1.0.7</b> — זיהוי שורשים מדויק יותר (93.9% על סט בדיקה ראשוני): אימות בשתי שכבות, שורשים חלשים, והוספת רשימת שורשים נפוצים.</li>
       <li><b>1.0.6</b> — מסמך תכנון ותוכנית עבודה מוטמעים בתוסף (בלשונית זו).</li>
@@ -173,7 +186,7 @@
     m.querySelector("#rc").onclick = () => m.remove(); m.onclick = e => { if (e.target === m) m.remove(); };
     m.querySelector("#rs").onclick = async () => {
       const note = m.querySelector("#rn").value.trim(), why = m.querySelector("#rr").value;
-      const details = `ערך: ${r.title}\nהגדרה מס' ${i + 1}: ${d}${nk ? " [" + nk + "]" : ""}${src ? "\nמקור ההגדרה: " + src : ""}\nסיבה: ${why}${note ? "\nהערה: " + note : ""}\nתוסף: מילון כליקודש 1.1.0`;
+      const details = `ערך: ${r.title}\nהגדרה מס' ${i + 1}: ${d}${nk ? " [" + nk + "]" : ""}${src ? "\nמקור ההגדרה: " + src : ""}\nסיבה: ${why}${note ? "\nהערה: " + note : ""}\nתוסף: מילון כליקודש 1.1.1`;
       const res = await call("feedback.report", { details, reportType: "content" });
       const st = res && res.success ? res.data : null;
       m.querySelector("#rm").textContent = st === "sent" ? "הדיווח נשלח. תודה!" : st === "queued" ? "הדיווח נשמר ויישלח אוטומטית כשיהיה חיבור." : st === "cancelled" ? "השליחה בוטלה." : "לא ניתן לשלוח כרגע.";
@@ -267,7 +280,7 @@
   }, 300);
   function go(word, words, raw) { if (!word) return; selWords = Array.isArray(words) ? words : []; selCtx = { raw: raw || "", words: selWords.length ? selWords : [word] }; $("#q").value = word; lookup(word); }
   if (O) {
-    O.on("plugin.boot", p => { theme(p && p.theme); const prm = p && (p.param || p.params); if (prm && prm.word) go(prm.word, prm.words, prm.raw); });
+    O.on("plugin.boot", p => { if (p && p.theme) theme(p.theme); else call("app.getTheme").then(r => r && r.success && theme(r.data)); const prm = p && (p.param || p.params); if (prm && prm.word) go(prm.word, prm.words, prm.raw); });
     O.on("theme.changed", theme);
     O.on("reader.selection_changed", fromSel);
     O.on("reader.context_menu_item_clicked", d => { const t = (d && (d.selectedText || (d.selection && d.selection.text))) || ""; if (t) applySel(t); });
