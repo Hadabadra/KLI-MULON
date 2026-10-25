@@ -34,7 +34,7 @@ zip -r milon-klei-kodesh-X.Y.Z.otzplugin manifest.json index.html background.htm
 ```
 
 ## שחרור גרסה
-מעלים מספר גרסה ב-`manifest.json` וב-`CHANGELOG.md`, ודוחפים תג `vX.Y.Z` — ה-Action בונה את ה-`.otzplugin` ומפרסם Release.
+מעלים מספר גרסה ב-`manifest.json` וב-`CHANGELOG.md`, ודוחפים ל-`main` — ה-Action בונה את ה-`.otzplugin` ומפרסם Release (תג `vX.Y.Z`). מצב ומשימות פתוחות: `docs/STATUS.md`.
 ```
 ```
 
