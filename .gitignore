@@ -1,4 +1,6 @@
+*.zim
 *.otzplugin
+dist/
 node_modules/
 __pycache__/
-*.zim
+.DS_Store
