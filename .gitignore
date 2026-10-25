@@ -1,0 +1,4 @@
+*.otzplugin
+node_modules/
+__pycache__/
+*.zim

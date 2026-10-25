@@ -1,0 +1,23 @@
+name: release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build .otzplugin
+        run: |
+          V=$(jq -r .version manifest.json)
+          [ "v$V" = "${GITHUB_REF_NAME}" ] || { echo "tag $GITHUB_REF_NAME != manifest $V"; exit 1; }
+          zip -qr "milon-klei-kodesh-$V.otzplugin" manifest.json index.html background.html css js data icon docs
+          sha256sum "milon-klei-kodesh-$V.otzplugin" > SHA256.txt
+          awk "/^## $V/{f=1;next}/^## /{f=0}f" CHANGELOG.md > notes.md
+          printf '\n### Checksum\n```\n%s\n```\n' "$(cat SHA256.txt)" >> notes.md
+          echo "V=$V" >> $GITHUB_ENV
+      - name: Release
+        env: { GH_TOKEN: '${{ github.token }}' }
+        run: gh release create "v$V" "milon-klei-kodesh-$V.otzplugin" --title "מילון כליקודש $V" --notes-file notes.md

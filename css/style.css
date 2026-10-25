@@ -1,0 +1,135 @@
+/* מילון כליקודש 1.1.0 — עיצוב מודרני תואם אוצריא: צבעים רק כאסימוני :root, מידות ב-em */
+:root{
+  --color-primary:#6750A4;--color-on-primary:#FFFFFF;
+  --color-surface:#FFFBFE;--color-on-surface:#1C1B1F;--color-on-surface-variant:#49454F;
+  --color-surface-container-low:#F7F2FA;--color-surface-container:#F3EDF7;
+  --color-surface-container-high:#ECE6F0;--color-surface-container-highest:#E6E0E9;
+  --color-outline:#79747E;--color-outline-variant:#CAC4D0;
+  --color-primary-subtle:rgba(103,80,164,.12);--color-shadow:rgba(0,0,0,.14);--color-scrim:rgba(0,0,0,.42);
+  --font-ui:'Rubik',system-ui,sans-serif;--font-main:'FrankRuhlCLM','David',serif;
+  --radius-sm:8px;--radius-md:12px;--radius-lg:16px;--radius-pill:999px;
+}
+@media(prefers-color-scheme:dark){:root{
+  --color-primary:#D0BCFF;--color-on-primary:#381E72;
+  --color-surface:#141218;--color-on-surface:#E6E0E9;--color-on-surface-variant:#CAC4D0;
+  --color-surface-container-low:#1D1B20;--color-surface-container:#211F26;
+  --color-surface-container-high:#2B2930;--color-surface-container-highest:#36343B;
+  --color-outline:#938F99;--color-outline-variant:#49454F;
+  --color-primary-subtle:rgba(208,188,255,.14);--color-shadow:rgba(0,0,0,.4);
+}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--color-surface);color:var(--color-on-surface)}
+body{font-family:var(--font-ui);font-size:1em;line-height:1.55}
+button{font-family:var(--font-ui)}
+.hid{display:none!important}
+
+/* ===== כותרת: חיפוש + לשוניות ===== */
+header{position:sticky;top:0;z-index:5;background:var(--color-surface-container-low);
+  border-bottom:1px solid var(--color-outline-variant);padding:.7em .9em .45em;box-shadow:0 .1em .5em var(--color-shadow)}
+.search{position:relative}
+#q{width:100%;padding:.6em 2.6em .6em 1em;font-family:var(--font-main);font-size:1.08em;border:1px solid var(--color-outline-variant);
+  border-radius:var(--radius-pill);background:var(--color-surface);color:var(--color-on-surface);transition:border-color .15s,box-shadow .15s}
+#q:focus{outline:none;border-color:var(--color-primary);box-shadow:0 0 0 .2em var(--color-primary-subtle)}
+.ic{position:absolute;inset-inline-end:.7em;top:50%;transform:translateY(-50%);border:0;background:none;color:var(--color-on-surface-variant);cursor:pointer;font-size:1em}
+.sug{position:absolute;inset-inline:0;top:100%;margin-top:.35em;max-height:50vh;overflow:auto;background:var(--color-surface);
+  border:1px solid var(--color-outline-variant);border-radius:var(--radius-md);box-shadow:0 .5em 1.5em var(--color-shadow)}
+.sug div{padding:.5em 1em;cursor:pointer;font-family:var(--font-main)}
+.sug div:hover,.sug div.act{background:var(--color-primary-subtle)}
+.sug small{color:var(--color-on-surface-variant);margin-inline-start:.6em;font-family:var(--font-ui);font-size:.8em}
+nav#modes{display:flex;gap:.2em;margin-top:.5em;overflow-x:auto;scrollbar-width:none}
+nav#modes button{flex:0 0 auto;font-size:.88em;padding:.4em .9em;border:0;border-radius:var(--radius-pill);background:none;
+  color:var(--color-on-surface-variant);cursor:pointer;transition:background .15s,color .15s}
+nav#modes button:hover{background:var(--color-surface-container-high)}
+nav#modes button.on{background:var(--color-primary-subtle);color:var(--color-primary);font-weight:600}
+
+/* ===== תוכן ===== */
+main{padding:1em 1em 3em;max-width:62em;margin:auto}
+main.wide{max-width:none}
+h2{margin:.15em 0 .4em;color:var(--color-on-surface);font-family:var(--font-main);font-size:2em;font-weight:700}
+.hero{display:flex;align-items:center;justify-content:space-between;gap:.6em;flex-wrap:wrap}
+.row{margin:1em 0}
+.row>b,.gh{display:block;color:var(--color-on-surface-variant);font-size:.8em;font-weight:600;letter-spacing:.02em;margin:0 0 .45em}
+.gh{margin-top:1.2em}
+.hint,.note{color:var(--color-on-surface-variant);font-size:.88em}
+.chips{display:flex;flex-wrap:wrap;gap:.4em}
+.chip{font-size:.88em;padding:.32em .85em;border-radius:var(--radius-pill);border:1px solid var(--color-outline-variant);
+  background:var(--color-surface);color:var(--color-on-surface);cursor:pointer;transition:background .15s,border-color .15s}
+.chip:hover{border-color:var(--color-primary);background:var(--color-primary-subtle)}
+.chip.pri{background:var(--color-primary);color:var(--color-on-primary);border-color:var(--color-primary)}
+.chip.pri:hover{filter:brightness(1.08)}
+.chip svg{vertical-align:-.2em}
+.pager{display:flex;justify-content:space-between;align-items:center;margin-top:1.2em;gap:.5em}
+
+/* ===== פירושים כאריחים ===== */
+.senses{display:grid;grid-template-columns:repeat(auto-fill,minmax(15em,1fr));gap:.7em;align-items:start}
+.sense{position:relative;background:var(--color-surface-container-low);border:1px solid var(--color-outline-variant);
+  border-radius:var(--radius-md);padding:.75em .9em .6em;display:flex;flex-direction:column;gap:.35em;
+  transition:border-color .15s,box-shadow .15s}
+.sense:hover{border-color:var(--color-primary);box-shadow:0 .2em .8em var(--color-shadow)}
+.sense.best{border-color:var(--color-primary);background:var(--color-primary-subtle)}
+.sbody{font-family:var(--font-main);font-size:1.05em;line-height:1.6}
+.nk{display:inline-block;font-weight:700;color:var(--color-primary);margin-inline-end:.4em}
+.src{display:block;color:var(--color-on-surface-variant);font-size:.75em;font-family:var(--font-ui);margin-top:.3em}
+.tb{display:flex;gap:.1em;justify-content:flex-end;margin-top:auto;opacity:.55;transition:opacity .15s}
+.sense:hover .tb{opacity:1}
+.ib{border:0;background:none;color:var(--color-on-surface-variant);padding:.3em;border-radius:var(--radius-sm);cursor:pointer;line-height:0}
+.ib:hover{background:var(--color-surface-container-high);color:var(--color-on-surface)}
+.ib.on{color:var(--color-primary)}.ib.on svg{fill:currentColor}
+details.more{margin:.8em 0}
+details.more>summary{cursor:pointer;color:var(--color-primary);padding:.3em 0;font-size:.9em;font-weight:600}
+details.more>.senses{margin-top:.5em}
+
+/* ===== תוצאות חיפוש באוצריא ===== */
+.results{display:grid;grid-template-columns:repeat(auto-fill,minmax(16em,1fr));gap:.6em}
+a.res{display:block;text-decoration:none;color:var(--color-on-surface);background:var(--color-surface-container-low);
+  border:1px solid var(--color-outline-variant);border-radius:var(--radius-md);padding:.6em .85em}
+a.res:hover{border-color:var(--color-primary)}
+a.res b{display:block;color:var(--color-primary);font-size:.85em;margin-bottom:.2em}
+a.res span{font-family:var(--font-main);font-size:.95em;color:var(--color-on-surface-variant)}
+.spin{display:inline-block;width:1em;height:1em;border:.15em solid var(--color-outline-variant);border-top-color:var(--color-primary);
+  border-radius:50%;animation:sp .8s linear infinite;vertical-align:-.15em;margin-inline-end:.4em}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ===== כל המילים: סרגל סינון מתקפל ===== */
+.allhead{display:flex;justify-content:space-between;align-items:center;gap:.6em;flex-wrap:wrap}
+.ftoggle{font-size:.88em;padding:.35em .95em;border-radius:var(--radius-pill);border:1px solid var(--color-outline-variant);
+  background:var(--color-surface);color:var(--color-on-surface);cursor:pointer}
+.ftoggle.on{border-color:var(--color-primary);color:var(--color-primary);background:var(--color-primary-subtle)}
+.fsum{font-size:.82em;color:var(--color-on-surface-variant);padding:.35em 0}
+.fbar{background:var(--color-surface-container);border:1px solid var(--color-outline-variant);border-radius:var(--radius-md);
+  padding:.55em;margin:.4em 0 .8em}
+.az{display:flex;flex-wrap:wrap;gap:.3em}
+.az .chip{min-width:2.2em;text-align:center;padding:.25em .4em;font-family:var(--font-main);font-size:1em}
+.allwrap{display:flex;gap:1em;align-items:flex-start}.allbody{flex:1;min-width:0}
+.allwrap .fbar{position:sticky;top:7em;margin:0;max-height:75vh;overflow:auto}
+.allwrap .az{flex-direction:column}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(11em,1fr));gap:.55em}
+.tile{width:100%;text-align:start;background:var(--color-surface-container-low);color:var(--color-on-surface);
+  border:1px solid var(--color-outline-variant);border-radius:var(--radius-md);padding:.55em .75em;cursor:pointer;min-height:4.2em;
+  transition:border-color .15s,transform .15s}
+.tile:hover{border-color:var(--color-primary);transform:translateY(-.08em)}
+.tile b{display:block;color:var(--color-primary);font-family:var(--font-main);font-size:1.1em}
+.tile small{display:block;color:var(--color-on-surface-variant);font-size:.78em;line-height:1.35;max-height:2.7em;overflow:hidden}
+
+/* ===== הגדרות ===== */
+.set{display:grid;gap:.6em;max-width:36em}
+.set .opt{display:flex;gap:.7em;align-items:center;justify-content:space-between;background:var(--color-surface-container-low);
+  border:1px solid var(--color-outline-variant);border-radius:var(--radius-md);padding:.7em .9em}
+.set .opt span small{display:block;color:var(--color-on-surface-variant);font-size:.8em}
+.set select{font-family:var(--font-ui);font-size:.9em;padding:.3em .5em;border-radius:var(--radius-sm);border:1px solid var(--color-outline-variant);
+  background:var(--color-surface);color:var(--color-on-surface)}
+.set input[type=checkbox]{width:1.15em;height:1.15em;accent-color:var(--color-primary)}
+
+/* ===== אודות / חלון ===== */
+.about h3{color:var(--color-primary);margin:1.1em 0 .3em}.about ul{padding-inline-start:1.3em;margin:.3em 0}
+.rmdoc{background:var(--color-surface-container-low);border:1px solid var(--color-outline-variant);border-radius:var(--radius-md);padding:.4em 1em .8em}
+.rmdoc h3,.rmdoc h4,.rmdoc h5{color:var(--color-primary);margin:.9em 0 .3em}
+.rmdoc ul.rm{list-style:none;padding-inline-start:.3em;margin:.3em 0}.rmdoc li{margin:.2em 0}
+.rmdoc code{background:var(--color-surface-container-high);padding:0 .3em;border-radius:var(--radius-sm);font-size:.9em}
+.modal{position:fixed;inset:0;background:var(--color-scrim);display:flex;align-items:center;justify-content:center;z-index:50;padding:1em}
+.box{background:var(--color-surface);color:var(--color-on-surface);border:1px solid var(--color-outline-variant);border-radius:var(--radius-lg);
+  padding:1em 1.1em;width:100%;max-width:28em;box-shadow:0 1em 3em var(--color-shadow)}
+.box h3{margin:.2em 0 .6em;color:var(--color-primary)}
+.box textarea{width:100%;margin-top:.5em;font-family:var(--font-ui);font-size:.95em;padding:.5em;border:1px solid var(--color-outline-variant);
+  border-radius:var(--radius-sm);background:var(--color-surface-container-low);color:var(--color-on-surface)}
+.box select{font-family:var(--font-ui);padding:.2em}

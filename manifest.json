@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "id": "milon-klei-kodesh",
+  "name": "מילון כליקודש",
+  "version": "1.1.0",
+  "stability": "beta",
+  "author": "מילון כליקודש",
+  "description": "מילון עברי מובנה: זיהוי אוטומטי של מילה מסומנת בזמן לימוד, חיפוש תוך כדי הקלדה, שורשים, בניינים ומילים דומות",
+  "entrypoint": "index.html",
+  "minAppVersion": "0.9.98",
+  "sdkVersion": "1.x",
+  "icon": "icon/icon.png",
+  "permissions": [
+    "plugin.storage.read",
+    "plugin.storage.write",
+    "ui.feedback",
+    "reader.open",
+    "reader.context_menu",
+    "plugin.open_other",
+    "navigation.write",
+    "app.startup_contributions",
+    "app.run_on_startup",
+    "app.background_keep_alive",
+    "search.fulltext.read",
+    "events.subscribe:theme.changed",
+    "events.subscribe:reader.selection_changed"
+  ],
+  "contributes": {
+    "toolTab": { "title": "מילון כליקודש", "order": 310, "defaultPinned": true, "iconName": "book_open_24_regular" },
+    "background": { "entrypoint": "background.html" },
+    "startup": {
+      "contextMenuItems": [
+        { "id": "kk-lookup", "label": "פתח במילון כליקודש", "icon": "book_open_24_regular", "openPlugin": true,
+          "contexts": ["reader-selection", "reader-page-shape-selection"] }
+      ],
+      "activationEvents": ["app.startup", "reader.selection_changed"],
+      "keepAlive": true
+    }
+  }
+}
