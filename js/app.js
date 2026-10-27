@@ -89,7 +89,8 @@
       `<div class="pager"><span>${stack.length ? `<button class="chip" id="back">→ חזרה</button>` : ""}</span></div>
        <div class="hero"><h2>${esc(r.title)}</h2></div>` +
       (selWords.length > 1 ? `<div class="row"><b>מילים בבחירה</b><div class="chips"><button class="chip" data-comb="1">📋 דף משולב</button>${selWords.map(t => chip(t, "", t === r.title ? "pri" : "")).join("")}</div></div>` : "") +
-      `<div class="row"><div class="chips"><button class="chip pri" id="osearch">${IC.search} חפש באוצריא</button><button class="chip" id="orel">📖 פסוקים ומפרשים קשורים</button></div></div><div id="rel"></div>` +
+      `<div class="row"><div class="chips"><button class="chip pri" id="osearch">${IC.search} חפש באוצריא</button><button class="chip" id="orel">📖 פסוקים ומפרשים קשורים</button><button class="chip" id="oconc">📚 קונקורדנציה לתנ"ך</button></div></div><div id="rel"></div>` +
+      (isAcr ? "" : `<div class="row"><b>במילוני הספרייה</b><div class="chips"><button class="chip" data-lib="radak">ספר השרשים לרד"ק — שורש ${esc(KK.refinal(root))}</button><button class="chip" data-lib="bachur">ספר הבחור</button>${online ? `<button class="chip" id="oeven">אבן שושן (באינטרנט) ↗</button>` : ""}</div>${online ? `<span class="note">אבן שושן נפתח בדפדפן (מנוי באתר), והמילה מועתקת להדבקה בחיפוש.</span>` : ""}</div>`) +
       sensesHtml(r) +
       Object.entries(links).map(([k, a]) => `<div class="row"><b>${esc(k.replace("_", " "))}</b><div class="chips">${a.map(t => chip(t)).join("")}</div></div>`).join("") +
       mhRow(isAcr ? [] : MH.find([r.n, ...(selCtx.words || [])], D)) +
@@ -99,6 +100,49 @@
       (sim.length ? `<div class="row"><b>מילים דומות</b><div class="chips">${sim.map(x => chip(x.title)).join("")}</div></div>` : "") +
       `<div class="pager">${nb.prev ? chip(nb.prev.title, "", "") .replace(">", ">→ ") : "<span></span>"}${nb.next ? chip(nb.next.title).replace(">", ">← ") : ""}</div>`;
     $("#out").scrollTop = 0; window.scrollTo(0, 0);
+  }
+  /* מילונים מתוך ספריית אוצריא (רד"ק, ספר הבחור): מאתרים את הספר ופותחים אותו על השורש/המילה */
+  const LIB = { radak: ["ספר השרשים", "רד\"ק"], bachur: ["ספר הבחור", "בחור"] };
+  async function openLib(which) {
+    const [q, must] = LIB[which], term = which === "radak" ? KK.refinal(D.analyze(cur.n).root) : cur.title.replace(/[^\u05D0-\u05EA ]/g, "");
+    const f = await call("library.findBooks", { query: q, limit: 10 });
+    const books = (f.success && Array.isArray(f.data) ? f.data : []).filter(b => String(b.title || b.bookId).includes(q.split(" ").pop()));
+    const b = books.find(x => String(x.title || x.bookId).includes(must)) || books[0];
+    if (!b) return call("ui.showMessage", { message: `הספר "${q}" לא נמצא בספרייה שלך.` });
+    const hit = (await runSearch(term, { books: [{ bookId: b.bookId, type: b.type || "text" }], limit: 1, order: "catalogue" }))[0];
+    const r = hit ? await call("reader.openBook", { id: hit.id, bookId: hit.bookId || b.bookId, type: hit.type, index: hit.index, searchQuery: term })
+                  : await call("reader.openBook", { bookId: b.bookId, searchQuery: term });
+    if (!r || r.success === false) call("ui.showMessage", { message: `לא ניתן לפתוח את "${b.title || b.bookId}".` });
+  }
+  /* קונקורדנציה לתנ"ך: כל צורות השורש שבמילון, וכל המופעים שלהן בתנ"ך מתוך ספריית אוצריא */
+  async function showConc(r) {
+    mode = "conc"; tabs(); const an = D.analyze(r.n);
+    const forms = [r.title.replace(/[^\u05D0-\u05EA]/g, ""), KK.refinal(an.root), ...D.byRoot(an.root).map(x => x.title.replace(/[^\u05D0-\u05EA]/g, ""))].filter((x, i, a) => x && a.indexOf(x) === i).slice(0, 16);
+    $("#out").innerHTML = `<h2>קונקורדנציה: ${esc(r.title)}</h2><p class="note">שורש ${esc(KK.refinal(an.root))}${an.ok ? "" : " (משוער)"} · ${forms.length} צורות · מתוך התנ"ך שבספריית אוצריא, כולל קידומות.</p><div class="row"><div class="search mini"><input id="cq" placeholder="הוסיפו צורה לחיפוש…"></div></div><div id="conc"><p class="note"><span class="spin"></span>אוסף מופעים…</p></div>`;
+    const card = (x, q) => `<a class="res" href="#" data-open='${esc(JSON.stringify({ id: x.id, bookId: x.bookId, type: x.type, index: x.index, q }))}'><b>${esc(x.reference || x.book || "")}</b><span>${snip(x.text)}</span></a>`;
+    const out = [], box = () => $("#conc");
+    const add = async f => {
+      const res = await runSearch(f, { categories: ["/תנך"], limit: 300, order: "catalogue" });
+      out.push({ f, res }); out.sort((a, b) => b.res.length - a.res.length);
+      const total = out.reduce((t, x) => t + x.res.length, 0);
+      if (box()) box().innerHTML = `<p><b>${total}</b> מופעים</p>` + out.filter(x => x.res.length).map(x =>
+        `<details class="more"${out.length === 1 ? " open" : ""}><summary><b>${esc(x.f)}</b> — ${x.res.length}${x.res.length >= 300 ? "+" : ""} מופעים</summary><div class="results">${x.res.map(y => card(y, x.f)).join("")}</div></details>`).join("") +
+        (out.some(x => !x.res.length) ? `<p class="note">ללא מופעים בתנ"ך: ${out.filter(x => !x.res.length).map(x => esc(x.f)).join(", ")}</p>` : "");
+    };
+    for (const f of forms) { if (mode !== "conc") return; await add(f); }
+    if (!out.some(x => x.res.length) && box()) box().innerHTML = '<p class="hint">לא נמצאו מופעים, או שהחיפוש אינו זמין כרגע.</p>';
+    const cq = $("#cq"); if (cq) cq.onkeydown = e => { if (e.key === "Enter" && cq.value.trim()) { add(KK.norm(cq.value)); cq.value = ""; } };
+  }
+  /* מצב מקוון לפי אוצריא (כולל ההגדרה "ללא גישה לאינטרנט") — קישורים חיצוניים מוסתרים כשאין חיבור */
+  let online = false;
+  async function checkOnline(force) {
+    try { let r = await call("app.getConnectivity", force ? { forceRefresh: true } : {}); if (r.success && r.data && r.data.isOnline === null) r = await call("app.getConnectivity"); online = !!(r.success && r.data && r.data.isOnline); } catch (e) { online = false; }
+  }
+  window.addEventListener("online", () => checkOnline(true)); window.addEventListener("offline", () => { online = false; });
+  async function openEven() {
+    copyText(cur.title.replace(/[^\u05D0-\u05EA ]/g, ""));
+    const r = await call("app.openUrl", { url: "https://www.even-shoshan.co.il/" });
+    call("ui.showMessage", { message: r && r.success !== false ? "המילה הועתקה — הדביקו אותה בחיפוש של אבן שושן" : "לא ניתן לפתוח את האתר" });
   }
   function lookup(text, push = true) {
     if (!selWords.length) selCtx = { raw: text, words: [] };
@@ -209,16 +253,17 @@
       if (st === "sent" || st === "queued") setTimeout(() => m.remove(), 1600);
     };
   }
-  function copyText(t) { try { navigator.clipboard.writeText(t); } catch (e) { const x = document.createElement("textarea"); x.value = t; document.body.appendChild(x); x.select(); try { document.execCommand("copy"); } catch (e2) {} x.remove(); } }
+  function copyText(t) { const fb = () => { const x = document.createElement("textarea"); x.value = t; document.body.appendChild(x); x.select(); try { document.execCommand("copy"); } catch (e2) {} x.remove(); }; try { navigator.clipboard.writeText(t).catch(fb); return; } catch (e) { const x = document.createElement("textarea"); x.value = t; document.body.appendChild(x); x.select(); try { document.execCommand("copy"); } catch (e2) {} x.remove(); } }
   /* חיפוש באוצריא: פסוקים ומקורות/מפרשים קשורים, עם קישורים לפתיחה בקורא */
   async function runSearch(q, extra) {
     let res = [];
     try {
       const it = O.call("search.query", { query: q, limit: 14, mode: "exact", options: { "קידומות דקדוקיות": true }, ...extra });
+      let it2 = it; if (it2 && typeof it2.then === "function" && !it2[Symbol.asyncIterator]) { const z = await it2; if (z && (z[Symbol.asyncIterator] || (z.data && z.data[Symbol.asyncIterator]))) it2 = z[Symbol.asyncIterator] ? z : z.data; else it2 = z; }
       // ה-chunk הראשון נושא רק ספירות; קוראים עד שמגיעים ל-limit או לסוף הזרם (תיקון 1.1.0)
       const lim = (extra && extra.limit) || 14;
-      if (it && it[Symbol.asyncIterator]) { for await (const ch of it) { res = res.concat((ch && ch.results) || []); if (res.length >= lim) break; } }
-      else { const x = await it; res = (x && (x.data && x.data.results || x.data)) || []; }
+      if (it2 && it2[Symbol.asyncIterator]) { for await (const ch of it2) { res = res.concat((ch && ch.results) || []); if (res.length >= lim) break; } }
+      else { const x = it2; res = (x && (x.data && x.data.results || x.data)) || []; }
     } catch (e) { res = []; }
     if (!res.length) { // גיבוי: search.fullText (בלי id; reader.openBook מקבל bookId+type)
       try { const x = await call("search.fullText", { query: q, limit: (extra && extra.limit) || 14 }); if (x && x.success && Array.isArray(x.data)) res = x.data.map(y => ({ ...y, bookId: y.bookId || y.book, reference: y.reference || y.book })); } catch (e) {}
@@ -257,7 +302,7 @@
 
   document.addEventListener("click", e => {
     if (!e.target.closest(".search")) { sugList = []; renderSug(); }
-    const t = e.target.closest("[data-go],[data-root],[data-i],[data-mhg],[data-rep],[data-copy],[data-like],[data-open],[data-unfav],[data-comb],#favexp,#osearch,#orel,#ftog,[data-letter],#more,#back,#clrh,#modes button,#clr"); if (!t) return;
+    const t = e.target.closest("[data-go],[data-root],[data-i],[data-mhg],[data-rep],[data-copy],[data-like],[data-open],[data-unfav],[data-comb],[data-lib],#oconc,#oeven,#favexp,#osearch,#orel,#ftog,[data-letter],#more,#back,#clrh,#modes button,#clr"); if (!t) return;
     if (t.dataset.mhg) openMh(t.dataset.mhg, t.dataset.mhn);
     else if (t.dataset.rep !== undefined) report(cur, +t.dataset.rep);
     else if (t.dataset.copy !== undefined) { const s = cur.s[+t.dataset.copy]; copyText(`${cur.title}: ${s[1]}`); }
@@ -266,6 +311,9 @@
     else if (t.dataset.open) { e.preventDefault(); const o = JSON.parse(t.dataset.open); call("reader.openBook", { id: o.id, bookId: o.bookId, type: o.type, index: o.index, searchQuery: o.q }); }
     else if (t.id === "osearch") call("reader.openSearchTab", { query: cur.title.replace(/[^\u05D0-\u05EA ]/g, ""), autoSearch: true });
     else if (t.id === "orel") related(cur);
+    else if (t.id === "oconc") showConc(cur);
+    else if (t.id === "oeven") openEven();
+    else if (t.dataset.lib) openLib(t.dataset.lib);
     else if (t.id === "ftog") { fOpen = !fOpen; showAll(null, true); }
     else if (t.dataset.letter) { showAll(t.dataset.letter); }
     else if (t.id === "more") { allShown += PAGE; showAll(null, true); }
@@ -325,5 +373,5 @@
     O.on("ui.messageClicked", d => d && d.payload && go(d.payload.word, d.payload.words, d.payload.raw));
     O.on("plugin.page_opened", p => { const prm = p && (p.param || p.params); if (prm && prm.word) go(prm.word, prm.words, prm.raw); });
   }
-  load().then(() => { fOpen = !!ST.fOpen; applyFs(); $("#q").focus(); });
+  checkOnline(); load().then(() => { fOpen = !!ST.fOpen; applyFs(); $("#q").focus(); });
 })();

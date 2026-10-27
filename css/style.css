@@ -147,3 +147,4 @@ a.res span{font-family:var(--font-main);font-size:.95em;color:var(--color-on-sur
 .sw::after{content:"";position:absolute;top:.15em;inset-inline-start:.15em;width:1.1em;height:1.1em;border-radius:50%;background:var(--color-outline);transition:inset-inline-start .2s,background .2s}
 .sw:checked{background:var(--color-primary);border-color:var(--color-primary)}
 .sw:checked::after{inset-inline-start:1.3em;background:var(--color-on-primary)}
+.search.mini input{width:100%;max-width:22em;font:inherit;font-size:.9em;padding:.45em .9em;border-radius:var(--radius-pill);border:1px solid var(--color-outline-variant);background:var(--color-surface);color:var(--color-on-surface)}

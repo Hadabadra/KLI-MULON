@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "milon-klei-kodesh",
   "name": "מילון כליקודש",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "stability": "beta",
   "author": "מילון כליקודש",
   "description": "מילון עברי מובנה: זיהוי אוטומטי של מילה מסומנת בזמן לימוד, חיפוש תוך כדי הקלדה, שורשים, בניינים ומילים דומות",
@@ -26,7 +26,10 @@
     "events.subscribe:reader.selection_changed",
     "reader.toolbar",
     "app.shortcuts",
-    "network.localhost"
+    "network.localhost",
+    "library.books.read",
+    "app.open_url",
+    "app.info.read"
   ],
   "contributes": {
     "toolTab": {
