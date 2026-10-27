@@ -10,7 +10,7 @@
     if (r && r.success && r.data && typeof r.data === "object") S = { ...DEF, ...r.data };
   }
   function short(r, ctx) {
-    const rk = KK.rank(r, ctx), order = ["lex", "enc", "laaz", "acr"];
+    const rk = KK.rank(r, ctx); if (S.noAcr) { rk.items = rk.items.filter(x => x.kind !== "acr"); rk.best = (rk.best || []).filter(x => x.kind !== "acr"); if (!rk.items.length) return null; } const order = ["lex", "enc", "laaz", "acr"];
     let pick = rk.confident ? rk.best.slice(0, 2) : order.map(k => rk.items.find(x => x.kind === k)).filter(Boolean).slice(0, 2);
     const d = pick.map(x => r.s[x.i][1]).filter(Boolean).join(" | ");
     return `${r.title}: ${d.length > 150 ? d.slice(0, 147) + "…" : d} — לחצו לפרטים`;
@@ -39,8 +39,9 @@
       const ctx = { raw: rawTxt, words: t.split(" ") };
       const param = { word: list[0].title, words: rs.phrase ? [] : list.map(x => x.title), raw: rawTxt };
       if (S.mode === "panel") return void call("plugin.openSelf", { param });
+      const msg = short(list[0], ctx); if (!msg) return;
       const more = list.length > 1 ? ` (+${list.length - 1} מילים בבחירה)` : "";
-      call("ui.showMessage", { message: short(list[0], ctx) + more, tapPayload: param, tapOpenPlugin: true });
+      call("ui.showMessage", { message: msg + (list.length > 1 ? " · לחיצה: דף משולב" : "") + more, tapPayload: param, tapOpenPlugin: true });
     }, 300);
   }
   O.on("plugin.boot", loadSettings);

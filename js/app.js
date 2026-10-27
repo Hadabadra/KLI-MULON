@@ -2,7 +2,7 @@
   const $ = s => document.querySelector(s), O = window.Otzaria;
   const D = new KK.Dict(window.KK_DICT), MH = new KK.MhIndex(window.MH_INDEX);
   let fOpen = false, allLetter = "א", allShown = 0, mode = "word", cur = null, stack = [], sugList = [], sugIdx = -1;
-  let ST = { auto: true, mode: "toast", maxWords: 8, hist: [], likes: [], azSide: false, fOpen: false };
+  let ST = { auto: true, mode: "toast", maxWords: 8, hist: [], likes: [], azSide: false, fOpen: false, noAcr: false, fs: 100 };
   let selWords = [], selCtx = { raw: "", words: [] };
   const call = async (m, p) => { try { return O ? await O.call(m, p || {}) : { success: false }; } catch (e) { return { success: false }; } };
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -88,12 +88,12 @@
     $("#out").innerHTML =
       `<div class="pager"><span>${stack.length ? `<button class="chip" id="back">→ חזרה</button>` : ""}</span></div>
        <div class="hero"><h2>${esc(r.title)}</h2></div>` +
-      (selWords.length > 1 ? `<div class="row"><b>מילים בבחירה</b><div class="chips">${selWords.map(t => chip(t, "", t === r.title ? "pri" : "")).join("")}</div></div>` : "") +
+      (selWords.length > 1 ? `<div class="row"><b>מילים בבחירה</b><div class="chips"><button class="chip" data-comb="1">📋 דף משולב</button>${selWords.map(t => chip(t, "", t === r.title ? "pri" : "")).join("")}</div></div>` : "") +
       `<div class="row"><div class="chips"><button class="chip pri" id="osearch">${IC.search} חפש באוצריא</button><button class="chip" id="orel">📖 פסוקים ומפרשים קשורים</button></div></div><div id="rel"></div>` +
       sensesHtml(r) +
       Object.entries(links).map(([k, a]) => `<div class="row"><b>${esc(k.replace("_", " "))}</b><div class="chips">${a.map(t => chip(t)).join("")}</div></div>`).join("") +
       mhRow(isAcr ? [] : MH.find([r.n, ...(selCtx.words || [])], D)) +
-      (isAcr ? "" :       `<div class="row"><b>${an.ok ? "שורש משוער · בניין משוער" : "שורש לא מאומת"}</b><div class="chips"><button class="chip pri" data-root="${esc(root)}">שורש: ${esc(KK.refinal(root))}</button>${(an.alts || []).map(x => `<button class="chip" data-root="${esc(x)}">או: ${esc(KK.refinal(x))}</button>`).join("")}<span class="chip">${esc(bin)}</span></div>
+      (isAcr ? "" :       `<div class="row"><b>${an.ok ? (an.src === "rd" ? "שורש (מאומת מול ספר השרשים) · בניין משוער" : "שורש (נמצא במילון) · בניין משוער") : "שורש משוער, לא מאומת"}</b><div class="chips"><button class="chip pri" data-root="${esc(root)}">שורש: ${esc(KK.refinal(root))}</button>${(an.alts || []).map(x => `<button class="chip" data-root="${esc(x)}">או: ${esc(KK.refinal(x))}</button>`).join("")}<span class="chip">${esc(bin)}</span></div>
        <span class="note">זיהוי השורש והבניין הוא הערכה אוטומטית ועלול לטעות.</span></div>`) +
       (same.length ? `<div class="row"><b>מילים מאותו שורש</b><div class="chips">${same.map(x => chip(x.title)).join("")}</div></div>` : "") +
       (sim.length ? `<div class="row"><b>מילים דומות</b><div class="chips">${sim.map(x => chip(x.title)).join("")}</div></div>` : "") +
@@ -117,7 +117,7 @@
   function showFav() {
     mode = "fav"; tabs();
     const items = ST.likes.map(k => { const [n, i] = k.split("#"), r = D.get(n); return r && r.s[+i] ? { r, i: +i, k } : null; }).filter(Boolean);
-    $("#out").innerHTML = `<h2>מועדפים</h2>` + (items.length ? `<p class="note">הגדרות שסימנתם 👍. לחיצה על הכותרת פותחת את הערך.</p><div class="senses">${items.map(x =>
+    $("#out").innerHTML = `<h2>מועדפים</h2>` + (items.length ? `<p><button class="chip" id="favexp">⬇ ייצוא מועדפים</button></p><p class="note">הגדרות שסימנתם 👍. לחיצה על הכותרת פותחת את הערך.</p><div class="senses">${items.map(x =>
       `<div class="sense"><button class="chip pri" data-go="${esc(x.r.title)}">${esc(x.r.title)}</button><div class="sbody">${esc(x.r.s[x.i][1])}</div><div class="tb"><button class="ib on" data-unfav="${esc(x.k)}" title="הסר ממועדפים" aria-label="הסר ממועדפים">${IC.up}</button></div></div>`).join("")}</div>`
       : `<p class="hint">עדיין אין מועדפים. לחצו 👍 על הגדרה כדי לשמור אותה כאן.</p>`);
   }
@@ -130,7 +130,11 @@
      <label class="opt"><span>אופן הצגה<small>מה קורה כשמילה מזוהה</small></span><select id="s-mode"><option value="toast">הודעה קופצת (לחיצה פותחת כאן)</option><option value="panel">פתיחת המילון אוטומטית</option><option value="off">כבוי (רק בתפריט ההקשר)</option></select></label>
      <label class="opt"><span>מקסימום מילים בבחירה</span><select id="s-max"><option>1</option><option>2</option><option>3</option><option>4</option><option>6</option><option>8</option></select></label>
      <label class="opt"><span>מיקום סרגל האותיות<small>בתצוגת "כל המילים"</small></span><select id="s-side"><option value="0">למעלה</option><option value="1">בצד</option></select></label>
-     <label class="opt"><span>סרגל האותיות פתוח כברירת מחדל</span><input type="checkbox" id="s-fopen" ${ST.fOpen ? "checked" : ""}></label></div>`;
+     <label class="opt"><span>סרגל האותיות פתוח כברירת מחדל</span><input type="checkbox" id="s-fopen" ${ST.fOpen ? "checked" : ""}></label>
+     <label class="opt"><span>השמטת ראשי תיבות מההודעה הקופצת<small>מונע הצפה בערכים כמו א"א</small></span><input type="checkbox" id="s-noacr" ${ST.noAcr ? "checked" : ""}></label>
+     <label class="opt"><span>גודל גופן</span><select id="s-fs"><option value="90">קטן</option><option value="100">רגיל</option><option value="115">גדול</option><option value="130">גדול מאוד</option></select></label></div>`;
+    $("#s-fs").value = String(ST.fs || 100); $("#s-fs").onchange = e => { ST.fs = +e.target.value; applyFs(); save(); };
+    $("#s-noacr").onchange = e => { ST.noAcr = e.target.checked; save(); };
     $("#s-mode").value = ST.mode; $("#s-max").value = String(ST.maxWords); $("#s-side").value = ST.azSide ? "1" : "0";
     $("#s-fopen").onchange = e => { ST.fOpen = e.target.checked; fOpen = ST.fOpen; save(); };
     $("#s-auto").onchange = e => { ST.auto = e.target.checked; save(); };
@@ -241,7 +245,7 @@
 
   document.addEventListener("click", e => {
     if (!e.target.closest(".search")) { sugList = []; renderSug(); }
-    const t = e.target.closest("[data-go],[data-root],[data-i],[data-mhg],[data-rep],[data-copy],[data-like],[data-open],[data-unfav],#osearch,#orel,#ftog,[data-letter],#more,#back,#clrh,#modes button,#clr"); if (!t) return;
+    const t = e.target.closest("[data-go],[data-root],[data-i],[data-mhg],[data-rep],[data-copy],[data-like],[data-open],[data-unfav],[data-comb],#favexp,#osearch,#orel,#ftog,[data-letter],#more,#back,#clrh,#modes button,#clr"); if (!t) return;
     if (t.dataset.mhg) openMh(t.dataset.mhg, t.dataset.mhn);
     else if (t.dataset.rep !== undefined) report(cur, +t.dataset.rep);
     else if (t.dataset.copy !== undefined) { const s = cur.s[+t.dataset.copy]; copyText(`${cur.title}: ${s[1]}`); }
@@ -257,6 +261,8 @@
     else if (t.dataset.root) showRoot(t.dataset.root);
     else if (t.dataset.i) { const r = sugList[+t.dataset.i]; picked = Date.now(); $("#q").value = r.title; sugList = []; renderSug(); open(r); }
     else if (t.id === "back") { const n = stack.pop(); if (n) open(D.get(n), false); }
+    else if (t.id === "favexp") exportFav();
+    else if (t.dataset.comb) showCombined(selWords, selCtx.raw);
     else if (t.id === "clrh") { ST.hist = []; save(); showHist(); }
     else if (t.id === "clr") { $("#q").value = ""; sugList = []; renderSug(); $("#clr").classList.add("hid"); $("#q").focus(); }
     else if (t.closest("#modes")) { mode = t.dataset.m; tabs(); if (mode === "all") showAll(); else if (mode === "about") showAbout(); else if (mode === "hist") showHist(); else if (mode === "fav") showFav(); else if (mode === "set") showSet(); else if (mode === "root") $("#out").innerHTML = `<p class="hint">הקלידו שורש (למשל: שלמ) וראו את כל המילים מאותו שורש.</p>`; else if (cur) open(cur, false); }
@@ -268,6 +274,23 @@
     else if (e.key === "Escape") { sugList = []; renderSug(); }
   });
 
+  function applyFs() { document.documentElement.style.fontSize = (ST.fs || 100) + "%"; }
+  const LINKS = { gh: "https://github.com/Hadabadra/KLI-MULON/releases/latest", store: "https://otzaria.org/plugins/6ade7923afc55cf35f057cf1" };
+  function exportFav() {
+    const items = ST.likes.map(k => { const [n, i] = k.split("#"), r = D.get(n); return r && r.s[+i] ? `<h3>${esc(r.title)}</h3><p>${esc(r.s[+i][1])}</p>` : ""; }).join("");
+    const html = `<!DOCTYPE html><html lang="he" dir="rtl"><head><meta charset="UTF-8"><title>מועדפים — מילון כליקודש</title></head><body style="font-family:David,serif;max-width:50em;margin:2em auto"><h1>מועדפים — מילון כליקודש</h1>${items}<hr><p>הורדת התוסף: <a href="${LINKS.gh}">GitHub</a> · <a href="${LINKS.store}">חנות התוספים של אוצריא</a></p></body></html>`;
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["\ufeff" + html], { type: "text/html;charset=utf-8" })); a.download = "milon-favorites.html"; document.body.appendChild(a); a.click(); a.remove();
+    copyText(`${LINKS.gh}\n${LINKS.store}`);
+  }
+  /* דף משולב: כשבבחירה כמה מילים — הסבר קצר לכל מילה בדף אחד (דיווח משתמש 26.10.2026) */
+  function showCombined(words, raw) {
+    mode = "word"; tabs(); cur = null; const ctx = { raw: raw || "", words };
+    const rows = words.map(t => { const r = D.find(t); if (!r) return `<div class="sense"><b>${esc(t)}</b><div class="sbody note">אין ערך במילון</div></div>`;
+      const rk = KK.rank(r, ctx), pick = (rk.confident ? rk.best : rk.items.filter(x => x.kind !== "acr")).slice(0, 2);
+      return `<div class="sense"><button class="chip pri" data-go="${esc(r.title)}">${esc(r.title)}</button><div class="sbody">${pick.map(x => esc(r.s[x.i][1])).join("<br>")}</div></div>`; }).join("");
+    $("#out").innerHTML = `<h2>${esc(KK.norm(raw || words.join(" ")))}</h2><p class="note">דף משולב של המילים שזוהו בבחירה. לחיצה על מילה פותחת את הערך המלא.</p><div class="senses">${rows}</div>`;
+  }
+
   /* זיהוי אוטומטי: בחירה, תפריט הקשר, לחיצה על הודעה, פתיחה עם פרמטר */
   function applySel(text) {
     const rs = D.resolve(text, ST.maxWords), list = rs.phrase ? [rs.phrase] : rs.words;
@@ -278,14 +301,15 @@
     let t = d && (d.text || d.selectedText); const g = await call("reader.getSelection"); let raw = t; if (g.success && g.data) { t = g.data.text || t; raw = g.data.sourceSelectedText || g.data.renderedSelectedText || t; }
     const n = KK.norm(t); if (n && n.split(" ").length <= ST.maxWords) { const r = D.find(n); if (!(cur && r && cur.n === r.n)) applySel(raw); }
   }, 300);
-  function go(word, words, raw) { if (!word) return; selWords = Array.isArray(words) ? words : []; selCtx = { raw: raw || "", words: selWords.length ? selWords : [word] }; $("#q").value = word; lookup(word); }
+  function go(word, words, raw) { if (!word) return; if (Array.isArray(words) && words.length > 1) { selWords = words; selCtx = { raw: raw || "", words }; $("#q").value = word; return showCombined(words, raw); } selWords = Array.isArray(words) ? words : []; selCtx = { raw: raw || "", words: selWords.length ? selWords : [word] }; $("#q").value = word; lookup(word); }
   if (O) {
     O.on("plugin.boot", p => { if (p && p.theme) theme(p.theme); else call("app.getTheme").then(r => r && r.success && theme(r.data)); const prm = p && (p.param || p.params); if (prm && prm.word) go(prm.word, prm.words, prm.raw); });
     O.on("theme.changed", theme);
     O.on("reader.selection_changed", fromSel);
     O.on("reader.context_menu_item_clicked", d => { const t = (d && (d.selectedText || (d.selection && d.selection.text))) || ""; if (t) applySel(t); });
+    O.on("reader.toolbar_item_clicked", async () => { const g = await call("reader.getSelection"); const t = g.success && g.data && (g.data.sourceSelectedText || g.data.text); if (t) applySel(t); else $("#q").focus(); });
     O.on("ui.messageClicked", d => d && d.payload && go(d.payload.word, d.payload.words, d.payload.raw));
     O.on("plugin.page_opened", p => { const prm = p && (p.param || p.params); if (prm && prm.word) go(prm.word, prm.words, prm.raw); });
   }
-  load().then(() => { fOpen = !!ST.fOpen; $("#q").focus(); });
+  load().then(() => { fOpen = !!ST.fOpen; applyFs(); $("#q").focus(); });
 })();

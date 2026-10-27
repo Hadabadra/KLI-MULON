@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "milon-klei-kodesh",
   "name": "מילון כליקודש",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "stability": "beta",
   "author": "מילון כליקודש",
   "description": "מילון עברי מובנה: זיהוי אוטומטי של מילה מסומנת בזמן לימוד, חיפוש תוך כדי הקלדה, שורשים, בניינים ומילים דומות",
@@ -23,18 +23,45 @@
     "app.background_keep_alive",
     "search.fulltext.read",
     "events.subscribe:theme.changed",
-    "events.subscribe:reader.selection_changed"
+    "events.subscribe:reader.selection_changed",
+    "reader.toolbar"
   ],
   "contributes": {
-    "toolTab": { "title": "מילון כליקודש", "order": 310, "defaultPinned": true, "iconName": "book_open_24_regular" },
-    "background": { "entrypoint": "background.html" },
+    "toolTab": {
+      "title": "מילון כליקודש",
+      "order": 310,
+      "defaultPinned": true,
+      "iconName": "book_open_24_regular"
+    },
+    "background": {
+      "entrypoint": "background.html"
+    },
     "startup": {
       "contextMenuItems": [
-        { "id": "kk-lookup", "label": "פתח במילון כליקודש", "icon": "book_open_24_regular", "openPlugin": true,
-          "contexts": ["reader-selection", "reader-page-shape-selection"] }
+        {
+          "id": "kk-lookup",
+          "label": "פתח במילון כליקודש",
+          "icon": "book_open_24_regular",
+          "openPlugin": true,
+          "contexts": [
+            "reader-selection",
+            "reader-page-shape-selection"
+          ]
+        }
       ],
-      "activationEvents": ["app.startup", "reader.selection_changed"],
-      "keepAlive": true
+      "activationEvents": [
+        "app.startup",
+        "reader.selection_changed"
+      ],
+      "keepAlive": true,
+      "toolbarItems": [
+        {
+          "id": "kk-toolbar",
+          "label": "מילון כליקודש",
+          "icon": "book_open_24_regular",
+          "openPlugin": true
+        }
+      ]
     }
   }
 }
