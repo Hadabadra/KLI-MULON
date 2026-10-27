@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "milon-klei-kodesh",
   "name": "לשון הקודש",
-  "version": "1.7.2",
+  "version": "1.8.0",
   "stability": "beta",
   "author": "מילון כליקודש",
   "description": "מילון לשון הקודש וקונקורדנציה לתנ\"ך: זיהוי מילה מסומנת וביטויים, שורשים ובניינים, רד\"ק וספר הבחור מהספרייה",
@@ -30,11 +30,12 @@
     "library.books.read",
     "app.open_url",
     "app.info.read",
-    "library.books.provide"
+    "library.books.provide",
+    "search.dialog"
   ],
   "contributes": {
     "toolTab": {
-      "title": "קונקורדנציה",
+      "title": "לשון הקודש",
       "order": 310,
       "defaultPinned": true,
       "iconName": "book_open_24_regular"
@@ -82,6 +83,19 @@
           "provider": "klikodesh-dikduk",
           "title": "ספרי דקדוק",
           "icon": "book_open_24_regular"
+        }
+      ],
+      "searchDialogItems": [
+        {
+          "id": "kk-search",
+          "type": "checkbox",
+          "title": "חפש גם בלשון הקודש (מילון וספר הדקדוק)",
+          "defaultValue": false,
+          "openPluginOnSubmit": true,
+          "visibleInModes": [
+            "exact",
+            "advanced"
+          ]
         }
       ]
     }

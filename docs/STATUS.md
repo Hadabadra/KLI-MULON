@@ -48,3 +48,9 @@
 ## 1.7.1 (27.10.2026)
 - מצב מקוון = `!isOfflineMode` של `app.getConnectivity` (בקשת המשתמשת: להסתיר קישורים רק במצב "ללא גישה לאינטרנט").
 - SDK (Otzaria dev, 26.10.2026): אין API חדש שמסומן 0.9.98.2. שימושיים מ-0.9.98.1: `ui.exportPdf`/`ui.print` (בשימוש בספר הדקדוק), `app.getDivineNamesDisplay`, `plugin.setRestoreState`. מ-0.9.99 (לא יצאה): `resultsAction` בשדה החיפוש — כפתור "חפש בלשון הקודש" בטאב החיפוש; לממש כשתצא.
+
+## 1.8.0 (27.10.2026)
+- משימות ופתוחים: docs/TASKS-1.8.md. ספר הדקדוק: המקור הוא docs/grammar.md (נבנה ל-data/grammar.js; פורמט חדש: ### לסעיף, [[ספר|מונח]] קישור לספרייה, **הדגשה**, שורת "ראו גם: "כותרת"" הופכת לקישור).
+- toolTab.title חייב להיות זהה ל-name (שגיאת חנות).
+- קונקורדנציה: ספרי התנ"ך נמצאים ב-library.findBooks לפי שם מלא ונשלחים ב-books, בלי הגבלה; isTanakh לפי שם ספר מלא.
+- חלון החיפוש של אוצריא: searchDialogItems + הרשאה search.dialog + אירוע search.requested (כמו בעינים למקרא).
