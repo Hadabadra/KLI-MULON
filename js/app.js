@@ -545,10 +545,10 @@
   /* דף משולב: כשבבחירה כמה מילים — הסבר קצר לכל מילה בדף אחד (דיווח משתמש 26.10.2026) */
   function showCombined(words, raw) {
     mode = "word"; tabs(); cur = null; const ctx = { raw: raw || "", words };
-    const rows = words.map(t => { const r = D.find(t); if (!r) return `<div class="sense"><b>${esc(t)}</b><div class="sbody note">אין ערך במילון</div></div>`;
+    const rows = words.map(t => { const r = D.find(t); if (!r) return `<div class="sense"><b>${esc(t)}</b><div class="sbody note">⚠ לא זוהתה — אין ערך במילון (בדקו כתיב או ניקוד)</div></div>`;
       const rk = KK.rank(r, ctx), pick = (rk.confident ? rk.best : rk.items.filter(x => x.kind !== "acr")).slice(0, 2);
-      return `<div class="sense${r.n.includes(" ") ? " best" : ""}"><button class="chip pri" data-go="${esc(r.title)}">${r.n.includes(" ") ? "ביטוי: " : ""}${esc(r.title)}</button><div class="sbody">${pick.map(x => esc(r.s[x.i][1])).join("<br>")}</div></div>`; }).join("");
-    $("#out").innerHTML = `<h2>${esc(KK.norm(raw || words.join(" ")))}</h2><p class="note">דף משולב של המילים שזוהו בבחירה. לחיצה על מילה פותחת את הערך המלא.</p><div class="senses">${rows}</div>`;
+      return `<div class="sense${r.n.includes(" ") ? " best" : ""}"><button class="chip pri" data-go="${esc(r.title)}">${r.n.includes(" ") ? "ביטוי: " : ""}${esc(r.title)}</button><div class="sbody">${(() => { const a = D.analyze(r.n); return a && a.root ? `<small class="note">שורש ${esc(KK.refinal(a.root))}${a.binyan ? " · " + esc(String(a.binyan).split(" (")[0]) : ""}${a.ok ? "" : " (משוער)"}</small><br>` : ""; })()}${pick.map(x => esc(r.s[x.i][1])).join("<br>")}</div></div>`; }).join("");
+    $("#out").innerHTML = `<h2>${esc(KK.norm(raw || words.join(" ")))}</h2><p class="note">ניתוח המשפט: לכל מילה — שורש ובניין (זיהוי אוטומטי, משוער) ופירוש; מילה שלא זוהתה מסומנת ⚠. לחיצה על מילה פותחת את הערך המלא.</p><div class="senses">${rows}</div>`;
   }
 
   /* זיהוי אוטומטי: בחירה, תפריט הקשר, לחיצה על הודעה, פתיחה עם פרמטר */
