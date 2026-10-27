@@ -98,10 +98,12 @@
       sensesHtml(r) +
       Object.entries(links).map(([k, a]) => chipRow(k.replace("_", " "), a)).join("") +
       mhRow(isAcr ? [] : MH.find([r.n, ...(selCtx.words || [])], D)) +
+      (isAcr ? "" : `<div id="libhits"></div>`) +
       (isAcr ? "" :       `<div class="row"><b>${an.ok ? (an.src === "rd" ? "שורש (מאומת מול ספר השרשים) · בניין משוער" : "שורש (נמצא במילון) · בניין משוער") : "שורש משוער, לא מאומת"}</b><div class="chips"><button class="chip pri" data-root="${esc(root)}">שורש: ${esc(KK.refinal(root))}</button>${(an.alts || []).map(x => `<button class="chip" data-root="${esc(x)}">או: ${esc(KK.refinal(x))}</button>`).join("")}<button class="chip" data-gram="הבניינים">📘 ${esc(bin)} — בדקדוק</button></div>
        <span class="note">זיהוי השורש והבניין הוא הערכה אוטומטית ועלול לטעות.</span></div>`) +
       chipRow("מאותו שורש", same.map(x => x.title)) + chipRow("מילים דומות", sim.map(x => x.title)) +
       `<div class="pager">${nb.prev ? chip(nb.prev.title, "", "") .replace(">", ">→ ") : "<span></span>"}${nb.next ? chip(nb.next.title).replace(">", ">← ") : ""}</div>`;
+    if (!isAcr) fillLibHits(r.title.replace(/[^\u05D0-\u05EA ]/g, ""), $("#libhits"));
     $("#out").scrollTop = 0; window.scrollTo(0, 0);
   }
   /* מילונים מתוך ספריית אוצריא (רד"ק, ספר הבחור): מאתרים את הספר ופותחים אותו על השורש/המילה */
@@ -271,6 +273,23 @@
     ["ספר הנקוד (תרגום ראבע, מהדורת נוט)", "ר' יהודה חיוג'", "כללי הניקוד"], ["דקדוקי הטעמים", "ר' אהרן בן אשר", "יסודות הניקוד והטעמים ממסורת טבריה"], ["ספר זכרון", "ר' יוסף קמחי", ""], ["שפת יתר", "ראב\"ע", ""], ["צחות", "ראב\"ע", "ספר צחות"], ["אבן עזרא בראשית שיטה אחרת - דקדוק", "ראב\"ע", ""],
     ["מעשה אפוד", "ר' יצחק ב\"ר משה הלוי", ""], ["בינת מקרא", "ר' מנשה בן פורת", ""], ["רדיפי מיא", "ר' יהודה ליב אדל", ""], ["שפה לנאמנים", "ר' יהודה ליב אדל", ""],
     ["ספר הבחור", "ר' אליהו בחור", ""], ["פרקי אליהו", "ר' אליהו בחור", ""], ["ספר הרכבה", "ר' אליהו בחור", ""]];
+  /* 1.9.0: חיפוש המילה בכל ספרי הדקדוק שבספרייה בבת אחת; מוצגים רק ספרים שיש בהם מופע, וכל כפתור נפתח על המופע */
+  let libGramBooks = null;
+  async function gramBooks() {
+    if (libGramBooks) return libGramBooks;
+    const clean = t => String(t || "").replace(/^ספר /, "").trim();
+    const found = await Promise.all(LIBGRAM.map(async ([t]) => { try { const f = await call("library.findBooks", { query: t, limit: 15 }); const l = f && f.success && Array.isArray(f.data) ? f.data : []; const b = l.find(x => clean(x.title) === clean(t)); return b ? { t, bookId: b.bookId, type: b.type || "text" } : null; } catch (e) { return null; } }));
+    return (libGramBooks = found.filter(Boolean));
+  }
+  async function fillLibHits(w, el) {
+    if (!el || !w) return;
+    const books = await gramBooks(); if (!books.length) return;
+    const res = await runSearch(w, { books: books.map(b => ({ bookId: b.bookId, type: b.type })), limit: 60, order: "catalogue" });
+    const first = new Map(); for (const h of res) { const id = h.bookId; if (id != null && !first.has(id)) first.set(id, h); }
+    const hits = books.filter(b => first.has(b.bookId)).map(b => ({ b, h: first.get(b.bookId) }));
+    if (!el.isConnected || !hits.length) return;
+    el.innerHTML = `<div class="row inl"><b>בספרי הדקדוק שבספרייה</b><div class="chips">${hits.map(({ b, h }) => `<button class="chip" data-open="${esc(JSON.stringify({ id: h.id, bookId: h.bookId, type: h.type, index: h.index, q: w }))}">${esc(b.t)}</button>`).join("")}</div></div>`;
+  }
   function searchAll(q) {
     const w = KK.norm(q), r = D.find(w), secs = parseBook(BUILTIN.text).filter(x => (x.title + "\n" + x.lines.join("\n")).includes(w));
     mode = "word"; tabs(); cur = r || null; $("#q").value = w;
@@ -283,7 +302,8 @@
     if (r) return open(r, push), true;
     const mhHits = MH.find(KK.norm(text).split(" "), D);
     mode = "word"; tabs(); cur = null; const w = KK.norm(text);
-    $("#out").innerHTML = `<div class="hero"><h2>${esc(w)}</h2></div><p class="hint">אין ערך במאגר. אפשר לחפש במקורות אחרים:</p>` + linksRow(w, mhHits) + sugHtml(D.similar(w, 12).map(k => D.get(k)));
+    $("#out").innerHTML = `<div class="hero"><h2>${esc(w)}</h2></div><p class="hint">אין ערך במאגר. אפשר לחפש במקורות אחרים:</p>` + linksRow(w, mhHits) + `<div id="libhits"></div>` + sugHtml(D.similar(w, 12).map(k => D.get(k)));
+    fillLibHits(w, $("#libhits"));
     return false;
   }
   /* 1.8.0: מילה שאינה במאגר — המילה בלבד עם קישורים (בלי הגדרה) */

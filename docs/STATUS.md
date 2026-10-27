@@ -58,3 +58,7 @@
 ## 1.8.1 (27.10.2026)
 - שורשים: מילון צורות IRREG ב-core.js (להרחיב שם צורות נפוצות). ציורים בספר: שורה `!ציור:שם`, התוכן ב-KK_GRAMMAR.figs (data/grammar.js). קישור חיפוש בספר: `[[חיפוש|מונח]]`. עינים למקרא: openOther עם { section, term }.
 - פרסום לחנות אוטומטי (store.yml) בכל שינוי גרסה ב-main.
+
+## 1.9.0 — חיפוש בספרי הדקדוק שבספרייה
+- `fillLibHits(w, el)` ב-js/app.js: מאתר פעם אחת (מטמון `libGramBooks`) את ה-bookId של כל ספר ברשימת `LIBGRAM` דרך `library.findBooks` (התאמה מדויקת לשם), ומריץ `search.query` אחד עם `books` של כולם (`limit: 60`, `order: "catalogue"`). מוצגים רק ספרים עם מופע; הכפתור משתמש ב-`data-open` (reader.openBook על id/index של המופע).
+- 1.8.2: כפתורי "חפש בעינים למקרא" הכלליים הוסרו; קישור לעינים למקרא רק כשיש התאמה ב-`MH_INDEX`.
