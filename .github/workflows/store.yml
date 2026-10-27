@@ -1,0 +1,46 @@
+name: פרסום לחנות אוצריא
+
+# מפרסם את "לשון הקודש" (milon-klei-kodesh) לחנות אוצריא.
+# רץ בכל דחיפה ל-main שמשנה את manifest.json, וגם ידנית מלשונית Actions.
+# גרסה שכבר קיימת בחנות לא מתפרסמת שוב (publish: auto). סודות: OTZARIA_USER / OTZARIA_PASSWORD.
+
+on:
+  push:
+    branches: [main]
+    paths: ['manifest.json', '.github/workflows/store.yml']
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'לפרסם גם אם הגרסה כבר קיימת'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: store
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: תיקיית התוסף בלבד
+        run: |
+          mkdir -p dist/plugin
+          cp -r manifest.json index.html background.html css js data icon dist/plugin/
+          node -p "'לשון הקודש ' + require('./dist/plugin/manifest.json').version"
+      - name: ולידציה, קיפול ופרסום
+        timeout-minutes: 6
+        uses: Otzaria/otzaria-plugin-validator@v1
+        with:
+          path: dist/plugin
+          otzaria-user: ${{ secrets.OTZARIA_USER }}
+          otzaria-password: ${{ secrets.OTZARIA_PASSWORD }}
+          publish: 'auto'
+          force: ${{ github.event.inputs.force || false }}
+          screenshots: 'store-screenshots/01.png,store-screenshots/02.png'
+          reports-consent: 'true'
