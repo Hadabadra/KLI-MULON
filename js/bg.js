@@ -2,7 +2,7 @@
 (function () {
   const O = window.Otzaria; if (!O) return;
   const D = new KK.Dict(window.KK_DICT), MH = new KK.MhIndex(window.MH_INDEX);
-  const DEF = { auto: true, mode: "toast", maxWords: 8 };
+  const DEF = { auto: true, mode: "toast", maxWords: 8, tLen: "normal" };
   let S = { ...DEF }, last = "", lastAt = 0, timer = null;
   const call = async (m, p) => { try { return await O.call(m, p || {}); } catch (e) { return { success: false }; } };
   async function loadSettings() {
@@ -13,7 +13,8 @@
     const rk = KK.rank(r, ctx); if (S.noAcr) { rk.items = rk.items.filter(x => x.kind !== "acr"); rk.best = (rk.best || []).filter(x => x.kind !== "acr"); if (!rk.items.length) return null; } const order = ["lex", "enc", "laaz", "acr"];
     let pick = rk.confident ? rk.best.slice(0, 2) : order.map(k => rk.items.find(x => x.kind === k)).filter(Boolean).slice(0, 2);
     const d = pick.map(x => r.s[x.i][1]).filter(Boolean).join(" | ");
-    return `${r.title}: ${d.length > 150 ? d.slice(0, 147) + "…" : d} — לחצו לפרטים`;
+    const mx = S.tLen === "short" ? 60 : 150;
+    return `${r.title}: ${d.length > mx ? d.slice(0, mx - 3) + "…" : d}` + (S.tLen === "short" ? "" : " — לחצו לפרטים");
   }
   function onSel(data) {
     clearTimeout(timer);

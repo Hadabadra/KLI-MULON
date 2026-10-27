@@ -112,7 +112,7 @@
   function showRoot(root) {
     mode = "root"; tabs(); const a = D.byRoot(root);
     $("#out").innerHTML = `<h2>שורש: ${esc(root)}</h2><p class="note">רשימה לפי זיהוי שורש אוטומטי (משוער).</p>` +
-      (a.length ? `<div class="chips">${a.map(x => chip(x.title)).join("")}</div>` : `<p class="hint">לא נמצאו מילים לשורש הזה.</p>`);
+      (a.length ? (() => { const g = {}; for (const x of a) { const b = (D.analyze(x.n).binyan || "—").split(" (")[0]; (g[b] = g[b] || []).push(x); } return Object.entries(g).map(([b, xs]) => `<div class="row"><b>${esc(b)}</b><div class="chips">${xs.map(x => chip(x.title)).join("")}</div></div>`).join(""); })() : `<p class="hint">לא נמצאו מילים לשורש הזה.</p>`);
   }
   function showFav() {
     mode = "fav"; tabs();
@@ -125,26 +125,30 @@
     $("#out").innerHTML = ST.hist.length ? `<h2>היסטוריה</h2><div class="chips">${ST.hist.map(t => chip(t)).join("")}</div><p><button class="chip" id="clrh">נקה היסטוריה</button></p>` : `<p class="hint">אין היסטוריה עדיין.</p>`;
   }
   function showSet() {
+    const sw = (id, on) => `<input type="checkbox" class="sw" id="${id}" ${on ? "checked" : ""}>`;
+    const seg = (id, opts, val) => `<div class="seg" id="${id}">${opts.map(([v, t]) => `<button data-v="${v}" class="${String(val) === String(v) ? "on" : ""}">${t}</button>`).join("")}</div>`;
+    const opt = (t, sub, ctl) => `<div class="opt"><span>${t}${sub ? `<small>${sub}</small>` : ""}</span>${ctl}</div>`;
     $("#out").innerHTML = `<h2>הגדרות</h2><div class="set">
-     <label class="opt"><span>זיהוי אוטומטי בזמן לימוד<small>מילה שמסמנים בספר מזוהה מעצמה</small></span><input type="checkbox" id="s-auto" ${ST.auto ? "checked" : ""}></label>
-     <label class="opt"><span>אופן הצגה<small>מה קורה כשמילה מזוהה</small></span><select id="s-mode"><option value="toast">הודעה קופצת (לחיצה פותחת כאן)</option><option value="panel">פתיחת המילון אוטומטית</option><option value="off">כבוי (רק בתפריט ההקשר)</option></select></label>
-     <label class="opt"><span>מקסימום מילים בבחירה</span><select id="s-max"><option>1</option><option>2</option><option>3</option><option>4</option><option>6</option><option>8</option></select></label>
-     <label class="opt"><span>מיקום סרגל האותיות<small>בתצוגת "כל המילים"</small></span><select id="s-side"><option value="0">למעלה</option><option value="1">בצד</option></select></label>
-     <label class="opt"><span>סרגל האותיות פתוח כברירת מחדל</span><input type="checkbox" id="s-fopen" ${ST.fOpen ? "checked" : ""}></label>
-     <label class="opt"><span>השמטת ראשי תיבות מההודעה הקופצת<small>מונע הצפה בערכים כמו א"א</small></span><input type="checkbox" id="s-noacr" ${ST.noAcr ? "checked" : ""}></label>
-     <label class="opt"><span>גודל גופן</span><select id="s-fs"><option value="90">קטן</option><option value="100">רגיל</option><option value="115">גדול</option><option value="130">גדול מאוד</option></select></label></div>`;
-    $("#s-fs").value = String(ST.fs || 100); $("#s-fs").onchange = e => { ST.fs = +e.target.value; applyFs(); save(); };
-    $("#s-noacr").onchange = e => { ST.noAcr = e.target.checked; save(); };
-    $("#s-mode").value = ST.mode; $("#s-max").value = String(ST.maxWords); $("#s-side").value = ST.azSide ? "1" : "0";
-    $("#s-fopen").onchange = e => { ST.fOpen = e.target.checked; fOpen = ST.fOpen; save(); };
+     <section class="card"><h3>זיהוי בזמן לימוד</h3>
+      ${opt("זיהוי אוטומטי", "מילה שמסמנים בספר מזוהה מעצמה", sw("s-auto", ST.auto))}
+      ${opt("אופן הצגה", "מה קורה כשמילה מזוהה", seg("s-mode", [["toast", "הודעה"], ["panel", "פתיחת המילון"], ["off", "כבוי"]], ST.mode))}
+      ${opt("אורך ההודעה הקופצת", "הודעה קצרה נעלמת מהר יותר. אוצריא קובעת את זמן ההצגה ואינה מאפשרת לתוסף לשנותו", seg("s-tlen", [["short", "קצרה"], ["normal", "רגילה"]], ST.tLen || "normal"))}
+      ${opt("השמטת ראשי תיבות מההודעה", "מונע הצפה בערכים כמו א\"א", sw("s-noacr", ST.noAcr))}
+      ${opt("מקסימום מילים בבחירה", "", seg("s-max", [[1, "1"], [2, "2"], [3, "3"], [4, "4"], [6, "6"], [8, "8"]], ST.maxWords))}
+     </section>
+     <section class="card"><h3>תצוגה</h3>
+      ${opt("גודל גופן", "", seg("s-fs", [[90, "קטן"], [100, "רגיל"], [115, "גדול"], [130, "גדול מאוד"]], ST.fs || 100))}
+      ${opt("מיקום סרגל האותיות", "בתצוגת \"כל המילים\"", seg("s-side", [[0, "למעלה"], [1, "בצד"]], ST.azSide ? 1 : 0))}
+      ${opt("סרגל האותיות פתוח כברירת מחדל", "", sw("s-fopen", ST.fOpen))}
+     </section>
+     <section class="card"><h3>קיצורים</h3><p class="note">Ctrl+Alt+M על מילה מסומנת פותח את המילון. אפשר לשנות במסך ההגדרות של אוצריא ← קיצורי מקשים. יש גם כפתור בסרגל הקורא.</p></section></div>`;
+    const segOn = (id, f) => $("#" + id).onclick = e => { const b = e.target.closest("button"); if (!b) return; $("#" + id).querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); f(b.dataset.v); save(); };
+    segOn("s-mode", v => ST.mode = v); segOn("s-tlen", v => ST.tLen = v); segOn("s-max", v => ST.maxWords = +v);
+    segOn("s-fs", v => { ST.fs = +v; applyFs(); }); segOn("s-side", v => ST.azSide = v === "1");
     $("#s-auto").onchange = e => { ST.auto = e.target.checked; save(); };
-    $("#s-mode").onchange = e => { ST.mode = e.target.value; save(); };
-    $("#s-side").onchange = e => { ST.azSide = e.target.value === "1"; save(); };
-    $("#s-max").onchange = e => { ST.maxWords = +e.target.value; save(); };
+    $("#s-noacr").onchange = e => { ST.noAcr = e.target.checked; save(); };
+    $("#s-fopen").onchange = e => { ST.fOpen = e.target.checked; fOpen = ST.fOpen; save(); };
   }
-
-  const LETTERS = "אבגדהוזחטיכלמנסעפצקרשת".split("");
-  const PAGE = 120;
   function showAll(letter, more) {
     mode = "all"; tabs(); if (letter) { allLetter = letter; allShown = 0; } if (!more) allShown = Math.max(allShown, PAGE);
     const L = unf(allLetter), list = D.keys.filter(k => unf(k[0]) === L && !k.includes(" "));
@@ -308,6 +312,7 @@
     O.on("reader.selection_changed", fromSel);
     O.on("reader.context_menu_item_clicked", d => { const t = (d && (d.selectedText || (d.selection && d.selection.text))) || ""; if (t) applySel(t); });
     O.on("reader.toolbar_item_clicked", async () => { const g = await call("reader.getSelection"); const t = g.success && g.data && (g.data.sourceSelectedText || g.data.text); if (t) applySel(t); else $("#q").focus(); });
+    O.on("app.command", async d => { if (d && d.command === "lookup") { const g = await call("reader.getSelection"); const t = g.success && g.data && (g.data.sourceSelectedText || g.data.text); if (t) applySel(t); } });
     O.on("ui.messageClicked", d => d && d.payload && go(d.payload.word, d.payload.words, d.payload.raw));
     O.on("plugin.page_opened", p => { const prm = p && (p.param || p.params); if (prm && prm.word) go(prm.word, prm.words, prm.raw); });
   }
