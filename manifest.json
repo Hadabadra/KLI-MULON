@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "milon-klei-kodesh",
-  "name": "קונקורדנציה כליקודש",
-  "version": "1.6.0",
+  "name": "קונקורדנציה",
+  "version": "1.6.1",
   "stability": "beta",
   "author": "מילון כליקודש",
   "description": "קונקורדנציה לתנ\"ך ומילון עברי: זיהוי מילה מסומנת וביטויים, שורשים ובניינים, רד\"ק וספר הבחור מהספרייה",
@@ -34,7 +34,7 @@
   ],
   "contributes": {
     "toolTab": {
-      "title": "קונקורדנציה כליקודש",
+      "title": "קונקורדנציה",
       "order": 310,
       "defaultPinned": true,
       "iconName": "book_open_24_regular"
@@ -46,7 +46,7 @@
       "contextMenuItems": [
         {
           "id": "kk-lookup",
-          "label": "פתח בקונקורדנציה כליקודש",
+          "label": "פתח בקונקורדנציה",
           "icon": "book_open_24_regular",
           "openPlugin": true,
           "contexts": [
@@ -63,7 +63,7 @@
       "toolbarItems": [
         {
           "id": "kk-toolbar",
-          "title": "קונקורדנציה כליקודש",
+          "title": "קונקורדנציה",
           "icon": "book_open_24_regular",
           "openPlugin": true
         }
@@ -71,7 +71,7 @@
       "shortcuts": [
         {
           "id": "kk-key",
-          "label": "פתח בקונקורדנציה כליקודש",
+          "label": "פתח בקונקורדנציה",
           "key": "ctrl+alt+m",
           "contextMenuItemId": "kk-lookup"
         }
