@@ -29,7 +29,8 @@
     "network.localhost",
     "library.books.read",
     "app.open_url",
-    "app.info.read"
+    "app.info.read",
+    "library.books.provide"
   ],
   "contributes": {
     "toolTab": {
@@ -73,6 +74,14 @@
           "label": "פתח בקונקורדנציה כליקודש",
           "key": "ctrl+alt+m",
           "contextMenuItemId": "kk-lookup"
+        }
+      ],
+      "libraryBooks": [
+        {
+          "id": "dikduk",
+          "provider": "klikodesh-dikduk",
+          "title": "ספרי דקדוק",
+          "icon": "book_open_24_regular"
         }
       ]
     }

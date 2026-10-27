@@ -148,3 +148,23 @@ a.res span{font-family:var(--font-main);font-size:.95em;color:var(--color-on-sur
 .sw:checked{background:var(--color-primary);border-color:var(--color-primary)}
 .sw:checked::after{inset-inline-start:1.3em;background:var(--color-on-primary)}
 .search.mini input{width:100%;max-width:22em;font:inherit;font-size:.9em;padding:.45em .9em;border-radius:var(--radius-pill);border:1px solid var(--color-outline-variant);background:var(--color-surface);color:var(--color-on-surface)}
+/* 1.6.0: ספרי דקדוק — קורא עם תוכן עניינים */
+.card.bk{margin-bottom:1em;max-width:42em}.card.bk .opt{display:flex;align-items:center;justify-content:space-between;gap:.7em;padding:.5em 0;border-top:1px solid var(--color-outline-variant)}
+.card.bk h3+.opt{border-top:0}.card.bk small{display:block;color:var(--color-on-surface-variant);font-size:.8em}
+.reader .rbar{display:flex;align-items:center;gap:.8em;flex-wrap:wrap;position:sticky;top:0;background:var(--color-surface);padding:.4em 0;z-index:2}
+.reader .rbar h2{margin:0;flex:1}
+.reader #bq{font:inherit;font-size:.9em;padding:.45em .9em;border-radius:var(--radius-pill);border:1px solid var(--color-outline-variant);background:var(--color-surface-container-low);color:var(--color-on-surface);min-width:12em}
+.rgrid{display:grid;grid-template-columns:14em 1fr;gap:1.4em;align-items:start}
+@media(max-width:44em){.rgrid{grid-template-columns:1fr}}
+.toc{position:sticky;top:3.6em;display:grid;gap:.1em;background:var(--color-surface-container-low);border:1px solid var(--color-outline-variant);border-radius:var(--radius-lg);padding:.8em;max-height:70vh;overflow:auto}
+.toc b{font-size:.85em;color:var(--color-primary);margin-bottom:.3em}
+.toc a{color:var(--color-on-surface);text-decoration:none;font-size:.9em;padding:.25em .5em;border-radius:var(--radius-sm)}
+.toc a.lv2{padding-inline-start:1.3em;font-size:.85em;color:var(--color-on-surface-variant)}
+.toc a:hover{background:var(--color-primary-subtle);color:var(--color-primary)}
+#bview{font-family:var(--font-main);font-size:1.1em;line-height:1.8;max-width:44em}
+#bview h3{color:var(--color-primary);border-bottom:1px solid var(--color-outline-variant);padding-bottom:.2em;margin-top:1.4em}
+#bview h4{margin:1em 0 .3em}
+.tblw{overflow-x:auto}#bview table{border-collapse:collapse;margin:.6em 0;font-size:.95em}
+#bview th,#bview td{border:1px solid var(--color-outline-variant);padding:.35em .7em;text-align:start}
+#bview th{background:var(--color-surface-container-high);font-family:var(--font-ui);font-weight:600}
+#bview mark{background:var(--color-primary-subtle);color:var(--color-primary);border-radius:.2em}

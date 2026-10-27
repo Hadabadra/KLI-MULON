@@ -94,7 +94,7 @@
       sensesHtml(r) +
       Object.entries(links).map(([k, a]) => `<div class="row"><b>${esc(k.replace("_", " "))}</b><div class="chips">${a.map(t => chip(t)).join("")}</div></div>`).join("") +
       mhRow(isAcr ? [] : MH.find([r.n, ...(selCtx.words || [])], D)) +
-      (isAcr ? "" :       `<div class="row"><b>${an.ok ? (an.src === "rd" ? "שורש (מאומת מול ספר השרשים) · בניין משוער" : "שורש (נמצא במילון) · בניין משוער") : "שורש משוער, לא מאומת"}</b><div class="chips"><button class="chip pri" data-root="${esc(root)}">שורש: ${esc(KK.refinal(root))}</button>${(an.alts || []).map(x => `<button class="chip" data-root="${esc(x)}">או: ${esc(KK.refinal(x))}</button>`).join("")}<span class="chip">${esc(bin)}</span></div>
+      (isAcr ? "" :       `<div class="row"><b>${an.ok ? (an.src === "rd" ? "שורש (מאומת מול ספר השרשים) · בניין משוער" : "שורש (נמצא במילון) · בניין משוער") : "שורש משוער, לא מאומת"}</b><div class="chips"><button class="chip pri" data-root="${esc(root)}">שורש: ${esc(KK.refinal(root))}</button>${(an.alts || []).map(x => `<button class="chip" data-root="${esc(x)}">או: ${esc(KK.refinal(x))}</button>`).join("")}<button class="chip" data-gram="הבניינים">📘 ${esc(bin)} — בדקדוק</button></div>
        <span class="note">זיהוי השורש והבניין הוא הערכה אוטומטית ועלול לטעות.</span></div>`) +
       (same.length ? `<div class="row"><b>מילים מאותו שורש</b><div class="chips">${same.map(x => chip(x.title)).join("")}</div></div>` : "") +
       (sim.length ? `<div class="row"><b>מילים דומות</b><div class="chips">${sim.map(x => chip(x.title)).join("")}</div></div>` : "") +
@@ -103,17 +103,7 @@
   }
   /* מילונים מתוך ספריית אוצריא (רד"ק, ספר הבחור): מאתרים את הספר ופותחים אותו על השורש/המילה */
   const LIB = { radak: ["ספר השרשים", "רד\"ק"], bachur: ["ספר הבחור", "בחור"] };
-  async function openLib(which) {
-    const [q, must] = LIB[which], term = which === "radak" ? KK.refinal(D.analyze(cur.n).root) : cur.title.replace(/[^\u05D0-\u05EA ]/g, "");
-    const f = await call("library.findBooks", { query: q, limit: 10 });
-    const books = (f.success && Array.isArray(f.data) ? f.data : []).filter(b => String(b.title || b.bookId).includes(q.split(" ").pop()));
-    const b = books.find(x => String(x.title || x.bookId).includes(must)) || books[0];
-    if (!b) return call("ui.showMessage", { message: `הספר "${q}" לא נמצא בספרייה שלך.` });
-    const hit = (await runSearch(term, { books: [{ bookId: b.bookId, type: b.type || "text" }], limit: 1, order: "catalogue" }))[0];
-    const r = hit ? await call("reader.openBook", { id: hit.id, bookId: hit.bookId || b.bookId, type: hit.type, index: hit.index, searchQuery: term })
-                  : await call("reader.openBook", { bookId: b.bookId, searchQuery: term });
-    if (!r || r.success === false) call("ui.showMessage", { message: `לא ניתן לפתוח את "${b.title || b.bookId}".` });
-  }
+  async function openLib(which) { return openLibTerm(which, which === "radak" ? KK.refinal(D.analyze(cur.n).root) : cur.title.replace(/[^\u05D0-\u05EA ]/g, "")); }
   /* קונקורדנציה לתנ"ך: כל צורות השורש שבמילון, וכל המופעים שלהן בתנ"ך מתוך ספריית אוצריא */
   async function showConc(r) {
     mode = "conc"; tabs(); const an = D.analyze(r.n);
@@ -143,6 +133,90 @@
     copyText(cur.title.replace(/[^\u05D0-\u05EA ]/g, ""));
     const r = await call("app.openUrl", { url: "https://www.even-shoshan.co.il/" });
     call("ui.showMessage", { message: r && r.success !== false ? "המילה הועתקה — הדביקו אותה בחיפוש של אבן שושן" : "לא ניתן לפתוח את האתר" });
+  }
+  /* ===== ספרי דקדוק (1.6.0): קורא מובנה עם תוכן עניינים, חיפוש וסימנייה; ייבוא ספר ידני; הצגה בספריית אוצריא ===== */
+  const BUILTIN = { id: 1, title: (window.KK_GRAMMAR || {}).title || "יסודות הדקדוק", note: (window.KK_GRAMMAR || {}).note || "", text: (window.KK_GRAMMAR || {}).text || "" };
+  const bookList = () => [{ id: 1, title: BUILTIN.title, builtin: true }, ...(ST.books || [])];
+  async function getBook(id) {
+    if (+id === 1) return BUILTIN;
+    const meta = (ST.books || []).find(b => b.id === +id); if (!meta) return null;
+    const r = await call("storage.get", { key: "book:" + id }); return r.success && r.data ? { ...meta, text: r.data } : null;
+  }
+  function parseBook(text) {
+    const secs = []; let cur = { lv: 1, title: "פתיחה", lines: [] };
+    for (const ln of String(text).split(/\r?\n/)) {
+      const m = /^(#{1,3})\s+(.*)/.exec(ln);
+      if (m) { if (cur.lines.length || secs.length) secs.push(cur); cur = { lv: m[1].length, title: m[2].trim(), lines: [] }; } else cur.lines.push(ln);
+    }
+    secs.push(cur);
+    return secs.filter(x => x.title !== "פתיחה" || x.lines.some(l => l.trim())).map((x, i) => ({ ...x, id: "s" + i }));
+  }
+  function secHtml(x, q) {
+    const hl = t => { let h = esc(t); if (q) { const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"); h = h.replace(re, m => `<mark>${m}</mark>`); } return h; };
+    let out = "", list = false, tbl = null;
+    const flush = () => { if (list) { out += "</ul>"; list = false; } if (tbl) { out += `<div class="tblw"><table>${tbl.map((r, i) => `<tr>${r.map(c => i ? `<td>${hl(c)}</td>` : `<th>${hl(c)}</th>`).join("")}</tr>`).join("")}</table></div>`; tbl = null; } };
+    for (const l of x.lines) {
+      const t = l.trim();
+      if (t.startsWith("|")) { if (list) { out += "</ul>"; list = false; } (tbl = tbl || []).push(t.slice(1).split("|").map(c => c.trim())); continue; }
+      if (t.startsWith("- ")) { if (tbl) flush(); if (!list) { out += "<ul>"; list = true; } out += `<li>${hl(t.slice(2))}</li>`; continue; }
+      flush(); if (t) out += `<p>${hl(t)}</p>`;
+    }
+    flush();
+    return `<section class="bsec lv${x.lv}" id="${x.id}"><h${x.lv + 2}>${hl(x.title)}</h${x.lv + 2}>${out}</section>`;
+  }
+  async function showBooks() {
+    mode = "books"; tabs(); $("#out").classList.remove("wide");
+    const lib = [["radak", "ספר השרשים לרד\"ק"], ["bachur", "ספר הבחור"]];
+    $("#out").innerHTML = `<h2>ספרי דקדוק</h2>
+      <section class="card bk"><h3>בספרייה המובנית</h3>${bookList().map(b => `<div class="opt"><button class="chip pri" data-book="${b.id}">📖 ${esc(b.title)}</button>${b.builtin ? `<small>מובנה בתוסף · זמני</small>` : `<button class="ib" data-delbook="${b.id}" title="הסרת הספר" aria-label="הסרת הספר">✕</button>`}</div>`).join("")}
+        <div class="opt"><span>ייבוא ספר ידני<small>קובץ טקסט (.txt / .md) או HTML. כותרות: # פרק, ## סעיף (ב-HTML: h1–h3). הספר יופיע גם בספריית אוצריא.</small></span><label class="chip">⬆ ייבוא ספר<input type="file" id="bkfile" accept=".txt,.md,.html,.htm" hidden></label></div></section>
+      <section class="card bk"><h3>בספריית אוצריא</h3><div class="chips">${lib.map(([k, t]) => `<button class="chip" data-libopen="${k}">${t} ↗</button>`).join("")}</div><p class="note">נפתחים בקורא של אוצריא. מתוך ערך במילון הם נפתחים ישירות על השורש או המילה.</p></section>`;
+    $("#bkfile").onchange = importBook;
+  }
+  async function importBook(e) {
+    const f = e.target.files && e.target.files[0]; if (!f) return;
+    let txt = await f.text();
+    if (/\.html?$/i.test(f.name)) { const d = new DOMParser().parseFromString(txt, "text/html"); d.querySelectorAll("script,style").forEach(x => x.remove());
+      d.querySelectorAll("h1,h2,h3").forEach(h => h.textContent = "\n" + "#".repeat(+h.tagName[1]) + " " + h.textContent.trim() + "\n");
+      d.querySelectorAll("li").forEach(li => li.textContent = "\n- " + li.textContent.trim()); d.querySelectorAll("p,br,div,tr").forEach(x => x.append("\n"));
+      txt = d.body.textContent.replace(/\n{3,}/g, "\n\n"); }
+    const id = Math.max(1, ...(ST.books || []).map(b => b.id)) + 1, title = f.name.replace(/\.[^.]+$/, "");
+    const r = await call("storage.set", { key: "book:" + id, value: txt });
+    if (O && (!r || r.success === false)) return call("ui.showMessage", { message: "הספר גדול מדי לשמירה בתוסף" });
+    if (!O) memBooks[id] = txt;
+    ST.books = [...(ST.books || []), { id, title }]; save(); syncLibrary(); showBooks();
+  }
+  const memBooks = {};
+  async function readBook(id, target) {
+    const b = +id === 1 ? BUILTIN : (await getBook(id)) || (memBooks[id] ? { ...(ST.books || []).find(x => x.id === +id), text: memBooks[id] } : null);
+    if (!b) return call("ui.showMessage", { message: "הספר לא נמצא" });
+    mode = "books"; tabs(); const secs = parseBook(b.text);
+    const render = q => {
+      const shown = q ? secs.filter(x => (x.title + "\n" + x.lines.join("\n")).includes(q)) : secs;
+      $("#bview").innerHTML = (q ? `<p class="note">${shown.length} סעיפים מכילים "${esc(q)}"</p>` : "") + (shown.length ? shown.map(x => secHtml(x, q)).join("") : '<p class="hint">לא נמצא.</p>');
+    };
+    $("#out").innerHTML = `<div class="reader"><div class="rbar"><button class="chip" id="bkback">→ ספרים</button><h2>${esc(b.title)}</h2><input id="bq" type="search" placeholder="חיפוש בספר…"></div>
+      ${b.note ? `<p class="note">${esc(b.note)}</p>` : ""}
+      <div class="rgrid"><nav class="toc"><b>תוכן עניינים</b>${secs.map(x => `<a href="#" data-sec="${x.id}" class="lv${x.lv}">${esc(x.title)}</a>`).join("")}</nav><article id="bview"></article></div></div>`;
+    render("");
+    $("#bq").oninput = deb(e => render(e.target.value.trim()), 250);
+    $("#bkback").onclick = showBooks;
+    $(".toc").onclick = e => { const a = e.target.closest("[data-sec]"); if (!a) return; e.preventDefault(); $("#bq").value = ""; render(""); const el = document.getElementById(a.dataset.sec); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); ST.lastSec = { id: +id, sec: a.dataset.sec }; save(); };
+    const go2 = target ? secs.find(x => x.title.includes(target)) : (ST.lastSec && ST.lastSec.id === +id ? secs.find(x => x.id === ST.lastSec.sec) : null);
+    if (go2) setTimeout(() => { const el = document.getElementById(go2.id); if (el) el.scrollIntoView({ block: "start" }); }, 50);
+  }
+  /* הצגת הספרים בספריית אוצריא (libraryBooks), כדי שיופיעו באיתור הספרים */
+  function syncLibrary() { call("library.setProviderBooks", { provider: "klikodesh-dikduk", books: bookList().map(b => ({ id: b.id, title: b.title, categoryPath: "/דקדוק" })) }); }
+  async function openLibTerm(which, term) {
+    const [q, must] = LIB[which];
+    const f = await call("library.findBooks", { query: q, limit: 10 });
+    const books = (f.success && Array.isArray(f.data) ? f.data : []).filter(b => String(b.title || b.bookId).includes(q.split(" ").pop()));
+    const b = books.find(x => String(x.title || x.bookId).includes(must)) || books[0];
+    if (!b) return call("ui.showMessage", { message: `הספר "${q}" לא נמצא בספרייה שלך.` });
+    const hit = term ? (await runSearch(term, { books: [{ bookId: b.bookId, type: b.type || "text" }], limit: 1, order: "catalogue" }))[0] : null;
+    const r = hit ? await call("reader.openBook", { id: hit.id, bookId: hit.bookId || b.bookId, type: hit.type, index: hit.index, searchQuery: term })
+                  : await call("reader.openBook", { bookId: b.bookId, searchQuery: term || "" });
+    if (!r || r.success === false) call("ui.showMessage", { message: `לא ניתן לפתוח את "${b.title || b.bookId}".` });
   }
   function lookup(text, push = true) {
     if (!selWords.length) selCtx = { raw: text, words: [] };
@@ -292,7 +366,7 @@
 
   document.addEventListener("click", e => {
     if (!e.target.closest(".search")) { sugList = []; renderSug(); }
-    const t = e.target.closest("[data-go],[data-root],[data-i],[data-mhg],[data-rep],[data-copy],[data-like],[data-open],[data-unfav],[data-comb],[data-lib],#oconc,#oeven,#favexp,#osearch,#orel,#ftog,[data-letter],#more,#back,#clrh,#modes button,#clr"); if (!t) return;
+    const t = e.target.closest("[data-go],[data-root],[data-i],[data-mhg],[data-rep],[data-copy],[data-like],[data-open],[data-unfav],[data-comb],[data-lib],[data-book],[data-delbook],[data-libopen],[data-gram],#oconc,#oeven,#favexp,#osearch,#orel,#ftog,[data-letter],#more,#back,#clrh,#modes button,#clr"); if (!t) return;
     if (t.dataset.mhg) openMh(t.dataset.mhg, t.dataset.mhn);
     else if (t.dataset.rep !== undefined) report(cur, +t.dataset.rep);
     else if (t.dataset.copy !== undefined) { const s = cur.s[+t.dataset.copy]; copyText(`${cur.title}: ${s[1]}`); }
@@ -304,6 +378,10 @@
     else if (t.id === "oconc") showConc(cur);
     else if (t.id === "oeven") openEven();
     else if (t.dataset.lib) openLib(t.dataset.lib);
+    else if (t.dataset.book) readBook(t.dataset.book);
+    else if (t.dataset.gram) readBook(1, t.dataset.gram);
+    else if (t.dataset.libopen) openLibTerm(t.dataset.libopen, "");
+    else if (t.dataset.delbook) { const id = +t.dataset.delbook; ST.books = (ST.books || []).filter(b => b.id !== id); call("storage.set", { key: "book:" + id, value: null }); save(); syncLibrary(); showBooks(); }
     else if (t.id === "ftog") { fOpen = !fOpen; showAll(null, true); }
     else if (t.dataset.letter) { showAll(t.dataset.letter); }
     else if (t.id === "more") { allShown += PAGE; showAll(null, true); }
@@ -315,7 +393,7 @@
     else if (t.dataset.comb) showCombined(selWords, selCtx.raw);
     else if (t.id === "clrh") { ST.hist = []; save(); showHist(); }
     else if (t.id === "clr") { $("#q").value = ""; sugList = []; renderSug(); $("#clr").classList.add("hid"); $("#q").focus(); }
-    else if (t.closest("#modes")) { mode = t.dataset.m; tabs(); if (mode === "all") showAll(); else if (mode === "about") showAbout(); else if (mode === "hist") showHist(); else if (mode === "fav") showFav(); else if (mode === "set") showSet(); else if (mode === "root") $("#out").innerHTML = `<p class="hint">הקלידו שורש (למשל: שלמ) וראו את כל המילים מאותו שורש.</p>`; else if (cur) open(cur, false); }
+    else if (t.closest("#modes")) { mode = t.dataset.m; tabs(); if (mode === "all") showAll(); else if (mode === "about") showAbout(); else if (mode === "hist") showHist(); else if (mode === "fav") showFav(); else if (mode === "set") showSet(); else if (mode === "books") showBooks(); else if (mode === "root") $("#out").innerHTML = `<p class="hint">הקלידו שורש (למשל: שלמ) וראו את כל המילים מאותו שורש.</p>`; else if (cur) open(cur, false); }
   });
   $("#q").addEventListener("input", onType);
   $("#q").addEventListener("keydown", e => {
@@ -360,8 +438,9 @@
     O.on("reader.context_menu_item_clicked", d => { const t = (d && (d.selectedText || (d.selection && d.selection.text))) || ""; if (t) applySel(t); });
     O.on("reader.toolbar_item_clicked", async () => { const g = await call("reader.getSelection"); const t = g.success && g.data && (g.data.sourceSelectedText || g.data.text); if (t) applySel(t); else $("#q").focus(); });
     O.on("app.command", async d => { if (d && d.command === "lookup") { const g = await call("reader.getSelection"); const t = g.success && g.data && (g.data.sourceSelectedText || g.data.text); if (t) applySel(t); } });
+    O.on("library.providerBook.openRequested", d => { const id = d && (d.id || (d.book && d.book.id)); if (id) readBook(id); });
     O.on("ui.messageClicked", d => d && d.payload && go(d.payload.word, d.payload.words, d.payload.raw));
     O.on("plugin.page_opened", p => { const prm = p && (p.param || p.params); if (prm && prm.word) go(prm.word, prm.words, prm.raw); });
   }
-  checkOnline(); load().then(() => { fOpen = !!ST.fOpen; applyFs(); $("#q").focus(); });
+  checkOnline(); load().then(() => { syncLibrary(); fOpen = !!ST.fOpen; applyFs(); $("#q").focus(); });
 })();
