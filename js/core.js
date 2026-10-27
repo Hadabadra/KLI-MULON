@@ -6,6 +6,10 @@
   const F2R = { ך: "כ", ם: "מ", ן: "נ", ף: "פ", ץ: "צ" }, R2F = { כ: "ך", מ: "ם", נ: "ן", פ: "ף", צ: "ץ" };
   const unfinal = s => s.replace(/[ךםןףץ]/g, c => F2R[c]);
   const refinal = s => s.length ? s.slice(0, -1) + (R2F[s.slice(-1)] || s.slice(-1)) : s;
+  /* סינון (דיווחי משתמשים): הגדרות שאינן מתאימות לציבור שומר תורה ומצוות. ראו docs/REPORTS.md */
+  const BLOCK_DEF = [["דמי", "זמרת יווניה"]];
+  const BLOCK_ENC = /זמר|זמרת|שחקנ|שחקן קולנוע|כדורגל|כדורסל|להקת|סדרת טלוויזיה|סרט |דוגמנ/;
+  const blocked = (t, x) => (x[2] === "המכלול" && BLOCK_ENC.test(x[1])) || BLOCK_DEF.some(([w, d]) => t === w && x[1] === d);
   const SUPP = 'בטח שלט כשר עלב רעב זכר חסר דמה פדה קדש נתנ הלכ שתה שוב שנא לבש חזק רעה מצא בקש ארכ מלא שבע עמד יכל לקח יצא ישב קומ בוא שומ שמר ידע ראה עשה שמע פתח למד קרא שלח מות ירד זכר שבר ברכ נהג כנס מלכ פסק דרש עבד ישע ירא אהב ארג בחר גנב הרג חפצ טהר ירש סבב סלח רדפ תפש'.split(' ');
   const PRE = "והבכלמש";
   const SUF = ["תי", "ותיהם", "ותיו", "יהם", "ותי", "ות", "ים", "ין", "תם", "תן", "נו", "כם", "כן", "ה", "י", "ך", "ו", "ם", "ן", "ת"];
@@ -13,8 +17,9 @@
   class Dict {
     constructor(data) {
       this.map = new Map(); this.keys = []; this.radak = new Set();
-      for (const [t, v] of Object.entries(data)) {
+      for (const [t, v0] of Object.entries(data)) {
         const n = norm(t); if (!n) continue;
+        const v = { ...v0, s: v0.s.filter(x => !blocked(t, x)) }; if (!v.s.length) continue;
         if (!this.map.has(n)) { this.map.set(n, { title: t, n, ...v }); this.keys.push(n); }
         else this.map.get(n).s.push(...v.s);
       }
