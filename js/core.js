@@ -9,6 +9,13 @@
   /* סינון (דיווחי משתמשים): הגדרות שאינן מתאימות לציבור שומר תורה ומצוות. ראו docs/REPORTS.md */
   const BLOCK_DEF = [["דמי", "זמרת יווניה"]];
   const BLOCK_ENC = /זמר|זמרת|שחקנ|שחקן קולנוע|כדורגל|כדורסל|להקת|סדרת טלוויזיה|סרט |דוגמנ/;
+  /* תיקוני הגדרות (דיווחי משתמשים): [ערך, הגדרה שגויה, הגדרה מתוקנת]. ראו docs/REPORTS.md */
+  const FIX_DEF = [
+    ['אא"ב', "אם אתה אומר בשלום (נניח שמה שאתה אומר ... מתקבל על הדעת, אבל ...)", "אי אמרת בשלמא — אם תאמר: מובן הדבר (אם אתה אומר כך — ניחא, אבל ...)"],
+    ["בשלמא", "בשלום", "ניחא, מובן הדבר (בלשון הגמרא: \"בשלמא ... אלא ...\")"],
+    ["בשלמא", "בשלום (נניח ש... אפשרי, אבל ... )", "ניחא — נניח ש... מובן, אבל ..."]
+  ];
+  const fixed = (t, x) => { const f = FIX_DEF.find(([w, d]) => t === w && x[1] === d); return f ? [x[0], f[2], x[2]] : x; };
   const blocked = (t, x) => (x[2] === "המכלול" && BLOCK_ENC.test(x[1])) || BLOCK_DEF.some(([w, d]) => t === w && x[1] === d);
   const SUPP = 'בטח שלט כשר עלב רעב זכר חסר דמה פדה קדש נתנ הלכ שתה שוב שנא לבש חזק רעה מצא בקש ארכ מלא שבע עמד יכל לקח יצא ישב קומ בוא שומ שמר ידע ראה עשה שמע פתח למד קרא שלח מות ירד זכר שבר ברכ נהג כנס מלכ פסק דרש עבד ישע ירא אהב ארג בחר גנב הרג חפצ טהר ירש סבב סלח רדפ תפש'.split(' ');
   const PRE = "והבכלמש";
@@ -19,7 +26,7 @@
       this.map = new Map(); this.keys = []; this.radak = new Set();
       for (const [t, v0] of Object.entries(data)) {
         const n = norm(t); if (!n) continue;
-        const v = { ...v0, s: v0.s.filter(x => !blocked(t, x)) }; if (!v.s.length) continue;
+        const v = { ...v0, s: v0.s.filter(x => !blocked(t, x)).map(x => fixed(t, x)) }; if (!v.s.length) continue;
         if (!this.map.has(n)) { this.map.set(n, { title: t, n, ...v }); this.keys.push(n); }
         else this.map.get(n).s.push(...v.s);
       }
