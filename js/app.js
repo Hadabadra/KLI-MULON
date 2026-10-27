@@ -2,7 +2,7 @@
   const $ = s => document.querySelector(s), O = window.Otzaria;
   const D = new KK.Dict(window.KK_DICT), MH = new KK.MhIndex(window.MH_INDEX);
   let fOpen = false, allLetter = "א", allShown = 0, mode = "word", cur = null, stack = [], sugList = [], sugIdx = -1;
-  let ST = { auto: true, mode: "toast", maxWords: 8, hist: [], likes: [], azSide: false, fOpen: false, noAcr: false, fs: 100 };
+  let ST = { auto: true, mode: "toast", maxWords: 8, hist: [], likes: [], azSide: false, fOpen: false, noAcr: false, fs: 100, nakdan: true };
   let selWords = [], selCtx = { raw: "", words: [] };
   const call = async (m, p) => { try { return O ? await O.call(m, p || {}) : { success: false }; } catch (e) { return { success: false }; } };
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -141,11 +141,19 @@
       ${opt("מיקום סרגל האותיות", "בתצוגת \"כל המילים\"", seg("s-side", [[0, "למעלה"], [1, "בצד"]], ST.azSide ? 1 : 0))}
       ${opt("סרגל האותיות פתוח כברירת מחדל", "", sw("s-fopen", ST.fOpen))}
      </section>
+     <section class="card"><h3>הנקדן המקומי</h3>
+      ${opt("ניקוד הבחירה בעזרת הנקדן", "כשהתוסף \"הנקדן\" פועל, המילה מנוקדת לפי המשפט, וכך נבחר הפירוש הנכון (למשל אָשֵׁר / אֲשֶׁר)", sw("s-nak", ST.nakdan))}
+      <div class="opt"><span id="nak-st">בודק חיבור…</span><span class="chips"><button class="chip" id="nak-copy">📋 העתקת קישור להורדה</button></span></div>
+      <p class="note">הנקדן הוא תוסף אוצריא נפרד (באדיבות יוסף שלום בן שטרית) שאינו בחנות; מורידים אותו מהפורום: ${KKNakdan.FORUM}</p>
+     </section>
      <section class="card"><h3>קיצורים</h3><p class="note">Ctrl+Alt+M על מילה מסומנת פותח את המילון. אפשר לשנות במסך ההגדרות של אוצריא ← קיצורי מקשים. יש גם כפתור בסרגל הקורא.</p></section></div>`;
     const segOn = (id, f) => $("#" + id).onclick = e => { const b = e.target.closest("button"); if (!b) return; $("#" + id).querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); f(b.dataset.v); save(); };
     segOn("s-mode", v => ST.mode = v); segOn("s-tlen", v => ST.tLen = v); segOn("s-max", v => ST.maxWords = +v);
     segOn("s-fs", v => { ST.fs = +v; applyFs(); }); segOn("s-side", v => ST.azSide = v === "1");
     $("#s-auto").onchange = e => { ST.auto = e.target.checked; save(); };
+    $("#s-nak").onchange = e => { ST.nakdan = e.target.checked; save(); };
+    $("#nak-copy").onclick = () => { copyText(KKNakdan.FORUM); call("ui.showMessage", { message: "הקישור הועתק" }); };
+    KKNakdan.scan(true).then(p => { const el = $("#nak-st"); if (el) el.textContent = p ? "🟢 הנקדן מחובר" : "⚪ הנקדן לא מחובר — המילון פועל כרגיל"; });
     $("#s-noacr").onchange = e => { ST.noAcr = e.target.checked; save(); };
     $("#s-fopen").onchange = e => { ST.fOpen = e.target.checked; fOpen = ST.fOpen; save(); };
   }
@@ -296,7 +304,8 @@
   }
 
   /* זיהוי אוטומטי: בחירה, תפריט הקשר, לחיצה על הודעה, פתיחה עם פרמטר */
-  function applySel(text) {
+  async function applySel(text) {
+    text = await KKNakdan.voc(text, ST.nakdan);
     const rs = D.resolve(text, ST.maxWords), list = rs.phrase ? [rs.phrase] : rs.words;
     if (!list.length) { const hh = MH.find(KK.norm(text).split(" "), D); if (hh.length) { $("#q").value = KK.norm(text); showMhOnly(text, hh); } return; }
     selCtx = { raw: text, words: KK.norm(text).split(" ") }; selWords = rs.phrase ? [] : list.map(x => x.title); $("#q").value = list[0].title; open(list[0]);

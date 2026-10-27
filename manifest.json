@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "milon-klei-kodesh",
   "name": "מילון כליקודש",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "stability": "beta",
   "author": "מילון כליקודש",
   "description": "מילון עברי מובנה: זיהוי אוטומטי של מילה מסומנת בזמן לימוד, חיפוש תוך כדי הקלדה, שורשים, בניינים ומילים דומות",
@@ -25,7 +25,8 @@
     "events.subscribe:theme.changed",
     "events.subscribe:reader.selection_changed",
     "reader.toolbar",
-    "app.shortcuts"
+    "app.shortcuts",
+    "network.localhost"
   ],
   "contributes": {
     "toolTab": {
@@ -72,5 +73,21 @@
         }
       ]
     }
+  },
+  "network": {
+    "enabled": true,
+    "allowlist": [
+      "http://127.0.0.1:5000",
+      "http://127.0.0.1:5001",
+      "http://127.0.0.1:5002",
+      "http://127.0.0.1:5003",
+      "http://127.0.0.1:5004",
+      "http://127.0.0.1:5005",
+      "http://127.0.0.1:5006",
+      "http://127.0.0.1:5007",
+      "http://127.0.0.1:5008",
+      "http://127.0.0.1:5009",
+      "http://127.0.0.1:5010"
+    ]
   }
 }
