@@ -179,13 +179,14 @@
     return secs.filter(x => x.title !== "פתיחה" || x.lines.some(l => l.trim())).map((x, i) => ({ ...x, id: "s" + i }));
   }
   function secHtml(x, q) {
-    const hl = t => { let h = esc(t).replace(/\[\[([^|\]]+)\|([^\]]*)\]\]/g, (m, a, b) => `<a href="#" class="blink" data-lt="${a}" data-lq="${b}">${b ? a + ": " + b : a} ↗</a>`).replace(/\[\[([^\]]+)\]\]/g, (m, a) => `<a href="#" class="blink" data-lt="${a}">${a} ↗</a>`).replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>"); if (q) { const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"); h = h.replace(re, m => `<mark>${m}</mark>`); } return h; };
+    const hl = t => { let h = esc(t).replace(/\[\[([^|\]]+)\|([^\]]*)\]\]/g, (m, a, b) => a === "חיפוש" ? `<a href="#" class="blink" data-srch="${b}">🔍 ${b}</a>` : `<a href="#" class="blink" data-lt="${a}" data-lq="${b}">${b ? a + ": " + b : a} ↗</a>`).replace(/\[\[([^\]]+)\]\]/g, (m, a) => `<a href="#" class="blink" data-lt="${a}">${a} ↗</a>`).replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>"); if (q) { const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"); h = h.replace(re, m => `<mark>${m}</mark>`); } return h; };
     let out = "", list = false, tbl = null;
     const flush = () => { if (list) { out += "</ul>"; list = false; } if (tbl) { out += `<div class="tblw"><table>${tbl.map((r, i) => `<tr>${r.map(c => i ? `<td>${hl(c)}</td>` : `<th>${hl(c)}</th>`).join("")}</tr>`).join("")}</table></div>`; tbl = null; } };
     for (const l of x.lines) {
       const t = l.trim();
       if (t.startsWith("|")) { if (list) { out += "</ul>"; list = false; } (tbl = tbl || []).push(t.slice(1).split("|").map(c => c.trim())); continue; }
       if (t.startsWith("- ")) { if (tbl) flush(); if (!list) { out += "<ul>"; list = true; } out += `<li>${hl(t.slice(2))}</li>`; continue; }
+      if (t.startsWith("!ציור:")) { flush(); const f = ((window.KK_GRAMMAR || {}).figs || {})[t.slice(6).trim()]; if (f) out += `<figure class="fig">${f}</figure>`; continue; }
       flush(); if (t) out += /^ראו גם/.test(t) ? `<p class="see">${hl(t).replace(/&quot;([^&]+?)&quot;/g, (m, x) => `<a href="#" class="blink" data-gsec="${x}">${x}</a>`)}</p>` : `<p>${hl(t)}</p>`;
     }
     flush();
@@ -286,7 +287,7 @@
     return false;
   }
   /* 1.8.0: מילה שאינה במאגר — המילה בלבד עם קישורים (בלי הגדרה) */
-  const linksRow = (w, hits) => `<div class="row inl"><b>קישורים</b><div class="chips"><button class="chip pri" data-srch="${esc(w)}">${IC.search} חפש באוצריא</button><button class="chip" data-lib2="radak" data-w="${esc(w)}">ספר השרשים לרד"ק</button>${hits.map(h => `<button class="chip" data-mhg="${esc(h.g)}" data-mhn="${esc(h.name)}">עינים למקרא — ${esc(KK.MH_LABEL[h.g] || h.g)}: ${esc(h.name)} ↗</button>`).join("")}${online ? `<button class="chip" data-even="${esc(w)}">אבן שושן ↗</button>${Object.keys(EXT).map(k => `<button class="chip" data-ext2="${k}" data-w="${esc(w)}">${EXTN[k]} ↗</button>`).join("")}` : ""}</div></div>`;
+  const linksRow = (w, hits) => `<div class="row inl"><b>קישורים</b><div class="chips"><button class="chip pri" data-srch="${esc(w)}">${IC.search} חפש באוצריא</button><button class="chip" data-lib2="radak" data-w="${esc(w)}">ספר השרשים לרד"ק</button>${hits.map(h => `<button class="chip" data-mhg="${esc(h.g)}" data-mhn="${esc(h.name)}">עינים למקרא — ${esc(KK.MH_LABEL[h.g] || h.g)}: ${esc(h.name)} ↗</button>`).join("")}${hits.length ? "" : ["flora", "animal", "domem", "places", "people"].map(g => `<button class="chip" data-mhs="${g}" data-w="${esc(w)}">חפש בעינים למקרא — ${esc(KK.MH_LABEL[g])} ↗</button>`).join("")}${online ? `<button class="chip" data-even="${esc(w)}">אבן שושן ↗</button>${Object.keys(EXT).map(k => `<button class="chip" data-ext2="${k}" data-w="${esc(w)}">${EXTN[k]} ↗</button>`).join("")}` : ""}</div></div>`;
   const EXTN = { wiktionary: "ויקימילון", wikisource: "ויקיטקסט", academy: "האקדמיה ללשון" };
   const sugHtml = a => a.length ? `<div class="row"><b>אולי התכוונתם</b><div class="chips">${a.map(x => chip(x.title)).join("")}</div></div>` : "";
   function showRoot(root) {
@@ -451,7 +452,7 @@
 
   document.addEventListener("click", e => {
     if (!e.target.closest(".search")) { sugList = []; renderSug(); }
-    const t = e.target.closest("[data-go],[data-root],[data-i],[data-mhg],[data-rep],[data-copy],[data-like],[data-open],[data-unfav],[data-comb],[data-lib],[data-book],[data-delbook],[data-libopen],[data-gram],[data-ext],[data-ext2],[data-srch],[data-lib2],[data-even],[data-lt],[data-cf],[data-gsec],#genrep,#oconc,#oeven,#favexp,#osearch,#orel,#ftog,[data-letter],#more,#back,#clrh,#modes button,#clr"); if (!t) return;
+    const t = e.target.closest("[data-go],[data-root],[data-i],[data-mhg],[data-rep],[data-copy],[data-like],[data-open],[data-unfav],[data-comb],[data-lib],[data-book],[data-delbook],[data-libopen],[data-gram],[data-ext],[data-ext2],[data-srch],[data-lib2],[data-even],[data-lt],[data-cf],[data-gsec],[data-mhs],#genrep,#oconc,#oeven,#favexp,#osearch,#orel,#ftog,[data-letter],#more,#back,#clrh,#modes button,#clr"); if (!t) return;
     if (t.dataset.mhg) openMh(t.dataset.mhg, t.dataset.mhn);
     else if (t.dataset.rep !== undefined) report(cur, +t.dataset.rep);
     else if (t.dataset.copy !== undefined) { const s = cur.s[+t.dataset.copy]; copyText(`${cur.title}: ${s[1]}`); }
@@ -464,12 +465,13 @@
     else if (t.id === "oeven") openEven();
     else if (t.dataset.ext) openExt(t.dataset.ext);
     else if (t.dataset.ext2) call("app.openUrl", { url: EXT[t.dataset.ext2](t.dataset.w) });
-    else if (t.dataset.srch) call("reader.openSearchTab", { query: t.dataset.srch, autoSearch: true });
+    else if (t.dataset.srch) { e.preventDefault(); call("reader.openSearchTab", { query: t.dataset.srch, autoSearch: true }); }
     else if (t.dataset.lib2) openLibTerm(t.dataset.lib2, D.analyze(t.dataset.w).root ? KK.refinal(D.analyze(t.dataset.w).root) : t.dataset.w);
     else if (t.dataset.even) { copyText(t.dataset.even); call("app.openUrl", { url: "https://www.even-shoshan.co.il/" }); call("ui.showMessage", { message: "המילה הועתקה — הדביקו אותה בחיפוש של אבן שושן" }); }
     else if (t.dataset.lt) { e.preventDefault(); openTitle(t.dataset.lt, t.dataset.lq || ""); }
     else if (t.dataset.cf !== undefined) {}
     else if (t.dataset.gsec) readBook(1, t.dataset.gsec);
+    else if (t.dataset.mhs) call("plugin.openOther", { pluginId: KK.MH_ID, param: { section: t.dataset.mhs, term: t.dataset.w } }).then(r => { if (!r || !r.success) call("ui.showMessage", { message: "לא ניתן לפתוח את עינים למקרא. ודאו שהתוסף מותקן ומופעל." }); });
     else if (t.id === "genrep") genReport();
     else if (t.dataset.lib) { if (cur) openLib(t.dataset.lib); }
     else if (t.dataset.book) readBook(t.dataset.book);

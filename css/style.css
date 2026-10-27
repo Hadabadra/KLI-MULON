@@ -248,3 +248,21 @@ body.compact #bview{font-size:1em;line-height:1.65}
 .toc a.lv2{padding-inline-start:.9em;font-size:.88em;color:var(--color-on-surface)}
 .toc a.lv3{padding-inline-start:1.8em;font-size:.82em;color:var(--color-on-surface-variant)}
 #bview .lv1>h3{font-size:1.45em}#bview .lv3>h5{margin:.9em 0 .2em;font-size:1em;color:var(--color-on-surface)}
+/* 1.8.1 ציורים בספר הדקדוק */
+.fig{margin:1em 0;padding:.9em;border-radius:var(--radius-lg);background:var(--color-surface-container-low);border:1px solid var(--color-outline-variant)}
+.fig figcaption{margin-top:.6em;font-family:var(--font-ui);font-size:.8em;color:var(--color-on-surface-variant)}
+.glyphs{display:grid;grid-template-columns:repeat(auto-fill,minmax(6em,1fr));gap:.5em}
+.glyphs .g{display:flex;flex-direction:column;align-items:center;padding:.4em;border-radius:var(--radius-md);background:var(--color-surface)}
+.glyphs b{font-size:2.4em;line-height:1.3;color:var(--color-primary)}.glyphs span{font-family:var(--font-ui);font-size:.85em}.glyphs small{font-family:var(--font-ui);font-size:.72em;color:var(--color-on-surface-variant)}
+.syl{display:flex;gap:1.6em;flex-wrap:wrap;font-size:1.8em}.syl>div{display:flex;gap:.12em}
+.syl span,.legend span{padding:.05em .3em;border-radius:var(--radius-sm)}
+.syl .o,.legend .o{background:var(--color-primary-subtle)}.syl .c,.legend .c{border:.08em solid var(--color-primary)}
+.legend{display:flex;gap:.8em;margin-top:.5em;font-family:var(--font-ui);font-size:.8em}
+.tree .lvl{display:flex;gap:.5em;margin:.3em 0}.tree .lvl span{flex:1;text-align:center;padding:.35em;border-radius:var(--radius-sm);background:var(--color-surface);border:1px solid var(--color-outline-variant)}
+.tree em{display:block;font-style:normal;font-family:var(--font-ui);font-size:.72em;color:var(--color-primary)}
+.ranks div{display:flex;gap:.8em;align-items:center;margin:.25em 0;padding:.35em .6em;border-radius:var(--radius-sm);background:var(--color-surface)}
+.ranks div:nth-child(1){border-inline-start:.5em solid var(--color-primary)}.ranks div:nth-child(2){border-inline-start:.38em solid var(--color-primary)}
+.ranks div:nth-child(3){border-inline-start:.26em solid var(--color-primary)}.ranks div:nth-child(4){border-inline-start:.14em solid var(--color-primary)}
+.ranks b{min-width:4.5em;font-family:var(--font-ui)}
+.moza{display:flex;gap:.4em;flex-wrap:wrap}.moza div{flex:1;min-width:5em;text-align:center;padding:.5em;border-radius:var(--radius-md);background:linear-gradient(180deg,var(--color-primary-subtle),var(--color-surface))}
+.moza b{display:block;font-size:1.3em;color:var(--color-primary)}.moza small{font-family:var(--font-ui);color:var(--color-on-surface-variant)}

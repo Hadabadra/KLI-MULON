@@ -54,3 +54,7 @@
 - toolTab.title חייב להיות זהה ל-name (שגיאת חנות).
 - קונקורדנציה: ספרי התנ"ך נמצאים ב-library.findBooks לפי שם מלא ונשלחים ב-books, בלי הגבלה; isTanakh לפי שם ספר מלא.
 - חלון החיפוש של אוצריא: searchDialogItems + הרשאה search.dialog + אירוע search.requested (כמו בעינים למקרא).
+
+## 1.8.1 (27.10.2026)
+- שורשים: מילון צורות IRREG ב-core.js (להרחיב שם צורות נפוצות). ציורים בספר: שורה `!ציור:שם`, התוכן ב-KK_GRAMMAR.figs (data/grammar.js). קישור חיפוש בספר: `[[חיפוש|מונח]]`. עינים למקרא: openOther עם { section, term }.
+- פרסום לחנות אוטומטי (store.yml) בכל שינוי גרסה ב-main.
