@@ -59,7 +59,7 @@ with sync_playwright() as p:
   pg.screenshot(path='/tmp/claude-0/conc.png',full_page=True)
   pg.click('[data-m="root"]');pg.fill('#q','');
   ck('ללא שגיאות בתוסף '+str(errs),not errs)
-  pg2=b.new_page();pg2.add_init_script(MOCK.replace("isOnline:true","isOnline:false"));pg2.goto('file:///home/claude/kli-mulon/index.html');pg2.wait_for_timeout(300)
+  pg2=b.new_page();pg2.add_init_script(MOCK.replace("isOnline:true","isOnline:false,isOfflineMode:true"));pg2.goto('file:///home/claude/kli-mulon/index.html');pg2.wait_for_timeout(300)
   pg2.fill('#q','בטחון');pg2.keyboard.press('Enter');pg2.wait_for_timeout(300)
   ck('במצב מנותק אבן שושן מוסתר',pg2.locator('#oeven').count()==0 and pg2.locator('[data-lib="radak"]').count()==1)
 print('\n'.join(res))

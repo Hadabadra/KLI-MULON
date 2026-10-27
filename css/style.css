@@ -199,3 +199,7 @@ nav#modes button.on{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--color-pri
 .mbox textarea:focus{outline:none;border-color:var(--color-primary);box-shadow:0 0 0 .2em var(--color-primary-subtle)}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 .chip{white-space:nowrap}
+.rbar{display:flex;flex-wrap:wrap;gap:.5em;align-items:center}
+body.printing header,body.printing .rbar,body.printing .toc{display:none!important}
+body.printing .rgrid{display:block}
+.pfoot{margin-top:2em;color:var(--color-on-surface-variant);font-size:.85em}

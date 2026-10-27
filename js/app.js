@@ -92,7 +92,7 @@
        <div class="hero"><h2>${esc(r.title)}</h2></div>` +
       (selWords.length > 1 ? `<div class="row"><b>מילים בבחירה</b><div class="chips"><button class="chip" data-comb="1">📋 דף משולב</button>${selWords.map(t => chip(t, "", t === r.title ? "pri" : "")).join("")}</div></div>` : "") +
       `<div class="row"><div class="chips"><button class="chip pri" id="osearch">${IC.search} חפש באוצריא</button><button class="chip" id="orel">📖 פסוקים ומפרשים קשורים</button><button class="chip" id="oconc">📚 קונקורדנציה לתנ"ך</button></div></div><div id="rel"></div>` +
-      (isAcr ? "" : `<div class="row"><b>במילוני הספרייה</b><div class="chips"><button class="chip" data-lib="radak">ספר השרשים לרד"ק — שורש ${esc(KK.refinal(root))}</button><button class="chip" data-lib="bachur">ספר הבחור</button>${online ? `<button class="chip" id="oeven">אבן שושן ↗</button><button class="chip" data-ext="wiktionary">ויקימילון ↗</button><button class="chip" data-ext="wikisource">ויקיטקסט ↗</button>` : ""}</div>${online ? `<span class="note">קישורים חיצוניים בלבד, נפתחים בדפדפן ומוצגים רק כשיש חיבור לאינטרנט. התוכן שם אינו מסונן. אבן שושן — מנוי באתר, והמילה מועתקת להדבקה.</span>` : ""}</div>`) +
+      (isAcr ? "" : `<div class="row"><b>במילוני הספרייה</b><div class="chips"><button class="chip" data-lib="radak">ספר השרשים לרד"ק — שורש ${esc(KK.refinal(root))}</button><button class="chip" data-lib="bachur">ספר הבחור</button>${online ? `<button class="chip" id="oeven">אבן שושן ↗</button><button class="chip" data-ext="wiktionary">ויקימילון ↗</button><button class="chip" data-ext="wikisource">ויקיטקסט ↗</button><button class="chip" data-ext="academy">האקדמיה ללשון ↗</button>` : ""}</div>${online ? `<span class="note">קישורים חיצוניים בלבד, נפתחים בדפדפן ומוסתרים רק כשאוצריא מוגדרת "ללא גישה לאינטרנט". התוכן שם אינו מסונן. אבן שושן — מנוי באתר, והמילה מועתקת להדבקה.</span>` : ""}</div>`) +
       sensesHtml(r) +
       Object.entries(links).map(([k, a]) => `<div class="row"><b>${esc(k.replace("_", " "))}</b><div class="chips">${a.map(t => chip(t)).join("")}</div></div>`).join("") +
       mhRow(isAcr ? [] : MH.find([r.n, ...(selCtx.words || [])], D)) +
@@ -132,10 +132,10 @@
   /* מצב מקוון לפי אוצריא (כולל ההגדרה "ללא גישה לאינטרנט") — קישורים חיצוניים מוסתרים כשאין חיבור */
   let online = false;
   async function checkOnline(force) {
-    try { let r = await call("app.getConnectivity", force ? { forceRefresh: true } : {}); if (r.success && r.data && r.data.isOnline === null) r = await call("app.getConnectivity"); online = !!(r.success && r.data && r.data.isOnline); } catch (e) { online = false; }
+    try { let r = await call("app.getConnectivity", force ? { forceRefresh: true } : {});  online = !(r.success && r.data && r.data.isOfflineMode); } /* 1.7.1: מוסתר רק כשאוצריא במצב "ללא גישה לאינטרנט" */ catch (e) { online = false; }
   }
-  window.addEventListener("online", () => checkOnline(true)); window.addEventListener("offline", () => { online = false; });
-  const EXT = { wiktionary: w => "https://he.wiktionary.org/wiki/" + encodeURIComponent(w), wikisource: w => "https://he.wikisource.org/w/index.php?search=" + encodeURIComponent(w) };
+  window.addEventListener("online", () => checkOnline(true)); 
+  const EXT = { wiktionary: w => "https://he.wiktionary.org/wiki/" + encodeURIComponent(w), wikisource: w => "https://he.wikisource.org/w/index.php?search=" + encodeURIComponent(w), academy: w => "https://hebrew-academy.org.il/?s=" + encodeURIComponent(w) };
   async function openExt(k) { const r = await call("app.openUrl", { url: EXT[k](cur.title.replace(/[^\u05D0-\u05EA ]/g, "")) }); if (!r || r.success === false) call("ui.showMessage", { message: "לא ניתן לפתוח את האתר" }); }
   async function openEven() {
     copyText(cur.title.replace(/[^\u05D0-\u05EA ]/g, ""));
@@ -203,12 +203,17 @@
       const shown = q ? secs.filter(x => (x.title + "\n" + x.lines.join("\n")).includes(q)) : secs;
       $("#bview").innerHTML = (q ? `<p class="note">${shown.length} סעיפים מכילים "${esc(q)}"</p>` : "") + (shown.length ? shown.map(x => secHtml(x, q)).join("") : '<p class="hint">לא נמצא.</p>');
     };
-    $("#out").innerHTML = `<div class="reader"><div class="rbar"><button class="chip" id="bkback">→ ספרים</button><h2>${esc(b.title)}</h2><input id="bq" type="search" placeholder="חיפוש בספר…"></div>
+    $("#out").innerHTML = `<div class="reader"><div class="rbar"><button class="chip" id="bkback">→ ספרים</button><h2>${esc(b.title)}</h2><input id="bq" type="search" placeholder="חיפוש בספר…"><button class="chip" id="bkdl">⬇ הורדה</button><button class="chip" id="bkpdf">🖨 PDF / הדפסה</button></div>
       ${b.note ? `<p class="note">${esc(b.note)}</p>` : ""}
       <div class="rgrid"><nav class="toc"><b>תוכן עניינים</b>${secs.map(x => `<a href="#" data-sec="${x.id}" class="lv${x.lv}">${esc(x.title)}</a>`).join("")}</nav><article id="bview"></article></div></div>`;
     render("");
     $("#bq").oninput = deb(e => render(e.target.value.trim()), 250);
     $("#bkback").onclick = showBooks;
+    $("#bkdl").onclick = () => { const h = `<!DOCTYPE html><html lang="he" dir="rtl"><head><meta charset="UTF-8"><title>${esc(b.title)}</title></head><body style="font-family:David,serif;max-width:50em;margin:2em auto;line-height:1.7"><h1>${esc(b.title)}</h1>${b.note ? `<p><i>${esc(b.note)}</i></p>` : ""}${secs.map(x => secHtml(x, "")).join("")}<hr><p>מתוך התוסף "לשון הקודש" לאוצריא. הורדת התוסף: <a href="${LINKS.gh}">GitHub</a> · <a href="${LINKS.store}">חנות התוספים של אוצריא</a></p></body></html>`;
+      const el = document.createElement("a"); el.href = URL.createObjectURL(new Blob(["\ufeff" + h], { type: "text/html;charset=utf-8" })); el.download = b.title.replace(/[\\/:*?"<>|]/g, "") + ".html"; document.body.appendChild(el); el.click(); el.remove();
+      copyText(`${LINKS.gh}\n${LINKS.store}`); call("ui.showMessage", { message: "הספר הורד; קישורי ההורדה של התוסף הועתקו" }); };
+    $("#bkpdf").onclick = async () => { $("#bq").value = ""; render(""); document.body.classList.add("printing"); const f = document.createElement("p"); f.className = "pfoot"; f.textContent = `הורדת התוסף "לשון הקודש": ${LINKS.gh} · ${LINKS.store}`; $("#bview").appendChild(f);
+      const r = await call("ui.exportPdf", { fileName: b.title, pageSize: "a4", marginMm: 15 }); if (!r || r.success === false) await call("ui.print", { pageSize: "a4", marginMm: 15 }); document.body.classList.remove("printing"); f.remove(); };
     $(".toc").onclick = e => { const a = e.target.closest("[data-sec]"); if (!a) return; e.preventDefault(); $("#bq").value = ""; render(""); const el = document.getElementById(a.dataset.sec); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); ST.lastSec = { id: +id, sec: a.dataset.sec }; save(); };
     const go2 = target ? secs.find(x => x.title.includes(target)) : (ST.lastSec && ST.lastSec.id === +id ? secs.find(x => x.id === ST.lastSec.sec) : null);
     if (go2) setTimeout(() => { const el = document.getElementById(go2.id); if (el) el.scrollIntoView({ block: "start" }); }, 50);
