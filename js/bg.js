@@ -28,7 +28,7 @@
       const t = KK.norm(txt);
       if (!t || t.split(" ").length > S.maxWords || t.length > 90) return;
       if (t === last && Date.now() - lastAt < 4000) return;
-      const rs = D.resolve(t, S.maxWords), list = rs.phrase ? [rs.phrase] : rs.words;
+      const rs = D.resolve(t, S.maxWords), list = rs.phrase ? [rs.phrase] : [...rs.phrases, ...rs.words.filter(w => !rs.phrases.some(p => p.n.split(" ").includes(w.n)))];
       if (!list.length) {
         const hh = MH.find(t.split(" "), D); if (!hh.length) return;
         last = t; lastAt = Date.now();
@@ -39,7 +39,7 @@
       last = t; lastAt = Date.now();
       rawTxt = await KKNakdan.voc(rawTxt, S.nakdan);          // ניקוד מהנקדן המקומי, אם מותקן
       const ctx = { raw: rawTxt, words: t.split(" ") };
-      const param = { word: list[0].title, words: rs.phrase ? [] : list.map(x => x.title), raw: rawTxt };
+      const param = { word: list[0].title, words: rs.phrase ? [] : list.map(x => x.title), raw: rawTxt, phrases: rs.phrases.length };
       if (S.mode === "panel") return void call("plugin.openSelf", { param });
       const msg = short(list[0], ctx); if (!msg) return;
       const more = list.length > 1 ? ` (+${list.length - 1} מילים בבחירה)` : "";

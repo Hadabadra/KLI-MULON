@@ -25,4 +25,4 @@ jobs:
       - name: Release
         if: env.SKIP != '1'
         env: { GH_TOKEN: '${{ github.token }}' }
-        run: gh release create "v$V" "milon-klei-kodesh-$V.otzplugin" --title "מילון כליקודש $V" --notes-file notes.md --target "$GITHUB_SHA"
+        run: gh release create "v$V" "milon-klei-kodesh-$V.otzplugin" --title "קונקורדנציה כליקודש $V" --notes-file notes.md --target "$GITHUB_SHA"

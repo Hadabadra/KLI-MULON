@@ -216,7 +216,7 @@
   const unf = s => s.replace(/[ךםןףץ]/g, c => ({ ך: "כ", ם: "מ", ן: "נ", ף: "פ", ץ: "צ" }[c]));
   function showAbout() {
     mode = "about"; tabs();
-    $("#out").innerHTML = `<div class="about"><h2>מילון כליקודש</h2><p>גרסה ${esc(window.KK_VERSION || "")} · ${D.keys.length.toLocaleString("he")} ערכים</p>
+    $("#out").innerHTML = `<div class="about"><h2>קונקורדנציה כליקודש</h2><p class="note">לשעבר "מילון כליקודש".</p><p>גרסה ${esc(window.KK_VERSION || "")} · ${D.keys.length.toLocaleString("he")} ערכים</p>
      <h3>על המילון</h3><p>קישורי הכרטסות מבוססים על רשימת שמות הערכים של התוסף "עינים למקרא" מאת חד בדרא (שמות בלבד; התוכן נשאר אצלם). התוסף נבנה על פי מאגר המילון של פרויקט כליקודש (KleiKodeshProject), בקובץ הנושא את השם milon-klei-kodesh (גרסת המאגר: 13.10.2026). כל ההגדרות, הנרדפים, הניגודים וראשי התיבות לקוחים ממנו, והמקור של כל הגדרה מצוין בערך עצמו. אין בתוסף תוכן מילוני נוסף.</p>
      <p class="note"><b>שימו לב:</b> המאגר עדיין צריך סינון, ותהליך הסינון טרם הסתיים. ייתכנו בו ערכים לא מילוניים (כגון שמות פרטיים), הגדרות כפולות או לא מדויקות, וערכים חסרים.</p>
      <p class="note">השורשים והבניינים אינם חלק מהמאגר. הם הערכה אוטומטית של התוסף ועלולים לטעות.</p>
@@ -337,16 +337,16 @@
     mode = "word"; tabs(); cur = null; const ctx = { raw: raw || "", words };
     const rows = words.map(t => { const r = D.find(t); if (!r) return `<div class="sense"><b>${esc(t)}</b><div class="sbody note">אין ערך במילון</div></div>`;
       const rk = KK.rank(r, ctx), pick = (rk.confident ? rk.best : rk.items.filter(x => x.kind !== "acr")).slice(0, 2);
-      return `<div class="sense"><button class="chip pri" data-go="${esc(r.title)}">${esc(r.title)}</button><div class="sbody">${pick.map(x => esc(r.s[x.i][1])).join("<br>")}</div></div>`; }).join("");
+      return `<div class="sense${r.n.includes(" ") ? " best" : ""}"><button class="chip pri" data-go="${esc(r.title)}">${r.n.includes(" ") ? "ביטוי: " : ""}${esc(r.title)}</button><div class="sbody">${pick.map(x => esc(r.s[x.i][1])).join("<br>")}</div></div>`; }).join("");
     $("#out").innerHTML = `<h2>${esc(KK.norm(raw || words.join(" ")))}</h2><p class="note">דף משולב של המילים שזוהו בבחירה. לחיצה על מילה פותחת את הערך המלא.</p><div class="senses">${rows}</div>`;
   }
 
   /* זיהוי אוטומטי: בחירה, תפריט הקשר, לחיצה על הודעה, פתיחה עם פרמטר */
   async function applySel(text) {
     text = await KKNakdan.voc(text, ST.nakdan);
-    const rs = D.resolve(text, ST.maxWords), list = rs.phrase ? [rs.phrase] : rs.words;
+    const rs = D.resolve(text, ST.maxWords), list = rs.phrase ? [rs.phrase] : [...rs.phrases, ...rs.words.filter(w => !rs.phrases.some(p => p.n.split(" ").includes(w.n)))];
     if (!list.length) { const hh = MH.find(KK.norm(text).split(" "), D); if (hh.length) { $("#q").value = KK.norm(text); showMhOnly(text, hh); } return; }
-    selCtx = { raw: text, words: KK.norm(text).split(" ") }; selWords = rs.phrase ? [] : list.map(x => x.title); $("#q").value = list[0].title; open(list[0]);
+    selCtx = { raw: text, words: KK.norm(text).split(" ") }; selWords = rs.phrase ? [] : list.map(x => x.title); $("#q").value = list[0].title; if (rs.phrases.length && list.length > 1) return showCombined(selWords, text); open(list[0]);
   }
   const fromSel = deb(async d => {
     let t = d && (d.text || d.selectedText); const g = await call("reader.getSelection"); let raw = t; if (g.success && g.data) { t = g.data.text || t; raw = g.data.sourceSelectedText || g.data.renderedSelectedText || t; }

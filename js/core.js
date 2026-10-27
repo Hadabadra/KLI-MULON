@@ -51,9 +51,17 @@
     find(word) { for (const c of this.candidates(word)) { const r = this.map.get(c); if (r) return r; } return null; }
     /* בחירה של כמה מילים: קודם כביטוי שלם, ואז כל מילה בנפרד; גם מילה חלקית (קידומת) */
     resolve(text, max = 8) {
-      const t = norm(text), out = { phrase: null, words: [] };
+      const t = norm(text), out = { phrase: null, phrases: [], words: [] };
       if (!t) return out;
       out.phrase = this.find(t);
+      /* ביטויים של כמה מילים בתוך הבחירה (צירופים קבועים, "אי אפשר" וכד'), הארוכים קודם (#3, 1.6.0) */
+      const ws = t.split(" ").slice(0, max), used = new Set();
+      if (!out.phrase || ws.length < 2) for (let len = Math.min(5, ws.length - (out.phrase ? 1 : 0)); len >= 2; len--) for (let i = 0; i + len <= ws.length; i++) {
+        if ([...Array(len).keys()].some(k => used.has(i + k))) continue;
+        let span = ws.slice(i, i + len).join(" "), r = this.map.get(span);
+        if (!r && /^[והבלמכש]/.test(span) && span.length > 3) r = this.map.get(span.slice(1));     // קידומת: "ובית המקדש"
+        if (r) { out.phrases.push(r); for (let k = 0; k < len; k++) used.add(i + k); }
+      }
       const seen = new Set();
       for (const w of t.split(" ").slice(0, max)) {
         let r = this.find(w);
