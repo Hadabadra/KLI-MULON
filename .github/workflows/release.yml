@@ -16,6 +16,7 @@ jobs:
         run: |
           V=$(jq -r .version manifest.json)
           if gh release view "v$V" >/dev/null 2>&1; then echo "v$V already released"; echo "SKIP=1" >> $GITHUB_ENV; exit 0; fi
+          python3 tools/build_roadmap.py docs/ROADMAP.md data/roadmap.js && python3 tools/build_roadmap.py CHANGELOG.md data/changelog.js KK_CHANGELOG
           zip -qr "milon-klei-kodesh-$V.otzplugin" manifest.json index.html background.html css js data icon docs
           sha256sum "milon-klei-kodesh-$V.otzplugin" > SHA256.txt
           awk "/^## $V/{f=1;next}/^## /{f=0}f" CHANGELOG.md > notes.md

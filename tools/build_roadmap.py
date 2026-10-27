@@ -33,5 +33,10 @@ def convert(md):
 
 if __name__ == '__main__':
     src, dst = sys.argv[1], sys.argv[2]
+    var = sys.argv[3] if len(sys.argv) > 3 else 'KK_ROADMAP'   # KK_CHANGELOG ליומן השינויים
     h = convert(open(src, encoding='utf-8').read())
-    open(dst, 'w', encoding='utf-8').write('window.KK_ROADMAP=' + json.dumps(h, ensure_ascii=False) + ';\n')
+    extra = ''
+    if var == 'KK_CHANGELOG':
+        h = re.sub(r'<h3>[^<]*</h3>\n?', '', h, count=1)   # בלי כותרת הקובץ
+        extra = 'window.KK_VERSION=' + json.dumps(json.load(open('manifest.json', encoding='utf-8'))['version']) + ';\n'
+    open(dst, 'w', encoding='utf-8').write(f'window.{var}=' + json.dumps(h, ensure_ascii=False) + ';\n' + extra)
