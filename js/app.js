@@ -59,6 +59,7 @@
     return res.slice(0, 8);
   }
   const pleneRow = w => { if (ST.plene === false) return ""; const a = pleneAlts(w); return a.length ? `<div class="row inl"><b>כתיב מלא / חסר</b><div class="chips">${a.map(r => `<button class="chip" data-go="${esc(r.title)}" title="${esc((r.s[0] || [])[1] || "")}">${esc(r.title)}</button>`).join("")}</div><span class="note">אותה מילה בכתיב אחר (למשל משל ← מושל) — לבחירתכם לפי ההקשר.</span></div>` : ""; };
+  const IA = (f, ...a) => window.KKA && typeof KKA[f] === "function" ? KKA[f](...a) : ""; /* 2.0: פיצ'רים מ-js/ideas-a.js */
   const chip = (t, a = "", cls = "") => `<button class="chip ${cls}" data-go="${esc(t)}" ${a}>${esc(t)}</button>`;
 
 
@@ -124,14 +125,14 @@
   async function showConc(r) {
     mode = "conc"; tabs(); const an = D.analyze(r.n); $("#out").classList.add("wide");
     const forms = [r.title.replace(/[^א-ת]/g, ""), KK.refinal(an.root), ...D.byRoot(an.root).map(x => x.title.replace(/[^א-ת]/g, ""))].filter((x, i, a) => x && a.indexOf(x) === i).slice(0, 16);
-    $("#out").innerHTML = `<div class="chead"><h2>קונקורדנציה: ${esc(r.title)}</h2><button class="chip" id="cback" title="חזרה לערך">חזרה לערך ←</button></div><p class="note">שורש ${esc(KK.refinal(an.root))}${an.ok ? "" : " (משוער)"} · ${forms.length} צורות · ${ST.concAll ? "מכל ספריית אוצריא" : "מתוך ספרי התנ\"ך בלבד"}, כולל קידומות. <a href="#" id="cscope">${ST.concAll ? "הגבל לתנ\"ך" : "חפש בכל הספרייה"}</a></p><div class="row"><div class="search mini"><input id="cq" placeholder="הוסיפו צורה לחיפוש…"></div></div><div id="cforms" class="chips"></div><div id="conc"><p class="note"><span class="spin"></span>אוסף מופעים…</p></div>`;
+    $("#out").innerHTML = `<div class="chead"><h2>קונקורדנציה: ${esc(r.title)}</h2><button class="chip" id="cback" title="חזרה לערך">חזרה לערך ←</button></div><p class="note">שורש ${esc(KK.refinal(an.root))}${an.ok ? "" : " (משוער)"} · ${forms.length} צורות · ${ST.concAll ? "מכל ספריית אוצריא" : "מתוך ספרי התנ\"ך בלבד"}, כולל קידומות. <a href="#" id="cscope">${ST.concAll ? "הגבל לתנ\"ך" : "חפש בכל הספרייה"}</a></p><div class="row"><div class="search mini"><input id="cq" placeholder="הוסיפו צורה לחיפוש…"></div></div><div id="cforms" class="chips"></div><div id="cchart"></div><div id="conc"><p class="note"><span class="spin"></span>אוסף מופעים…</p></div>`;
     const card = (x, q) => `<a class="res" href="#" data-open='${esc(JSON.stringify({ id: x.id, bookId: x.bookId, type: x.type, index: x.index, q }))}'><b>${esc(plain(x.reference || x.book || ""))}</b><span>${hlForm(x.text, q)}</span></a>`;
     const out = [], box = () => $("#conc"); let pick = "";
     const draw = () => {
       const total = out.reduce((t, x) => t + x.res.length, 0), fb = $("#cforms"); if (!box()) return;
       fb.innerHTML = `<button class="chip ${pick ? "" : "pri"}" data-cf="">הכל · ${total}</button>` + out.map(x => x.res.length ? `<button class="chip ${pick === x.f ? "pri" : ""}" data-cf="${esc(x.f)}">${esc(x.f)} · ${x.res.length}${ST.concAll && x.res.length >= CMAX ? "+" : ""}</button>` : `<button class="chip zero" disabled title="ללא מופעים${ST.concAll ? "" : " בתנ\"ך"}">${esc(x.f)} · 0</button>`).join(""); /* 2.0: צורה ללא מופעים מוצגת בשורה עם 0, לא בתחתית */
-      const shown = out.filter(x => !pick || x.f === pick);
-      box().innerHTML = `<div class="results conc">${shown.map(x => x.res.map(y => card(y, x.f)).join("")).join("")}</div>`;
+      const shown = out.filter(x => !pick || x.f === pick), bf = IA("concChart", shown, draw) || null; /* 2.0: התפלגות לפי ספר + סינון לספר */
+      box().innerHTML = `<div class="results conc">${shown.map(x => x.res.filter(y => !bf || bf(y)).map(y => card(y, x.f)).join("")).join("")}</div>`;
     };
     $("#cback").onclick = () => { mode = "word"; open(r, false); };
     $("#cforms").onclick = e => { const b = e.target.closest("[data-cf]"); if (b) { pick = b.dataset.cf; draw(); } };
@@ -650,7 +651,7 @@
     const msg = { notaam: "בטקסט אין טעמי מקרא. בחרו פסוק מוטעם מספר התנ\"ך.", emet: "זהו פסוק בטעמי אמ\"ת (תהלים, משלי, איוב) — המפה תומכת כרגע רק בטעמי כ\"א ספרים.", empty: "הדביקו פסוק מנוקד ומוטעם." }[r.error];
     const ws = t.replace(/[\u05C3:]\s*$/, "").split(/\s+/).filter(w => w && !/^[|\u05C0]$/.test(w));
     $("#out").innerHTML = `<h2>מפת הפסוק לפי הטעמים</h2><p class="note">חלוקה דיכוטומית לפי דרגות המפסיקים: סילוק ואתנחתא, ואחריהם סגולתא, זקף וטפחא, רביע, זרקא, פשטא ותביר, ולבסוף גרש, פזר, קרני פרה ותלישא גדולה. בכל חלק — המפסיק שחותם אותו. טעמי כ"א ספרים בלבד.</p>` +
-      (msg ? `<p class="hint">${msg}</p>` : `<div class="tmap">${node(r.tree, null)}</div>`) +
+      (msg ? `<p class="hint">${msg}</p>` : `<div class="tmap">${node(r.tree, null)}</div>`) + IA("qk", t) +
       (hasNikud(t) ? `<h3>ניתוח הניקוד והטעמים</h3><p class="note">נגזר מהסימנים עצמם. "?" — מקרה מסופק או שנחלקו בו. לחיצה על תגית פותחת את הכלל בספר הדקדוק.</p><div class="senses">${ws.map((w, i) => { const tg = KK.nikudAnalyze(w, i === ws.length - 1); return `<div class="sense"><b class="nw">${esc(w)}</b><div class="chips">${tagHtml(tg) || '<small class="note">—</small>'}</div></div>`; }).join("")}</div>` : "") +
       `<div class="row"><textarea id="tmq" rows="2" placeholder="הדביקו פסוק מנוקד ומוטעם…">${esc(t)}</textarea><button class="chip pri" id="tmgo">🎼 הצג מפה</button></div>`;
     $("#tmgo").onclick = () => showTaam($("#tmq").value);
@@ -681,7 +682,7 @@
     const rows = words.map(t => { const r = D.find(t); if (!r) return `<div class="sense"><b>${esc(t)}</b><div class="sbody note">⚠ לא זוהתה — אין ערך במילון (בדקו כתיב או ניקוד)</div>${rules(t)}</div>`;
       const rk = KK.rank(r, ctx), pick = (rk.confident ? rk.best : rk.items.filter(x => x.kind !== "acr")).slice(0, 2);
       return `<div class="sense${r.n.includes(" ") ? " best" : ""}"><button class="chip pri" data-go="${esc(r.title)}">${r.n.includes(" ") ? "ביטוי: " : ""}${esc(r.title)}</button><div class="sbody">${(() => { const a = D.analyze(r.n); return a && a.root ? `<small class="note">שורש ${esc(KK.refinal(a.root))}${a.binyan ? " · " + esc(String(a.binyan).split(" (")[0]) : ""}${a.ok ? "" : " (משוער)"}</small><br>` : ""; })()}${pick.map(x => esc(r.s[x.i][1])).join("<br>")}</div>${rules(t)}</div>`; }).join("");
-    $("#out").innerHTML = `<h2>${esc(KK.norm(raw || words.join(" ")))}</h2><p class="note">ניתוח המשפט: לכל מילה — שורש ובניין (זיהוי אוטומטי, משוער) ופירוש; מילה שלא זוהתה מסומנת ⚠. לחיצה על מילה פותחת את הערך המלא. התגיות — הכלל במשפט: לחיצה פותחת את הסעיף בספר הדקדוק.</p>${hasTaam(raw) ? `<p><button class="chip pri" id="taambtn">🎼 מפת הפסוק לפי הטעמים</button></p>` : ""}<div class="senses">${rows}</div>`;
+    $("#out").innerHTML = `<h2>${esc(KK.norm(raw || words.join(" ")))}</h2><p class="note">ניתוח המשפט: לכל מילה — שורש ובניין (זיהוי אוטומטי, משוער) ופירוש; מילה שלא זוהתה מסומנת ⚠. לחיצה על מילה פותחת את הערך המלא. התגיות — הכלל במשפט: לחיצה פותחת את הסעיף בספר הדקדוק.</p>${IA("qk", raw)}${hasTaam(raw) ? `<p><button class="chip pri" id="taambtn">🎼 מפת הפסוק לפי הטעמים</button></p>` : ""}<div class="senses">${rows}</div>`;
     if ($("#taambtn")) $("#taambtn").onclick = () => showTaam(raw);
   }
 
@@ -710,5 +711,6 @@
     O.on("ui.messageClicked", d => d && d.payload && go(d.payload.word, d.payload.words, d.payload.raw));
     O.on("plugin.page_opened", p => { const prm = p && (p.param || p.params); if (prm && prm.word) go(prm.word, prm.words, prm.raw); });
   }
+  window.KKA = Object.assign(window.KKA || {}, { D, call, esc, plain, TNK, bookOf, copyText, LINKS, PARTICLES, getST: () => ST }); /* 2.0: חיבור ל-js/ideas-a.js */
   checkOnline(); load().then(() => { syncLibrary(); fOpen = !!ST.fOpen; applyFs(); prTab(); $("#q").focus(); });
 })();

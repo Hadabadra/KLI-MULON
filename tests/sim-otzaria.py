@@ -43,8 +43,12 @@ with sync_playwright() as p:
   V='בְּרֵאשִׁ֖ית בָּרָ֣א אֱלֹהִ֑ים אֵ֥ת הַשָּׁמַ֖יִם וְאֵ֥ת הָאָֽרֶץ׃'
   pg.evaluate("v=>fire('ui.messageClicked',{payload:{word:'בראשית',words:['בראשית','ברא','אלהים','את','השמים','ואת','הארץ'],raw:v}})",V);pg.wait_for_timeout(300)
   ck('הכלל במשפט: תגיות ניקוד/דקדוק עם קישור לספר',pg.locator('.chips.rules [data-gsec]').count()>0)
+  ck('אין קרי וכתיב בפסוק בלי סוגריים',pg.locator('.qk').count()==0)
   pg.click('#taambtn');pg.wait_for_timeout(200)
   ck('מפת הפסוק: חלוקה באתנחתא ובטפחא',pg.locator('.tmap .thead small:has-text("אתנחתא")').count()==1 and pg.locator('.tmap .thead small:has-text("טפחא")').count()==2)
+  K='כָּל־הַחַיָּ֨ה אֲשֶֽׁר־אִתְּךָ֜ מִכָּל־בָּשָׂ֗ר (הוצא) [הַיְצֵ֣א] אִתָּ֑ךְ'  # בראשית ח יז, כפי שבנוסח אוצריא
+  pg.evaluate("v=>fire('ui.messageClicked',{payload:{word:'כל',words:['כל','החיה','אשר','אתך'],raw:v}})",K);pg.wait_for_timeout(300)
+  ck('קרי וכתיב: כתיב הוצא / קרי היצא',pg.locator('.qk li:has-text("הוצא")').count()==1 and pg.locator('.qk li:has-text("הַיְצֵ֣א")').count()==1)
   pg.evaluate("""()=>{const c0=Otzaria.call;Otzaria.call=async(m,p)=>m==='library.findBooks'&&p.query==='בראשית'?(__calls.push([m,p]),{success:true,data:[{bookId:'בראשית',title:'בראשית',type:'text'}]}):c0(m,p);
     const a=document.createElement('a');a.dataset.psk='בראשית א ג|ויאמר';a.id='pskt';a.textContent='x';document.body.appendChild(a);}""")
   pg.click('#pskt');pg.wait_for_timeout(300)
@@ -74,6 +78,9 @@ with sync_playwright() as p:
   ck('קונקורדנציה מציגה מופעים',pg.locator('#conc .res').count()>0)
   ck('קונקורדנציה: צורה ללא מופעים בשורה עם 0',pg.locator('#cforms .chip.zero').count()>0)
   pg.screenshot(path=TMP+'/conc.png',full_page=True)
+  ck('קונקורדנציה: גרף התפלגות לפי ספר',pg.locator('#cchart svg [data-cbk="בראשית"]').count()==1)
+  pg.click('#cchart [data-cbk="בראשית"]');pg.wait_for_timeout(100)
+  ck('לחיצה על עמודה מסננת לספר',pg.locator('#cchart .chip.pri[data-cbk=""]').count()==1 and pg.locator('#conc .res').count()>0)
   pg.click('[data-m="rules"]');pg.wait_for_timeout(300);pg.click('#out .rbar [data-m2="terms"]');pg.wait_for_timeout(300)
   n_ti=pg.locator('.tie [data-gsec]').count()
   with pg.expect_download() as d2: pg.click('#tidl')
