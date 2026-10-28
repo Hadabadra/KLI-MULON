@@ -40,6 +40,11 @@ with sync_playwright() as p:
   pg.goto(ROOT+'/index.html');pg.wait_for_timeout(300)
   pg.evaluate("fire('ui.messageClicked',{payload:{word:'שלום',words:['שלום','עליכם'],raw:'שלום עליכם'}})");pg.wait_for_timeout(300)
   ck('דף משולב נפתח',pg.locator('text=ניתוח המשפט').count()>0 and pg.locator('[data-go="שלום"]').count()>0)
+  V='בְּרֵאשִׁ֖ית בָּרָ֣א אֱלֹהִ֑ים אֵ֥ת הַשָּׁמַ֖יִם וְאֵ֥ת הָאָֽרֶץ׃'
+  pg.evaluate("v=>fire('ui.messageClicked',{payload:{word:'בראשית',words:['בראשית','ברא','אלהים','את','השמים','ואת','הארץ'],raw:v}})",V);pg.wait_for_timeout(300)
+  ck('הכלל במשפט: תגיות ניקוד/דקדוק עם קישור לספר',pg.locator('.chips.rules [data-gsec]').count()>0)
+  pg.click('#taambtn');pg.wait_for_timeout(200)
+  ck('מפת הפסוק: חלוקה באתנחתא ובטפחא',pg.locator('.tmap .thead small:has-text("אתנחתא")').count()==1 and pg.locator('.tmap .thead small:has-text("טפחא")').count()==2)
   pg.evaluate("window.__sel='בטחון';fire('reader.toolbar_item_clicked',{})");pg.wait_for_timeout(500)
   ck('כפתור סרגל הקורא פותח ערך',pg.locator('h2:has-text("בטחון")').count()>0)
   ck('שורש בטחון = בטח',pg.locator('[data-root="בטח"]').count()>0)

@@ -285,3 +285,19 @@ table.glyph td:first-child{font-size:1.8em;line-height:1.6;text-align:center;fon
 /* 1.11.0: כותרת הקונקורדנציה עם כפתור חזרה בצד שמאל למעלה */
 .chead { display: flex; align-items: center; gap: .5em; }
 .chead h2 { flex: 1; margin: 0; }
+/* 2.0: מפת הפסוק לפי הטעמים, תגיות ניתוח */
+.tmap{margin:.6em 0}
+.tnode{border-inline-start:3px solid var(--color-primary);padding:.15em .6em .15em 0;margin:.3em 0}
+.tnode.lv1{border-color:color-mix(in srgb,var(--color-primary) 80%,transparent)}
+.tnode.lv2{border-color:color-mix(in srgb,var(--color-primary) 60%,transparent)}
+.tnode.lv3{border-color:color-mix(in srgb,var(--color-primary) 42%,transparent)}
+.tnode.lv4{border-color:var(--color-outline-variant)}
+.thead{display:flex;flex-wrap:wrap;gap:.5em;align-items:baseline}
+.thead .tw{font-family:var(--font-main);font-size:1.12em}
+.thead small{color:var(--color-primary);font-weight:600}
+.tkids{padding-inline-start:.9em}
+.chip.tg{font-size:.8em;padding:.18em .6em}
+.chip.tg.q{border-style:dashed}
+.chips.rules{margin-top:.35em}
+.nw{font-family:var(--font-main);font-size:1.15em}
+#tmq{flex:1;min-width:0;font-family:var(--font-main);font-size:1em;padding:.4em;border-radius:var(--radius-sm);border:1px solid var(--color-outline-variant);background:var(--color-surface);color:var(--color-on-surface)}

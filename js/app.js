@@ -211,7 +211,7 @@
     mode = "books"; tabs(); $("#out").classList.add("wide");
     const lib = [["radak", "ספר השרשים לרד\"ק"], ["bachur", "ספר הבחור"], ["tzachot", "ספר צחות לראב\"ע"]];
     $("#out").innerHTML = `<h2>ספרי דקדוק</h2>
-      <section class="card bk"><h3>ספרים שייבאתם</h3><div class="opt"><button class="chip pri" data-m2="rules">📖 כללי הדקדוק (הספר המובנה)</button></div>${bookList().filter(b => !b.builtin).map(b => `<div class="opt"><button class="chip pri" data-book="${b.id}">📖 ${esc(b.title)}</button>${b.builtin ? `<small>מובנה בתוסף</small>` : `<button class="ib" data-delbook="${b.id}" title="הסרת הספר" aria-label="הסרת הספר">✕</button>`}</div>`).join("")}
+      <section class="card bk"><h3>ספרים שייבאתם</h3><div class="opt"><button class="chip pri" data-m2="rules">📖 כללי הדקדוק (הספר המובנה)</button><button class="chip" data-m2="taam">🎼 מפת פסוק לפי הטעמים</button></div>${bookList().filter(b => !b.builtin).map(b => `<div class="opt"><button class="chip pri" data-book="${b.id}">📖 ${esc(b.title)}</button>${b.builtin ? `<small>מובנה בתוסף</small>` : `<button class="ib" data-delbook="${b.id}" title="הסרת הספר" aria-label="הסרת הספר">✕</button>`}</div>`).join("")}
         <div class="opt"><span>ייבוא ספר ידני<small>קובץ טקסט (.txt / .md) או HTML. כותרות: # פרק, ## סעיף (ב-HTML: h1–h3). הספר יופיע גם בספריית אוצריא.</small></span><label class="chip">⬆ ייבוא ספר<input type="file" id="bkfile" accept=".txt,.md,.html,.htm" hidden></label></div></section>
       <section class="card bk wide"><h3>ספרי הדקדוק שבספריית אוצריא</h3><div class="ltiles">${LIBGRAM.map(([t, a, d]) => `<button class="ltile" data-lt="${esc(t)}"><b>${esc(t)}</b><small>${esc(a)}${d ? " · " + esc(d) : ""}</small></button>`).join("")}</div><h4 class="gh">ספרים שהוספתם</h4><div class="ltiles">${(ST.extraGram || []).map(t => `<div class="ltile"><button class="chip" data-lt="${esc(t)}">${esc(t)}</button> <button class="ib" data-delgram="${esc(t)}" title="הסרה מהרשימה" aria-label="הסרה מהרשימה">✕</button></div>`).join("") || `<small class="note">עדיין לא נוספו ספרים.</small>`}</div><div class="opt"><span>הוספת ספר דקדוק מהספרייה<small>שם הספר כפי שהוא מופיע בספריית אוצריא. הספר ייכלל בחיפוש "בספרי הדקדוק שבספרייה".</small></span><input id="addgram" type="search" placeholder="שם הספר"><button class="chip" id="addgramb">הוספה</button></div>${online ? `<h4 class="gh">באתרים (נפתחים בדפדפן)</h4><div class="ltiles">${WEBGRAM.map(([t, d, u]) => `<button class="ltile" data-url="${esc(u)}"><b>${esc(t)} ↗</b><small>${esc(d)}</small></button>`).join("")}</div><p class="note">קישורים חיצוניים; התוכן שם אינו מסונן. מוסתרים כשאוצריא מוגדרת "ללא גישה לאינטרנט".</p>` : ""}<p class="note">נפתחים בקורא של אוצריא, אם הספר קיים בספרייה שלך. מתוך ערך במילון, ספר השרשים וספר הבחור נפתחים ישירות על השורש או המילה.</p></section>`;
     $("#bkfile").onchange = importBook;
@@ -525,6 +525,7 @@
     else if (t.dataset.ext) openExt(t.dataset.ext);
     else if (t.dataset.url) call("app.openUrl", { url: t.dataset.url });
     else if (t.dataset.m2 === "rules") { mode = "rules"; readBook(1); }
+    else if (t.dataset.m2 === "taam") showTaam("");
     else if (t.dataset.ext2) call("app.openUrl", { url: EXT[t.dataset.ext2](t.dataset.w) });
     else if (t.dataset.srch) { e.preventDefault(); call("reader.openSearchTab", { query: t.dataset.srch, autoSearch: true }); }
     else if (t.dataset.lib2) openLibTerm(t.dataset.lib2, D.analyze(t.dataset.w).root ? KK.refinal(D.analyze(t.dataset.w).root) : t.dataset.w);
@@ -571,13 +572,54 @@
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["\ufeff" + html], { type: "text/html;charset=utf-8" })); a.download = "milon-favorites.html"; document.body.appendChild(a); a.click(); a.remove();
     copyText(`${LINKS.gh}\n${LINKS.store}`);
   }
+  /* 2.0: סעיפי ספר הדקדוק לפי מילות מפתח בכותרת (הספר משתנה — לכן חיפוש לפי מילים ולא לפי מספר סעיף) */
+  let GSECS = null; const gsecs = () => GSECS || (GSECS = parseBook(BUILTIN.text));
+  const secFor = keys => { for (const k of keys || []) { const x = gsecs().find(y => y.title.includes(k)); if (x) return x.title; } return ""; };
+  const tagHtml = tags => tags.map(g => { const st = secFor(g.sec), lb = esc(g.t) + (g.q && !/\?/.test(g.t) ? "?" : ""); return st ? `<button class="chip tg${g.q ? " q" : ""}" data-gsec="${esc(st)}" title="${esc(st)}">${lb}</button>` : `<span class="chip tg${g.q ? " q" : ""}">${lb}</span>`; }).join("");
+  const hasTaam = t => /[\u0591-\u05AE]/.test(t || ""), hasNikud = t => /[\u05B0-\u05BC\u05C7]/.test(t || "");
+  /* 2.0: מפת פסוק לפי הטעמים + ניתוח הניקוד לכל מילה */
+  function showTaam(text) {
+    mode = "word"; tabs(); cur = null; $("#out").classList.add("wide");
+    const t = String(text || "").trim(), r = t ? KK.taamMap(t) : { error: "empty" };
+    /* חלק שנחתם באותו מפסיק כמו האב הוא "המשך" — בלי שם טעם חוזר */
+    const node = (n, pe) => { const words = r.units.slice(n.from, n.to + 1).map(u => esc(u.text)).join(" ");
+      return `<div class="tnode lv${Math.min(n.end.lv, 4)}"><div class="thead"><span class="tw">${words}</span>${n.end === pe ? "" : `<small>${esc(n.end.name || "")}</small>`}</div>${n.kids ? `<div class="tkids">${n.kids.map(k => node(k, n.end)).join("")}</div>` : ""}</div>`; };
+    const msg = { notaam: "בטקסט אין טעמי מקרא. בחרו פסוק מוטעם מספר התנ\"ך.", emet: "זהו פסוק בטעמי אמ\"ת (תהלים, משלי, איוב) — המפה תומכת כרגע רק בטעמי כ\"א ספרים.", empty: "הדביקו פסוק מנוקד ומוטעם." }[r.error];
+    const ws = t.replace(/[\u05C3:]\s*$/, "").split(/\s+/).filter(w => w && !/^[|\u05C0]$/.test(w));
+    $("#out").innerHTML = `<h2>מפת הפסוק לפי הטעמים</h2><p class="note">חלוקה דיכוטומית לפי דרגות המפסיקים: סילוק ואתנחתא, ואחריהם סגולתא, זקף וטפחא, רביע, זרקא, פשטא ותביר, ולבסוף גרש, פזר, קרני פרה ותלישא גדולה. בכל חלק — המפסיק שחותם אותו. טעמי כ"א ספרים בלבד.</p>` +
+      (msg ? `<p class="hint">${msg}</p>` : `<div class="tmap">${node(r.tree, null)}</div>`) +
+      (hasNikud(t) ? `<h3>ניתוח הניקוד והטעמים</h3><p class="note">נגזר מהסימנים עצמם. "?" — מקרה מסופק או שנחלקו בו. לחיצה על תגית פותחת את הכלל בספר הדקדוק.</p><div class="senses">${ws.map((w, i) => { const tg = KK.nikudAnalyze(w, i === ws.length - 1); return `<div class="sense"><b class="nw">${esc(w)}</b><div class="chips">${tagHtml(tg) || '<small class="note">—</small>'}</div></div>`; }).join("")}</div>` : "") +
+      `<div class="row"><textarea id="tmq" rows="2" placeholder="הדביקו פסוק מנוקד ומוטעם…">${esc(t)}</textarea><button class="chip pri" id="tmgo">🎼 הצג מפה</button></div>`;
+    $("#tmgo").onclick = () => showTaam($("#tmq").value);
+  }
+  /* 2.0: "הכלל במשפט" — לכל מילה בדף המשולב, סעיפי הספר לפי הניתוח (בניין, גזרה, אותיות השימוש) */
+  const BIN = ["התפעל", "הופעל", "הפעיל", "נפעל", "פיעל", "פועל"], GZ = { 'ל"ה': 'נחי ל"ה', 'פ"נ': 'חסרי פ"נ', 'ע"ו': 'נחי ע"ו', 'ע"ע': "כפולים", 'פ"י': 'פ"י ופ"ו' };
+  const PARTICLES = new Set("את אשר על אל כי לא כל מן עם גם אך רק הנה אם או כן עד בין אין יש זה זאת אלה הוא היא הם הן אני אתה".split(" "));
+  function ruleTags(word, an, t) {
+    const out = [], b = String((an && an.binyan) || ""), w = String(word || "").normalize("NFC"), M = "[\\u0591-\\u05C7]*";
+    const hey = new RegExp("^(ו" + M + ")?ה\\u05B7" + M + "[א-ת][\\u0591-\\u05BB\\u05BD\\u05C1\\u05C2\\u05C7]*\\u05BC").test(w);
+    if (new RegExp("^ו\\u05B7" + M + "[יתנ][\\u0591-\\u05BB\\u05BD\\u05C1\\u05C2\\u05C7]*\\u05BC|^ו\\u05B8" + M + "א").test(w)) out.push({ t: "ו' ההיפוך", sec: ["ו' ההיפוך"] });
+    else if (/^ו/.test(w) && t && t.length > 2 && D.find(t.slice(1))) out.push({ t: "ו' החיבור", sec: ["ו' החיבור"] });
+    if (hey) out.push({ t: "ה' הידיעה", sec: ["ה' הידיעה"] });
+    /* בניין וגזרה — מהזיהוי האוטומטי (משוער, מסומן ?); לא למילות יחס ולא לשם עם ה' הידיעה */
+    const base = t && /^ו/.test(t) && D.find(t.slice(1)) ? t.slice(1) : t;
+    if (an && an.ok && an.src === "rd" && !hey && base && base.length > 2 && !PARTICLES.has(base) && D.find(t)) {
+      const nm = BIN.find(x => b.includes(x)) || (/^קל/.test(b) ? "קל" : "");
+      if (nm && !b.includes(" / ") && !b.includes(" או ")) out.push({ t: "בניין " + nm, sec: nm === "קל" ? ["טבלת נטייה מלאה: בניין קל", "הבניינים"] : ["הבניינים"], q: true });
+      const g = (/\(([^)]+)\)/.exec(b) || [])[1]; if (GZ[g]) out.push({ t: "גזרת " + g, sec: [GZ[g], "הגזרות"], q: true });
+    }
+    return out;
+  }
   /* דף משולב: כשבבחירה כמה מילים — הסבר קצר לכל מילה בדף אחד (דיווח משתמש 26.10.2026) */
   function showCombined(words, raw) {
     mode = "word"; tabs(); cur = null; const ctx = { raw: raw || "", words };
-    const rows = words.map(t => { const r = D.find(t); if (!r) return `<div class="sense"><b>${esc(t)}</b><div class="sbody note">⚠ לא זוהתה — אין ערך במילון (בדקו כתיב או ניקוד)</div></div>`;
+    const rw = String(raw || "").replace(/[\u05C3:]\s*$/, "").split(/\s+/).filter(Boolean), rawOf = t => rw.find(x => KK.norm(x).split(" ").includes(t)) || ""; /* 2.0: המילה המנוקדת מתוך הבחירה */
+    const rules = t => { const x = rawOf(t), tg = [...ruleTags(x, D.analyze(t), t), ...(hasNikud(x) ? KK.nikudAnalyze(x, x === rw[rw.length - 1]) : [])]; return tg.length ? `<div class="chips rules">${tagHtml(tg)}</div>` : ""; };
+    const rows = words.map(t => { const r = D.find(t); if (!r) return `<div class="sense"><b>${esc(t)}</b><div class="sbody note">⚠ לא זוהתה — אין ערך במילון (בדקו כתיב או ניקוד)</div>${rules(t)}</div>`;
       const rk = KK.rank(r, ctx), pick = (rk.confident ? rk.best : rk.items.filter(x => x.kind !== "acr")).slice(0, 2);
-      return `<div class="sense${r.n.includes(" ") ? " best" : ""}"><button class="chip pri" data-go="${esc(r.title)}">${r.n.includes(" ") ? "ביטוי: " : ""}${esc(r.title)}</button><div class="sbody">${(() => { const a = D.analyze(r.n); return a && a.root ? `<small class="note">שורש ${esc(KK.refinal(a.root))}${a.binyan ? " · " + esc(String(a.binyan).split(" (")[0]) : ""}${a.ok ? "" : " (משוער)"}</small><br>` : ""; })()}${pick.map(x => esc(r.s[x.i][1])).join("<br>")}</div></div>`; }).join("");
-    $("#out").innerHTML = `<h2>${esc(KK.norm(raw || words.join(" ")))}</h2><p class="note">ניתוח המשפט: לכל מילה — שורש ובניין (זיהוי אוטומטי, משוער) ופירוש; מילה שלא זוהתה מסומנת ⚠. לחיצה על מילה פותחת את הערך המלא.</p><div class="senses">${rows}</div>`;
+      return `<div class="sense${r.n.includes(" ") ? " best" : ""}"><button class="chip pri" data-go="${esc(r.title)}">${r.n.includes(" ") ? "ביטוי: " : ""}${esc(r.title)}</button><div class="sbody">${(() => { const a = D.analyze(r.n); return a && a.root ? `<small class="note">שורש ${esc(KK.refinal(a.root))}${a.binyan ? " · " + esc(String(a.binyan).split(" (")[0]) : ""}${a.ok ? "" : " (משוער)"}</small><br>` : ""; })()}${pick.map(x => esc(r.s[x.i][1])).join("<br>")}</div>${rules(t)}</div>`; }).join("");
+    $("#out").innerHTML = `<h2>${esc(KK.norm(raw || words.join(" ")))}</h2><p class="note">ניתוח המשפט: לכל מילה — שורש ובניין (זיהוי אוטומטי, משוער) ופירוש; מילה שלא זוהתה מסומנת ⚠. לחיצה על מילה פותחת את הערך המלא. התגיות — הכלל במשפט: לחיצה פותחת את הסעיף בספר הדקדוק.</p>${hasTaam(raw) ? `<p><button class="chip pri" id="taambtn">🎼 מפת הפסוק לפי הטעמים</button></p>` : ""}<div class="senses">${rows}</div>`;
+    if ($("#taambtn")) $("#taambtn").onclick = () => showTaam(raw);
   }
 
   /* זיהוי אוטומטי: בחירה, תפריט הקשר, לחיצה על הודעה, פתיחה עם פרמטר */
