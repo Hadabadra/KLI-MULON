@@ -129,10 +129,9 @@
     const out = [], box = () => $("#conc"); let pick = "";
     const draw = () => {
       const total = out.reduce((t, x) => t + x.res.length, 0), fb = $("#cforms"); if (!box()) return;
-      fb.innerHTML = `<button class="chip ${pick ? "" : "pri"}" data-cf="">הכל · ${total}</button>` + out.filter(x => x.res.length).map(x => `<button class="chip ${pick === x.f ? "pri" : ""}" data-cf="${esc(x.f)}">${esc(x.f)} · ${x.res.length}${ST.concAll && x.res.length >= CMAX ? "+" : ""}</button>`).join("");
+      fb.innerHTML = `<button class="chip ${pick ? "" : "pri"}" data-cf="">הכל · ${total}</button>` + out.map(x => x.res.length ? `<button class="chip ${pick === x.f ? "pri" : ""}" data-cf="${esc(x.f)}">${esc(x.f)} · ${x.res.length}${ST.concAll && x.res.length >= CMAX ? "+" : ""}</button>` : `<button class="chip zero" disabled title="ללא מופעים${ST.concAll ? "" : " בתנ\"ך"}">${esc(x.f)} · 0</button>`).join(""); /* 2.0: צורה ללא מופעים מוצגת בשורה עם 0, לא בתחתית */
       const shown = out.filter(x => !pick || x.f === pick);
-      box().innerHTML = `<div class="results conc">${shown.map(x => x.res.map(y => card(y, x.f)).join("")).join("")}</div>` +
-        (out.some(x => !x.res.length) ? `<p class="note">ללא מופעים ${ST.concAll ? "" : "בתנ\"ך"}: ${out.filter(x => !x.res.length).map(x => esc(x.f)).join(", ")}</p>` : "");
+      box().innerHTML = `<div class="results conc">${shown.map(x => x.res.map(y => card(y, x.f)).join("")).join("")}</div>`;
     };
     $("#cback").onclick = () => { mode = "word"; open(r, false); };
     $("#cforms").onclick = e => { const b = e.target.closest("[data-cf]"); if (b) { pick = b.dataset.cf; draw(); } };
