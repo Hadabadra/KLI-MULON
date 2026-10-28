@@ -45,6 +45,10 @@ with sync_playwright() as p:
   ck('הכלל במשפט: תגיות ניקוד/דקדוק עם קישור לספר',pg.locator('.chips.rules [data-gsec]').count()>0)
   pg.click('#taambtn');pg.wait_for_timeout(200)
   ck('מפת הפסוק: חלוקה באתנחתא ובטפחא',pg.locator('.tmap .thead small:has-text("אתנחתא")').count()==1 and pg.locator('.tmap .thead small:has-text("טפחא")').count()==2)
+  pg.evaluate("""()=>{const c0=Otzaria.call;Otzaria.call=async(m,p)=>m==='library.findBooks'&&p.query==='בראשית'?(__calls.push([m,p]),{success:true,data:[{bookId:'בראשית',title:'בראשית',type:'text'}]}):c0(m,p);
+    const a=document.createElement('a');a.dataset.psk='בראשית א ג|ויאמר';a.id='pskt';a.textContent='x';document.body.appendChild(a);}""")
+  pg.click('#pskt');pg.wait_for_timeout(300)
+  ck('קישור פסוק בספר פותח את הפסוק',pg.evaluate("__calls.some(c=>c[0]==='reader.openBook'&&c[1].bookId==='בראשית'&&c[1].index===3)"))
   pg.evaluate("window.__sel='בטחון';fire('reader.toolbar_item_clicked',{})");pg.wait_for_timeout(500)
   ck('כפתור סרגל הקורא פותח ערך',pg.locator('h2:has-text("בטחון")').count()>0)
   ck('שורש בטחון = בטח',pg.locator('[data-root="בטח"]').count()>0)

@@ -193,7 +193,7 @@
     return secs.filter(x => x.title !== "פתיחה" || x.lines.some(l => l.trim())).map((x, i) => ({ ...x, id: "s" + i }));
   }
   function secHtml(x, q, bm) {
-    const hl = t => { let h = esc(t).replace(/\[\[([^|\]]+)\|([^\]]*)\]\]/g, (m, a, b) => a === "חיפוש" ? `<a href="#" class="blink" data-srch="${b}">🔍 ${b}</a>` : `<a href="#" class="blink" data-lt="${a}" data-lq="${b}">${b ? a + ": " + b : a} ↗</a>`).replace(/\[\[([^\]]+)\]\]/g, (m, a) => `<a href="#" class="blink" data-lt="${a}">${a} ↗</a>`).replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>"); if (q) { const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"); h = h.replace(re, m => `<mark>${m}</mark>`); } return h; };
+    const hl = t => { let h = esc(t).replace(/\[\[([^|\]]+)\|([^\]]*)\]\]/g, (m, a, b) => a === "חיפוש" ? `<a href="#" class="blink" data-srch="${b}">🔍 ${b}</a>` : a === "פסוק" ? `<a href="#" class="blink psk" data-psk="${b}">📖 ${b.split("|")[0]}</a>` : `<a href="#" class="blink" data-lt="${a}" data-lq="${b}">${b ? a + ": " + b : a} ↗</a>`).replace(/\[\[([^\]]+)\]\]/g, (m, a) => `<a href="#" class="blink" data-lt="${a}">${a} ↗</a>`).replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>"); if (q) { const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"); h = h.replace(re, m => `<mark>${m}</mark>`); } return h; };
     let out = "", list = false, tbl = null, rule = false;
     const flush = () => { if (list) { out += "</ul>"; list = false; } if (tbl) { out += `<div class="tblw"><table${tbl[0][0] === "צורה" ? ' class="glyph"' : ""}>${tbl.map((r, i) => `<tr>${r.map(c => i ? `<td>${hl(c)}</td>` : `<th>${hl(c)}</th>`).join("")}</tr>`).join("")}</table></div>`; tbl = null; } };
     for (const l of x.lines) {
@@ -254,7 +254,7 @@
     $("#bkdl").onclick = () => { const h = `<!DOCTYPE html><html lang="he" dir="rtl"><head><meta charset="UTF-8"><title>${esc(b.title)}</title></head><body style="font-family:David,serif;max-width:50em;margin:2em auto;line-height:1.7"><h1>${esc(b.title)}</h1>${b.note ? `<p><i>${esc(b.note)}</i></p>` : ""}${secs.map(x => secHtml(x, "")).join("")}<hr><p>מתוך התוסף "לשון הקודש" לאוצריא. הורדת התוסף: <a href="${LINKS.gh}">GitHub</a> · <a href="${LINKS.store}">חנות התוספים של אוצריא</a></p></body></html>`;
       const el = document.createElement("a"); el.href = URL.createObjectURL(new Blob(["\ufeff" + h], { type: "text/html;charset=utf-8" })); el.download = b.title.replace(/[\\/:*?"<>|]/g, "") + ".html"; document.body.appendChild(el); el.click(); el.remove();
       copyText(`${LINKS.gh}\n${LINKS.store}`); call("ui.showMessage", { message: "הספר הורד; קישורי ההורדה של התוסף הועתקו" }); };
-    $("#bktxt").onclick = () => { const clean = t => t.replace(/\[\[([^|\]]+)\|([^\]]*)\]\]/g, (m, a, b2) => a === "חיפוש" ? b2 : (b2 ? a + ": " + b2 : a)).replace(/\[\[([^\]]+)\]\]/g, "$1").replace(/\*\*([^*]+)\*\*/g, "$1").replace(/^:קצר:\s*/, "בקצרה: ").replace(/^:מקור:\s*/, "מקור: ").replace(/^:דוגמה:\s*/, "דוגמה מן המקרא: ");
+    $("#bktxt").onclick = () => { const clean = t => t.replace(/\[\[([^|\]]+)\|([^\]]*)\]\]/g, (m, a, b2) => a === "חיפוש" ? b2 : a === "פסוק" ? "(" + b2.split("|")[0] + ")" : (b2 ? a + ": " + b2 : a)).replace(/\[\[([^\]]+)\]\]/g, "$1").replace(/\*\*([^*]+)\*\*/g, "$1").replace(/^:קצר:\s*/, "בקצרה: ").replace(/^:מקור:\s*/, "מקור: ").replace(/^:דוגמה:\s*/, "דוגמה מן המקרא: ");
       const txt = [b.title, b.note || "", ...secs.flatMap(x => ["", "=".repeat(Math.max(1, 4 - x.lv)) + " " + clean(x.title), ...x.lines.filter(l => !/^!ציור:/.test(l.trim())).map(l => clean(l.trim()).replace(/^\|\s*|\s*\|$/g, "").replace(/\s*\|\s*/g, " | "))]), "", "———", `מתוך התוסף "לשון הקודש" לאוצריא. הורדת התוסף: GitHub ${LINKS.gh} · חנות התוספים של אוצריא ${LINKS.store}`].join("\n").replace(/\n{3,}/g, "\n\n");
       const el = document.createElement("a"); el.href = URL.createObjectURL(new Blob(["\ufeff" + txt], { type: "text/plain;charset=utf-8" })); el.download = b.title.replace(/[\\/:*?"<>|]/g, "") + ".txt"; document.body.appendChild(el); el.click(); el.remove(); call("ui.showMessage", { message: "הספר הורד כקובץ טקסט" }); };
     $("#bkpdf").onclick = async () => { $("#bq").value = ""; render(""); document.body.classList.add("printing"); const f = document.createElement("p"); f.className = "pfoot"; f.textContent = `הורדת התוסף "לשון הקודש": ${LINKS.gh} · ${LINKS.store}`; $("#bview").appendChild(f);
@@ -511,7 +511,7 @@
 
   document.addEventListener("click", e => {
     if (!e.target.closest(".search")) { sugList = []; renderSug(); }
-    const t = e.target.closest("[data-go],[data-root],[data-i],[data-mhg],[data-rep],[data-copy],[data-like],[data-open],[data-unfav],[data-comb],[data-lib],[data-book],[data-delbook],[data-delgram],[data-libopen],[data-gram],[data-ext],[data-ext2],[data-url],[data-m2],[data-srch],[data-lib2],[data-even],[data-lt],[data-cf],[data-gsec],[data-mhs],#genrep,#oconc,#oeven,#favexp,#osearch,#orel,#ftog,[data-letter],#more,#back,#clrh,#modes button,#clr"); if (!t) return;
+    const t = e.target.closest("[data-go],[data-root],[data-i],[data-mhg],[data-rep],[data-copy],[data-like],[data-open],[data-unfav],[data-comb],[data-lib],[data-book],[data-delbook],[data-delgram],[data-libopen],[data-gram],[data-ext],[data-ext2],[data-url],[data-m2],[data-srch],[data-lib2],[data-even],[data-lt],[data-cf],[data-gsec],[data-psk],[data-mhs],#genrep,#oconc,#oeven,#favexp,#osearch,#orel,#ftog,[data-letter],#more,#back,#clrh,#modes button,#clr"); if (!t) return;
     if (t.dataset.mhg) openMh(t.dataset.mhg, t.dataset.mhn);
     else if (t.dataset.rep !== undefined) report(cur, +t.dataset.rep);
     else if (t.dataset.copy !== undefined) { const s = cur.s[+t.dataset.copy]; copyText(`${cur.title}: ${s[1]}`); }
@@ -534,6 +534,7 @@
     else if (t.dataset.lt) { e.preventDefault(); openTitle(t.dataset.lt, t.dataset.lq || ""); }
     else if (t.dataset.cf !== undefined) {}
     else if (t.dataset.gsec) readBook(1, t.dataset.gsec);
+    else if (t.dataset.psk) { e.preventDefault(); openVerse(t.dataset.psk); }
     else if (t.dataset.mhs) call("plugin.openOther", { pluginId: KK.MH_ID, param: { section: t.dataset.mhs, term: t.dataset.w } }).then(r => { if (!r || !r.success) call("ui.showMessage", { message: "לא ניתן לפתוח את עינים למקרא. ודאו שהתוסף מותקן ומופעל." }); });
     else if (t.id === "genrep") genReport();
     else if (t.dataset.lib) { if (cur) openLib(t.dataset.lib); }
@@ -571,6 +572,20 @@
     const html = `<!DOCTYPE html><html lang="he" dir="rtl"><head><meta charset="UTF-8"><title>מועדפים — מילון כליקודש</title></head><body style="font-family:David,serif;max-width:50em;margin:2em auto"><h1>מועדפים — מילון כליקודש</h1>${items}<hr><p>הורדת התוסף: <a href="${LINKS.gh}">GitHub</a> · <a href="${LINKS.store}">חנות התוספים של אוצריא</a></p></body></html>`;
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["\ufeff" + html], { type: "text/html;charset=utf-8" })); a.download = "milon-favorites.html"; document.body.appendChild(a); a.click(); a.remove();
     copyText(`${LINKS.gh}\n${LINKS.store}`);
+  }
+  /* 2.0: [[פסוק|בראשית א ג]] או [[פסוק|בראשית א ג|מילה]] — פתיחת הפסוק באוצריא. עם מילה: חיפוש המילה בספר ובחירת המופע שההפניה שלו היא הפסוק; בלי מילה — נפתח הספר וההפניה מועתקת */
+  const refNorm = t => plain(t).replace(/^ספר /, "").replace(/[,:.()\-–]/g, " ").replace(/(^| )(פרק|פסוק)(?= )/g, " ").replace(/\s+/g, " ").trim();
+  async function openVerse(spec) {
+    const [ref, word] = String(spec || "").split("|").map(x => x.trim()), r0 = refNorm(ref);
+    const bk = [...TNK].sort((a, b) => b.length - a.length).find(t => r0 === t || r0.startsWith(t + " ")) || (r0.startsWith("ישעיה ") ? "ישעיהו" : r0.startsWith("ירמיה ") ? "ירמיהו" : "");
+    const b = bk && (await findLibBook(bk) || (bk === "תהלים" ? await findLibBook("תהילים") : null));
+    if (!b) return call("ui.showMessage", { message: `הספר של "${ref}" לא נמצא בספרייה` });
+    const cv = r0.slice(bk.length).trim();
+    if (word) { const hits = await runSearch(word, { books: [{ bookId: b.bookId, type: b.type }], limit: 5000, order: "catalogue" });
+      const h = hits.find(x => { const z = refNorm(x.reference || ""); return z === r0 || z.endsWith(" " + cv) && z.includes(bk); });
+      if (h) return call("reader.openBook", { id: h.id, bookId: h.bookId, type: h.type, index: h.index, searchQuery: word }); }
+    copyText(ref); await call("reader.openBook", { bookId: b.bookId, type: b.type, ref, reference: ref });
+    call("ui.showMessage", { message: `נפתח ספר ${bk}; ההפניה "${ref}" הועתקה` });
   }
   /* 2.0: סעיפי ספר הדקדוק לפי מילות מפתח בכותרת (הספר משתנה — לכן חיפוש לפי מילים ולא לפי מספר סעיף) */
   let GSECS = null; const gsecs = () => GSECS || (GSECS = parseBook(BUILTIN.text));
