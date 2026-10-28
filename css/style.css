@@ -308,3 +308,4 @@ table.glyph td:first-child{font-size:1.8em;line-height:1.6;text-align:center;fon
 .tie .blink{font-size:.75em}
 .tie.hid{display:none}
 #tiq{margin:.3em 0 .6em;padding:.35em .6em;border-radius:var(--radius-pill);border:1px solid var(--color-outline-variant);background:var(--color-surface);color:var(--color-on-surface)}
+.atbl{border-collapse:collapse;font-size:.92em}.atbl th,.atbl td{border:1px solid var(--color-outline-variant);padding:.25em .45em;text-align:center;white-space:nowrap}.atbl tbody th{text-align:start;font-weight:600}.atbl .chip{padding:.15em .6em}

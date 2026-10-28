@@ -79,6 +79,14 @@ with sync_playwright() as p:
   with pg.expect_download() as d2: pg.click('#tidl')
   ck('מפתח מונחים: %d מונחים + ייצוא טקסט'%n_ti, n_ti>50 and 'otzaria.org/plugins' in open(d2.value.path(),encoding='utf-8-sig').read())
   pg.click('[data-m="root"]');pg.fill('#q','');
+  pg.click('[data-m="root"]') if pg.locator('[data-m="books"]').count()==0 else None
+  pg.evaluate("document.querySelector('[data-m=\"books\"]') && document.querySelector('[data-m=\"books\"]').click()");pg.wait_for_timeout(300)
+  pg.evaluate("document.querySelector('[data-m2=\"audio\"]').click()");pg.wait_for_timeout(400)
+  ck('השמעת הטעמים: טבלת טעמים × שיטות',pg.locator('.atbl tbody tr').count()>=25 and pg.locator('[data-aadd]').count()>=100)
+  pg.set_input_files('[data-aadd="אתנחתא|אשכנז"]',files=[{'name':'a.wav','mimeType':'audio/wav','buffer':bytes.fromhex('52494646240000005741564566d7420100000001000100401f0000401f0000010008006461746100000000')}]);pg.wait_for_timeout(500)
+  ck('השמעת הטעמים: הוספת הקלטה ושמירתה',pg.locator('[data-aplay="אתנחתא|אשכנז"]').count()==1)
+  with pg.expect_download() as d2: pg.click('#aexp')
+  ck('השמעת הטעמים: ייצוא',open(d2.value.path(),encoding='utf-8').read().find('kk-taamim-audio')>=0)
   ck('ללא שגיאות בתוסף '+str(errs),not errs)
   pg2=b.new_page();pg2.add_init_script(MOCK.replace("isOnline:true","isOnline:false,isOfflineMode:true"));pg2.goto(ROOT+'/index.html');pg2.wait_for_timeout(300)
   pg2.fill('#q','בטחון');pg2.keyboard.press('Enter');pg2.wait_for_timeout(300)
