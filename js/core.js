@@ -253,25 +253,29 @@
     }
     /* התאמה בשם מלא, עם הסרת תחיליות (ו/ה/ב/כ/ל/מ/ש) ורבים (ים/ות) בלבד; התאמה בשם הערך עצמו קודמת להתאמה בכינוי */
     find(words, D) {
-      const out = [], seen = new Set();
+      const out = [], seen = new Set(), push = h => { const k = h.g + "|" + h.name; if (!seen.has(k)) { seen.add(k); out.push(h); } };
       for (const raw of words) {
         const w = norm(raw), forms = [w];
         for (let i = 1; i <= 2 && w.length - i >= 3 && PRE.includes(w[i - 1]); i++) forms.push(w.slice(i));
-        for (const f of [...forms]) for (const s of ["ים", "ות"]) if (f.length - s.length >= 3 && f.endsWith(s)) { const b = f.slice(0, -s.length); forms.push(b); const rf = refinal(b); if (rf !== b) forms.push(rf); }
+        const bare = [...forms];
+        for (const f of bare) for (const s of ["ים", "ות"]) if (f.length - s.length >= 3 && f.endsWith(s)) { const b = f.slice(0, -s.length); forms.push(b); const rf = refinal(b); if (rf !== b) forms.push(rf); }
+        let hit = false;
         for (const c of forms) {
           const hits = this.m.get(c); if (!hits) continue;
-          const ranked = [...hits].sort((a, b) => (norm(b.name) === c) - (norm(a.name) === c));
-          for (const h of ranked) { const k = h.g + "|" + h.name; if (!seen.has(k)) { seen.add(k); out.push(h); } }
+          [...hits].sort((a, b) => (norm(b.name) === c) - (norm(a.name) === c)).forEach(push); hit = true;
           break;
         }
-      }
-      /* 1.9.1: אין התאמה בשם — ניסיון לפי השורש: מילים מאותו שורש במילון שהן שם ערך בעינים למקרא (כולל צורות שהשורש אינו נראה בהן) */
-      if (!out.length && D && D.analyze && D.byRoot) for (const raw of words) {
-        const an = D.analyze(norm(raw)); if (!an || !an.root || !an.ok) continue;
-        const w0 = unfinal(norm(raw)), sub = [w0, w0.slice(1), w0.slice(2)];
-        for (const x of D.byRoot(an.root)) { const hits = x && this.m.get(norm(x.title)); if (!hits) continue;
-          const base = unfinal(norm(x.title)).replace(/[הת]$/, ""); if (base.length < 3 || !sub.some(f => f.startsWith(base))) continue; /* רק נטייה של אותו שם (תאנתו←תאנה), לא כל מילה מהשורש */
-          for (const h of hits) { const k = h.g + "|" + h.name; if (!seen.has(k)) { seen.add(k); out.push({ ...h, byRoot: true }); } } }
+        /* 1.9.1: אין התאמה בשם — לפי השורש: מילה מאותו שורש במילון שהיא שם ערך בעינים למקרא, ורק כשהיא נטייה של אותו שם (תאנתו←תאנה), לא כל מילה מהשורש.
+           2.0: לכל מילה בנפרד (קודם: רק כשאף מילה בבחירה לא נמצאה בשם), וגם אחרי הסרת תחיליות (ותאנתו) */
+        if (hit || !D || !D.analyze || !D.byRoot) continue;
+        for (const f of bare) {
+          const an = D.analyze(f); if (!an || !an.root || !an.ok) continue;
+          const w0 = unfinal(f), sub = [w0, w0.slice(1), w0.slice(2)]; let got = false;
+          for (const x of D.byRoot(an.root)) { const hits = x && this.m.get(norm(x.title)); if (!hits) continue;
+            const base = unfinal(norm(x.title)).replace(/[הת]$/, ""); if (base.length < 3 || !sub.some(g => g.startsWith(base))) continue;
+            hits.forEach(h => push({ ...h, byRoot: true })); got = true; }
+          if (got) break;
+        }
       }
       return out.slice(0, 5);
     }
