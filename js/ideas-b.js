@@ -2,8 +2,9 @@
 (function () {
   const A = window.KKAPP; if (!A) return;
   const $ = s => document.querySelector(s), esc = A.esc, D = A.D, ST = () => A.st();
+  const shuf = a => a.map(x => [Math.random(), x]).sort((p, q) => p[0] - q[0]).map(x => x[1]);
   const css = document.createElement("style");
-  css.textContent = `.prbar{margin:.2em 0 .6em}.srs .back{margin:.6em 0;line-height:1.7}.srs .back small{display:block}`;
+  css.textContent = `.prbar{margin:.2em 0 .6em}.srs .back{margin:.6em 0;line-height:1.7}.srs .back small{display:block}.nkt{color:var(--color-primary);text-decoration:underline dotted}.nko,.nkw{font-family:var(--font-main);font-size:1.25em}`;
   document.head.appendChild(css);
 
   /* ===== 1. כרטיסיות שינון — לייטנר, 5 תאים: 1, 2, 4, 8, 16 ימים. נשמר ב-ST.srs = { מפתח: { b: תא 0–4, d: מועד חזרה } } ===== */
@@ -16,7 +17,7 @@
     A.save(); return n;
   }
   const srsBtn = r => ST().practice ? `<button class="chip" data-srs="${esc(r.n)}" title="כרטיסיות שינון בלשונית התרגול">${srs()[r.n] ? "✓ בשינון" : "＋ לשינון"}</button>` : "";
-  const prBar = cur => `<div class="chips prbar">${[["root", "שורש ובניין"], ["srs", `כרטיסיות שינון (${due().length})`]].map(([k, t]) => `<button class="chip${k === cur ? " pri" : ""}" data-prm="${k}">${t}</button>`).join("")}</div>`;
+  const prBar = cur => `<div class="chips prbar">${[["root", "שורש ובניין"], ["nikud", "ניקוד"], ["srs", `כרטיסיות שינון (${due().length})`]].map(([k, t]) => `<button class="chip${k === cur ? " pri" : ""}" data-prm="${k}">${t}</button>`).join("")}</div>`;
   function showSrs(flip) {
     const c = srs(), d = due(), tot = Object.keys(c).length, [k, cd] = d[0] || [], r = k && D.get(k);
     let body;
@@ -86,8 +87,46 @@
     return `<section class="aram"><h3>ארמית — זיהוי משוער</h3><p class="note">מילות יחס, קישור וכינויים שכיחים מטבלה קטנה מובנית; פירוש מילים אחרות מ"מילון ארמי עברי" שבמאגר; הבניין (פְּעַל, פַּעֵל, אַפְעֵל, אִתְפְּעֵל, אִתְפַּעַל, אִתַּפְעַל) והסיומת — לפי הניקוד והתחילית בלבד, ועלולים לטעות.</p><div class="senses">${rows}</div></section>`;
   }
 
+  /* ===== 3. תרגול ניקוד — מילה מנוקדת מהמילון (רק ערכים בניקוד מלא), סימן תנועה אחד מוסתר באות אחת, 4 אפשרויות ===== */
+  const NK_V = { "\u05B0": "שווא", "\u05B1": "חטף סגול", "\u05B2": "חטף פתח", "\u05B3": "חטף קמץ", "\u05B4": "חיריק", "\u05B5": "צירה", "\u05B6": "סגול", "\u05B7": "פתח", "\u05B8": "קמץ", "\u05B9": "חולם", "\u05BB": "קובוץ" };
+  /* [אות, סימנים] לכל אות — רק כשהניקוד מלא: כל אות מנוקדת, חוץ מהאחרונה, מאותיות אהו"י, ומאות שאחריה ו' בחולם או בשורוק */
+  function nkParse(nk, n) {
+    const v = canon(nk); if (/[^א-ת\u05B0-\u05BC\u05C1\u05C2]/.test(v)) return null;
+    const L = [...v.matchAll(/([א-ת])([\u05B0-\u05BC\u05C1\u05C2]*)/g)].map(m => [m[1], m[2]]);
+    if (L.map(x => x[0]).join("") !== n || L.length < 3 || L.length > 9) return null;
+    const vow = x => /[\u05B0-\u05BB]/.test(x[1]) || (x[0] === "ו" && /\u05BC/.test(x[1]));
+    for (let i = 0; i < L.length - 1; i++) if (!vow(L[i]) && !/[אהוי]/.test(L[i][0]) && !(L[i + 1][0] === "ו" && vow(L[i + 1]))) return null;
+    return L;
+  }
+  function nkItem() {
+    for (let k = 0; k < 4000; k++) {
+      const r = D.get(D.keys[Math.floor(Math.random() * D.keys.length)]); if (!r) continue;
+      for (const sn of r.s) { if (!sn[0] || KK.kindOf(sn[2]) === "acr") continue; const L = nkParse(sn[0], r.n); if (!L) continue;
+        const ix = L.map((x, i) => i).filter(i => i < L.length - 1 && L[i][0] !== "ו" && (L[i][1].match(/[\u05B0-\u05BB]/g) || []).length === 1);
+        if (ix.length) { const i = ix[Math.floor(Math.random() * ix.length)]; return { r, sn, L, i, v: L[i][1].match(/[\u05B0-\u05BB]/)[0] }; } }
+    }
+    return null;
+  }
+  function showNk() {
+    const it = nkItem(), s = ST(), sc = s.nkScore || { ok: 0, n: 0 };
+    const head = `<h2>תרגול</h2>${prBar("nikud")}<p class="note">מילה מנוקדת מהמילון (רק ערכים בניקוד מלא). באות המסומנת הוסתר סימן ניקוד אחד — איזה?</p>`;
+    if (!it) { $("#out").innerHTML = head + '<p class="hint">לא נמצאה מילה לתרגול. נסו שוב.</p>'; return; }
+    const { L, i, v } = it, base = L[i][1].replace(v, ""), gut = /[אהחע]/.test(L[i][0]);
+    const pool = Object.keys(NK_V).filter(x => x !== v && (gut || !/[\u05B1-\u05B3]/.test(x)));
+    const opts = shuf([v, ...shuf(pool).slice(0, 3)]);
+    const word = L.map((x, j) => j === i ? `<span class="nkt">${x[0]}${base}</span>` : x[0] + x[1]).join("");
+    $("#out").innerHTML = head + `<section class="card pr"><p class="prw">${word}</p><div class="chips" id="nka">${opts.map(o => `<button class="chip" data-nk="${o}"><span class="nko">${L[i][0]}${base}${o}</span> ${NK_V[o]}</button>`).join("")}</div><div id="nkr"></div></section>
+      <p class="note" id="nks">ציון: ${sc.ok} מתוך ${sc.n} <a href="#" id="nkz">איפוס</a></p>`;
+    $("#nka").onclick = e => { const b = e.target.closest("[data-nk]"); if (!b || $("#nka").dataset.done) return; $("#nka").dataset.done = 1; const ok = b.dataset.nk === v;
+      s.nkScore = { ok: sc.ok + (ok ? 1 : 0), n: sc.n + 1 }; A.save();
+      $("#nka").querySelectorAll("button").forEach(x => { x.disabled = true; x.classList.toggle("pri", x.dataset.nk === v); x.classList.toggle("bad", x === b && !ok); });
+      $("#nkr").innerHTML = `<p>${ok ? "✓ נכון" : "✗ התשובה: " + NK_V[v]} · <span class="nkw">${esc(it.sn[0])}</span> — ${esc(it.sn[1])} <small class="note">(מקור: ${esc(it.sn[2])})</small></p><div class="chips"><button class="chip pri" id="nkn">שאלה הבאה ←</button><button class="chip" data-go="${esc(it.r.title)}">פתיחת הערך</button></div>`;
+      $("#nks").firstChild.textContent = `ציון: ${s.nkScore.ok} מתוך ${s.nkScore.n} `; $("#nkn").onclick = showNk; };
+    $("#nkz").onclick = e => { e.preventDefault(); s.nkScore = { ok: 0, n: 0 }; A.save(); showNk(); };
+  }
+
   /* ניתוב התרגול: נקרא מתחילת showPractice; מחזיר true כשהתצוגה כאן */
-  const pr = () => { const m = ST().prSub; if (m === "srs") { showSrs(); return true; } return false; };
+  const pr = () => { const m = ST().prSub; if (m === "srs") { showSrs(); return true; } if (m === "nikud") { showNk(); return true; } return false; };
   document.addEventListener("click", e => {
     const t = e.target.closest("[data-prm],[data-srs],[data-srsadd],[data-srsok],[data-srsdel]"); if (!t) return;
     if (t.dataset.prm) { ST().prSub = t.dataset.prm; A.save(); A.showPractice(); }

@@ -71,6 +71,8 @@ with sync_playwright() as p:
   pg.click('[data-prm="srs"]');pg.wait_for_timeout(150);pg.click('[data-srsadd="hist"]');pg.wait_for_timeout(150);pg.click('#srsflip');pg.wait_for_timeout(100)
   n0=pg.locator('.srs .back').count();pg.click('[data-srsok="1"]');pg.wait_for_timeout(100)
   ck('כרטיסיות שינון: הוספה מההיסטוריה, צד ב, "ידעתי" מעביר לתא 2',n0==1 and pg.evaluate("Object.values(KKAPP.st().srs).filter(c=>c.b===1&&c.d>Date.now()+864e5).length")==1)
+  pg.click('[data-prm="nikud"]');pg.wait_for_timeout(200);nko=pg.locator('#nka [data-nk]').count();hid=pg.locator('.prw .nkt').count();pg.click('#nka [data-nk] >> nth=0');pg.wait_for_timeout(100)
+  ck('תרגול ניקוד: אות מסומנת, 4 אפשרויות וציון',nko==4 and hid==1 and pg.locator('#nks:has-text("מתוך 1")').count()==1)
   pg.click('[data-prm="root"]');pg.wait_for_timeout(100)
   pg.click('[data-m="set"]');pg.wait_for_timeout(200)
   pg.click('#s-fs button[data-v="130"]');ck('גודל גופן',pg.evaluate("document.documentElement.style.fontSize")=='130%')
