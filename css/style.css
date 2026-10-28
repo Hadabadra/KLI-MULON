@@ -281,3 +281,6 @@ header nav#modes{flex:0 1 auto;margin-top:0;min-width:0}
 .bm.on{color:var(--color-primary)}
 #bml hr{border:0;border-top:1px solid var(--color-outline-variant);margin:.4em 0}
 table.glyph td:first-child{font-size:1.8em;line-height:1.6;text-align:center;font-family:var(--font-main)}
+/* 1.11.0: כותרת הקונקורדנציה עם כפתור חזרה בצד שמאל למעלה */
+.chead { display: flex; align-items: center; gap: .5em; }
+.chead h2 { flex: 1; margin: 0; }
