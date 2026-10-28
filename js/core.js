@@ -280,6 +280,129 @@
       return out.slice(0, 5);
     }
   }
-  g.KK = { norm, Dict, skeleton, rank, kindOf, refinal, MhIndex, MH_ID, MH_LABEL };
+
+  /* 2.0: מפת פסוק לפי הטעמים (טעמי כ"א ספרים). דרגות המפסיקים: 0 סילוק · 1 אתנחתא · 2 סגולתא/שלשלת/זקף/טפחא · 3 רביע/זרקא/פשטא/יתיב/תביר · 4 גרש/גרשיים/פזר/קרני פרה/תלישא גדולה/לגרמיה.
+     המשרתים (מונח, מהפך, מרכא, מרכא כפולה, דרגא, קדמא, תלישא קטנה, ירח בן יומו) אינם מחלקים. מילים במקף — יחידה אחת. */
+  const TA = { "\u0591": [1, "אתנחתא"], "\u0592": [2, "סגולתא"], "\u0593": [2, "שלשלת"], "\u0594": [2, "זקף קטן"], "\u0595": [2, "זקף גדול"], "\u0596": [2, "טפחא"],
+    "\u0597": [3, "רביע"], "\u0598": [3, "זרקא"], "\u05AE": [3, "זרקא"], "\u0599": [3, "פשטא"], "\u059A": [3, "יתיב"], "\u059B": [3, "תביר"],
+    "\u059C": [4, "גרש"], "\u059D": [4, "גרש"], "\u059E": [4, "גרשיים"], "\u059F": [4, "קרני פרה"], "\u05A0": [4, "תלישא גדולה"], "\u05A1": [4, "פזר"] };
+  const TA_CONJ = { "\u05A3": "מונח", "\u05A4": "מהפך", "\u05A5": "מרכא", "\u05A6": "מרכא כפולה", "\u05A7": "דרגא", "\u05A8": "קדמא", "\u05A9": "תלישא קטנה", "\u05AA": "ירח בן יומו" };
+  const TA_EMET = /[\u05A2\u05AB\u05AC\u05AD]/; /* אתנח הפוך, עולה, עילוי, דחי — רק בטעמי אמ"ת */
+  function taamMap(text) {
+    const t = String(text || "").replace(/[\u05C3:]\s*$/, "").trim();
+    if (!/[\u0591-\u05AE]/.test(t)) return { error: "notaam" };
+    if (TA_EMET.test(t)) return { error: "emet" };
+    /* יחידות: מילה, או כמה מילים במקף; פסק (|) אחרי מונח = לגרמיה */
+    const raw = t.split(/\s+/).filter(Boolean), units = [];
+    for (let i = 0; i < raw.length; i++) {
+      let w = raw[i]; if (w === "|" || w === "\u05C0") { if (units.length) units[units.length - 1].paseq = true; continue; }
+      const pq = /[|\u05C0]$/.test(w); w = w.replace(/[|\u05C0]$/, "");
+      const prev = units[units.length - 1];
+      if (prev && /\u05BE$/.test(prev.text)) { prev.text += w; prev.last = w; } else units.push({ text: w, last: w });
+      if (pq) units[units.length - 1].paseq = true;
+    }
+    for (const u of units) {
+      let lv = 9, name = "", conj = "";
+      for (const ch of u.last) { const d = TA[ch]; if (d && d[0] < lv) { lv = d[0]; name = d[1]; } else if (TA_CONJ[ch] && !conj) conj = TA_CONJ[ch]; }
+      if (lv === 9 && u.paseq && conj === "מונח") { lv = 4; name = "לגרמיה"; }
+      if (name === "שלשלת" && !u.paseq) { lv = 9; conj = "שלשלת קטנה"; name = ""; } /* שלשלת בלי פסק — משרת (שלשלת קטנה); בכ"א ספרים שלשלת היא תמיד בפסק */
+      u.lv = lv; u.name = name; u.conj = conj;
+    }
+    if (!units.length) return { error: "empty" };
+    const L = units[units.length - 1]; L.lv = 0; L.name = "סילוק";
+    /* חלוקה דיכוטומית: כל תחום נחלק במפסיק החזק ביותר שבתוכו (בשוויון — הראשון), וכן הלאה */
+    const split = (a, b) => {
+      const node = { from: a, to: b, end: units[b] };
+      let best = -1; for (let i = a; i < b; i++) if (units[i].lv < 9 && (best < 0 || units[i].lv < units[best].lv)) best = i;
+      if (best >= 0) node.kids = [split(a, best), split(best + 1, b)];
+      return node;
+    };
+    return { units, tree: split(0, units.length - 1) };
+  }
+
+  /* 2.0: ניתוח ניקוד וטעם למילה מנוקדת — רק מה שנגזר בוודאות מהסימנים; מקרה מסופק מסומן "?" (q: true).
+     sec: מילות מפתח לכותרת הסעיף בספר הדקדוק (הראשונה שנמצאת). */
+  const V = { "\u05B0": "sh", "\u05B1": "hs", "\u05B2": "hp", "\u05B3": "hq", "\u05B4": "i", "\u05B5": "e", "\u05B6": "E", "\u05B7": "a", "\u05B8": "A", "\u05B9": "o", "\u05BA": "o", "\u05BB": "u", "\u05C7": "Aq" };
+  const BGD = "בגדכפת", SHORT = { a: 1, E: 1, u: 1, Aq: 1 }, POSTPRE = /[\u0592\u0599\u05AE\u05A9\u05A0\u059A]/;
+  const SEC = { shNa0: ["כלל א: שווא בתחילת", "שווא נע ושווא נח"], sh2: ["כלל ב: שני שוואים", "שווא נע ושווא נח"], shEnd: ["כלל ח: שווא בסוף", "כלל ג: שני שוואים בסוף", "שווא נע ושווא נח"],
+    shDag: ["כלל ד: שווא תחת אות דגושה", "שווא נע ושווא נח"], shLong: ["כלל ה: שווא אחרי תנועה גדולה", "שווא נע ושווא נח"], shSame: ["כלל ו: שווא תחת הראשונה", "שווא נע ושווא נח"],
+    shShort: ["כלל ז: שווא בסוף הברה", "שווא נע ושווא נח"], dkal: ["כלל: דגש קל", "דגש קל ודגש חזק", "הדגש"], dhaz: ["כלל: דגש חזק", "דגש קל ודגש חזק", "הדגש"],
+    qq: ["כלל ב: לפני חטף קמץ", "כללי קמץ קטן", "קמץ גדול וקמץ קטן"], qqClosed: ["כלל א: קמץ בהברה סגורה", "כללי קמץ קטן", "קמץ גדול וקמץ קטן"], qqx: ["קמץ גדול וקמץ קטן", "כללי קמץ קטן"],
+    pg: ["פתח גנובה"], mapiq: ["מפיק"], stress: ["הטעם במילה", "מלרע ומלעיל"], taam: ["שמות הטעמים"], meteg: ["כלל: מתג", "מתג וגעיה", "מתג (געיה)"] };
+  function clusters(word) {
+    const cs = [];
+    for (const ch of word) {
+      if (/[א-ת]/.test(ch)) { cs.push({ ch, v: "", dag: false, met: false, acc: [] }); continue; }
+      const c = cs[cs.length - 1]; if (!c) continue;
+      if (V[ch]) c.v = V[ch]; else if (ch === "\u05BC") c.dag = true; else if (ch === "\u05BD") c.met = true; else if (/[\u0591-\u05AF]/.test(ch)) c.acc.push(ch);
+    }
+    /* אמות קריאה: חולם מלא, שורוק, יו"ד אחרי חיריק/צירה/סגול, ה/א בלי ניקוד בסוף מילה */
+    cs.forEach((c, i) => { const p = cs[i - 1];
+      if (c.ch === "ו" && c.v === "o" && p && !p.v) { p.v = "o"; c.mater = true; c.v = ""; }
+      else if (c.ch === "ו" && c.dag && !c.v && (!p || !p.v || p.v === "sh")) { c.dag = false; if (p) { p.v = "u+"; c.mater = true; } else c.v = "u+"; }
+      else if (c.ch === "י" && !c.v && !c.dag && p && /^(i|e|E)$/.test(p.v)) { c.mater = true; p.v += "+"; }
+      else if (/[הא]/.test(c.ch) && !c.v && !c.dag && i === cs.length - 1 && p && p.v) c.mater = true; });
+    return cs;
+  }
+  const full = v => v && !/^(sh|hs|hp|hq)$/.test(v);
+  const isLong = v => /^(e|o|u\+|i\+|e\+)$/.test(v) || v === "A";
+  function nikudAnalyze(word, last) {
+    const out = [], add = (t, sec, q) => out.push({ t, sec: SEC[sec] || [], q: !!q });
+    if (!/[\u05B0-\u05BC\u05C7]/.test(word)) return out;
+    const parts = word.split("\u05BE");                                   /* מילים במקף — הטעם על האחרונה */
+    parts.forEach((pw, pi) => {
+      const cs = clusters(pw), n = cs.length, lastPart = pi === parts.length - 1; if (!n) return;
+      const L = c => c.ch + (c.v === "sh" ? "\u05B0" : "");
+      /* פתח גנובה ומפיק */
+      const z = cs[n - 1], y = cs.slice(0, n - 1).reverse().find(c => !c.mater);   /* התנועה שלפני האות האחרונה, אחרי דילוג על אמות קריאה (רו\u05BCח\u05B7) */
+      const pg = z && z.v === "a" && (/[חע]/.test(z.ch) || (z.ch === "ה" && z.dag)) && y && full(y.v) && !/^(a|E)$/.test(y.v);
+      if (pg) { z.pg = true; add(`פתח גנובה (${z.ch})`, "pg"); }
+      if (z && z.ch === "ה" && z.dag) add("מפיק (ה)", "mapiq");
+      cs.forEach((c, i) => {
+        const p = cs[i - 1], nx = cs[i + 1];
+        /* דגש */
+        if (c.dag && !(c.ch === "ה" && i === n - 1)) {
+          if (i === 0) BGD.includes(c.ch) ? add(`דגש קל (${c.ch}\u05BC)`, "dkal", pi > 0) : add(`דגש חזק בראש מילה (${c.ch}\u05BC)`, "dhaz", true);
+          else if (i === n - 1 && c.v === "sh" && BGD.includes(c.ch)) add(`דגש באות האחרונה בשווא (${c.ch}\u05BC)`, "dkal", true); /* א\u05B7ת\u05B0\u05BC, ו\u05B7י\u05B5\u05BCש\u05B0\u05C1ת\u05B0\u05BC */
+          else if (p.mater || full(p.v)) add(`דגש חזק (${c.ch}\u05BC)`, "dhaz"), c.hz = true;
+          else if (p.v === "sh" && BGD.includes(c.ch)) add(`דגש קל (${c.ch}\u05BC)`, "dkal");
+          else add(`דגש (${c.ch}\u05BC)`, "dhaz", true);
+        }
+        /* שווא */
+        if (c.v === "sh") {
+          if (i === 0) add(`שווא נע (${L(c)})`, "shNa0");
+          else if (i === n - 1) add(`שווא נח (${L(c)})`, "shEnd");
+          else if (nx && nx.v === "sh" && i + 1 === n - 1) add(`שווא נח (${L(c)})`, "shEnd");
+          else if (p.v === "sh" && !(i === 1)) add(`שווא נע (${L(c)})`, "sh2");
+          else if (nx && nx.v === "sh") add(`שווא נח (${L(c)})`, "sh2");
+          else if (c.hz) add(`שווא נע (${L(c)})`, "shDag");
+          else if (nx && nx.ch === c.ch) add(`שווא נע (${L(c)})`, "shSame");
+          else if (SHORT[p.v] || p.v === "i") p.met ? add(`שווא נע? (${L(c)})`, "shShort", true) : add(`שווא נח (${L(c)})`, "shShort");
+          else if (p.v === "A") p.met ? add(`שווא נע (${L(c)})`, "shLong") : add(`שווא — תלוי בקמץ (${L(c)})`, "qqx", true);
+          else if (isLong(p.v)) p.met ? add(`שווא נע (${L(c)})`, "shLong") : add(`שווא אחרי תנועה גדולה (${L(c)})`, "shLong", true);
+          else if (p.v === "sh" && i === 1) add(`שווא נע (${L(c)})`, "sh2");
+        }
+        /* קמץ קטן */
+        if (c.v === "Aq") add(`קמץ קטן (${c.ch}\u05C7)`, "qqx");
+        else if (c.v === "A" && !c.met) {
+          if (nx && nx.v === "hq") add(`קמץ קטן (${c.ch}\u05B8)`, "qq");
+          else if (!lastPart && i === n - 2 && !cs[n - 1].v && !c.acc.length) add(`קמץ קטן לפני מקף (${c.ch}\u05B8)`, "qqClosed");
+        }
+        if (c.met && !(last && lastPart && i === cs.map(x => x.met).lastIndexOf(true))) add(`מתג (${c.ch})`, "meteg"); /* בסוף פסוק — המתג האחרון הוא הסילוק */
+      });
+      /* טעם: שם ומקום (מלרע / מלעיל) */
+      if (!lastPart) return;
+      const accs = cs.flatMap((c, i) => c.acc.map(a => ({ a, i })));
+      for (const { a } of accs) { const nm = (TA[a] || [])[1] || TA_CONJ[a]; if (nm && !out.some(o => o.t === "טעם: " + nm)) add("טעם: " + nm, "taam"); }
+      let si = -1; const real = accs.filter(x => !POSTPRE.test(x.a));
+      if (real.length) si = real[real.length - 1].i; else { const ps = accs.filter(x => x.a === "\u0599"); if (ps.length > 1) si = ps[0].i; }
+      if (si < 0 && last) { const m = cs.map(c => c.met).lastIndexOf(true); if (m >= 0) { si = m; if (!accs.length) add("טעם: סילוק", "taam"); } }
+      if (si < 0) return;
+      const after = cs.slice(si + 1).filter(c => full(c.v) && !c.mater && !c.pg).length;
+      if (after === 0) add("מלרע", "stress"); else if (after === 1) add("מלעיל", "stress"); else add("מקום הטעם?", "stress", true);
+    });
+    return out;
+  }
+  g.KK = { nikudAnalyze, taamMap, norm, Dict, skeleton, rank, kindOf, refinal, MhIndex, MH_ID, MH_LABEL };
   if (typeof module !== "undefined") module.exports = g.KK;
 })(typeof window !== "undefined" ? window : globalThis);
