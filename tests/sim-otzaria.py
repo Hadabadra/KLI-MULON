@@ -91,6 +91,11 @@ with sync_playwright() as p:
   pg.click('#conjbox [data-cjb="התפעל"]');ck('טבלת נטייה: התפעל בחילוף ת (הִשְׁתַּמֵּר)',NF('הִשְׁתַּמֵּר'))
   pg.fill('#q','שמע');pg.keyboard.press('Enter');pg.wait_for_timeout(300);pg.click('#conjbtn')
   ck('טבלת נטייה: שורש גרוני (שמע) — הודעה שאינו נתמך',pg.locator('#conjbox:has-text("רק בשלמים")').count()==1)
+  pg.click('[data-m="books"]');pg.wait_for_timeout(200);pg.click('[data-ia="prep"]')
+  pg.fill('#prept','בְּרֵאשִׁ֖ית בָּרָ֣א אֱלֹהִ֑ים אֵ֥ת הַשָּׁמַ֖יִם וְאֵ֥ת הָאָֽרֶץ׃ וְהָאָ֗רֶץ הָיְתָ֥ה תֹ֙הוּ֙ וָבֹ֔הוּ וְחֹ֖שֶׁךְ עַל־פְּנֵ֣י תְה֑וֹם וְר֣וּחַ אֱלֹהִ֔ים מְרַחֶ֖פֶת עַל־פְּנֵ֥י הַמָּֽיִם׃');pg.click('#prepgo');pg.wait_for_timeout(300)
+  pw=pg.evaluate("[...document.querySelectorAll('#prepres .sense .chip')].map(b=>b.textContent)")
+  with pg.expect_download() as d3: pg.click('#prepdl')
+  ck('הכנה לפרק: %d מילים לא נפוצות (מרחפת כן, את/על לא) + ייצוא'%len(pw), any('מְרַחֶ' in w for w in pw) and not any(w in ('אֵ֥ת','עַל') for w in pw) and 'otzaria.org/plugins' in open(d3.value.path(),encoding='utf-8-sig').read())
   pg.click('[data-m="root"]');pg.fill('#q','');
   ck('ללא שגיאות בתוסף '+str(errs),not errs)
   pg2=b.new_page();pg2.add_init_script(MOCK.replace("isOnline:true","isOnline:false,isOfflineMode:true"));pg2.goto(ROOT+'/index.html');pg2.wait_for_timeout(300)

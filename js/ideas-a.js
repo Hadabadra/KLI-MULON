@@ -3,6 +3,7 @@
   const A = window.KKA; if (!A) return;
   const $ = s => document.querySelector(s), esc = A.esc;
   document.head.insertAdjacentHTML("beforeend", `<style>
+    #prept{width:100%;box-sizing:border-box;font:inherit;font-family:var(--font-main);margin:.4em 0}.qk ul{margin:.3em 0}
     .cchart{margin:.4em 0 .8em}.cchart svg{width:100%;height:auto;max-height:200px;display:block;overflow:visible;direction:ltr}
     .cchart .bar{fill:var(--color-primary);opacity:.85;cursor:pointer}.cchart .bar:hover{opacity:1}.cchart .bar.dim{opacity:.3}
     .cchart .hit{fill:transparent;cursor:pointer}.cchart text{fill:var(--color-on-surface-variant);font:10px var(--font-ui)}
@@ -129,4 +130,41 @@
     let box = $("#conjbox"); if (!box) { box = document.createElement("div"); box.id = "conjbox"; box.className = "card conj"; b.closest(".row").after(box); }
     else if (b.id === "conjbtn") { box.remove(); return; }
     box.innerHTML = conjHtml(b.dataset.cjr, b.dataset.cjb); });
+  /* ===== 4. הכנה לפרק: מילים לא נפוצות מתוך קטע, עם שורש ופירוש קצר. "תדירות" = מספר הופעות המילה בגוף ההגדרות שבמילון (מדד גס, אין במאגר נתוני שכיחות) ===== */
+  let FQ = null;
+  const freqMap = () => { if (FQ) return FQ; FQ = new Map(); for (const k of A.D.keys) for (const x of A.D.get(k).s) for (const w of KK.norm(x[1]).split(" ")) if (w.length > 1) FQ.set(w, (FQ.get(w) || 0) + 1); return FQ; };
+  const STOP = new Set("ויאמר אמר לאמר היה ויהי יהוה אלהים".split(" "));
+  function prepList(text, thr) {
+    const F = freqMap(), seen = new Set(), out = [];
+    const toks = String(text || "").replace(/\([^()]*\)/g, " ").split(/[\s־־]+/); /* (כתיב) — מדלגים; הקרי נשאר */
+    for (const tk of toks) {
+      const w = KK.norm(tk).replace(/[^א-ת]/g, ""); if (w.length < 3 || seen.has(w)) continue; seen.add(w);
+      const r = A.D.find(w), base = /^[והבלמכש]/.test(w) && !r ? w.slice(1) : w;
+      if (A.PARTICLES.has(w) || A.PARTICLES.has(w.slice(1)) && /^[והבלמכש]/.test(w) || STOP.has(w)) continue;
+      const an = A.D.analyze(r ? r.n : base), f = Math.max(F.get(w) || 0, r ? F.get(r.n) || 0 : 0, an.ok ? F.get(KK.refinal(an.root)) || 0 : 0);
+      if (f >= thr) continue;
+      const sn = r ? (r.s.find(x => !/ראשי תיבות|המכלול|ויקיפדיה/.test(x[2] || "")) || r.s[0]) : null;
+      out.push({ w: tk.replace(/[^֑-ׇא-ת]/g, ""), t: r ? r.title : "", root: an.root ? KK.refinal(an.root) + (an.ok ? "" : "?") : "", d: sn ? String(sn[1]).slice(0, 110) : "", f });
+    }
+    return out;
+  }
+  const THR = [[5, "נדירות מאוד"], [15, "לא נפוצות"], [40, "כולל בינוניות"]];
+  function showPrep(text) {
+    const st = A.getST(), thr = st.prepThr || 15, el = $("#out"); el.classList.add("wide");
+    el.innerHTML = `<div class="chead"><h2>הכנה לפרק</h2><button class="chip" id="prepback">→ ספרי דקדוק</button></div><p class="note">הדביקו פרק או קטע (או קחו את הבחירה בספר) — ותקבלו את המילים שאינן נפוצות, עם שורש ופירוש קצר מהמילון. "נפוצות" נקבע לפי מספר ההופעות של המילה בהגדרות המילון; מילים קצרות ומילות יחס (את, אשר, על) מושמטות. השורש והפירוש — זיהוי אוטומטי, משוער.</p>
+      <textarea id="prept" rows="5" placeholder="הדביקו כאן פרק או קטע…">${esc(text || "")}</textarea>
+      <div class="chips"><button class="chip pri" id="prepgo">📝 הכן רשימה</button><button class="chip" id="prepsel">מהבחירה בספר</button>${THR.map(([v, l]) => `<button class="chip${v === thr ? " pri" : ""}" data-pthr="${v}">${l}</button>`).join("")}<button class="chip" id="prepdl">⬇ טקסט</button></div><div id="prepres"></div>`;
+    let list = [];
+    const run = () => { list = prepList($("#prept").value, A.getST().prepThr || 15);
+      $("#prepres").innerHTML = !$("#prept").value.trim() ? "" : list.length ? `<p class="note">${list.length} מילים</p><div class="senses">${list.map(x => `<div class="sense"><button class="chip pri" data-go="${esc(x.t || KK.norm(x.w))}">${esc(x.w)}</button><div class="sbody">${x.root ? `<small class="note">שורש ${esc(x.root)}${x.t && KK.norm(x.t) !== KK.norm(x.w) ? " · ערך: " + esc(x.t) : ""}</small><br>` : ""}${x.d ? esc(x.d) : '<span class="note">⚠ אין ערך במילון</span>'}</div></div>`).join("")}</div>` : '<p class="hint">לא נמצאו מילים לא נפוצות.</p>'; };
+    $("#prepgo").onclick = run; $("#prepback").onclick = () => $('#modes [data-m="books"]').click();
+    $("#prepsel").onclick = async () => { const g = await A.call("reader.getSelection"); const t = g.success && g.data && (g.data.sourceSelectedText || g.data.text); if (t) { $("#prept").value = t; run(); } else A.call("ui.showMessage", { message: "לא נבחר טקסט בספר" }); };
+    el.querySelectorAll("[data-pthr]").forEach(b => b.onclick = () => { A.getST().prepThr = +b.dataset.pthr; A.save && A.save(); el.querySelectorAll("[data-pthr]").forEach(x => x.classList.toggle("pri", x === b)); run(); });
+    $("#prepdl").onclick = () => { if (!list.length) run(); const L = A.LINKS;
+      const txt = ["הכנה לפרק — מילים לא נפוצות", "", ...list.map(x => `${x.w}${x.root ? " (שורש " + x.root + ")" : ""} — ${x.d || "אין ערך במילון"}`), "", "השורש והפירוש — זיהוי אוטומטי, משוער.", "———", `מתוך התוסף "לשון הקודש" לאוצריא. הורדת התוסף: GitHub ${L.gh} · חנות התוספים של אוצריא ${L.store}`].join("\n");
+      const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["﻿" + txt], { type: "text/plain;charset=utf-8" })); a.download = "הכנה לפרק.txt"; document.body.appendChild(a); a.click(); a.remove(); A.call("ui.showMessage", { message: "הרשימה הורדה כקובץ טקסט" }); };
+    if (text) run();
+  }
+  A.showPrep = showPrep;
+  document.addEventListener("click", e => { if (e.target.closest('[data-ia="prep"]')) showPrep(""); });
 })();
