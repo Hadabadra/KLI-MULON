@@ -43,8 +43,13 @@ with sync_playwright() as p:
   V='בְּרֵאשִׁ֖ית בָּרָ֣א אֱלֹהִ֑ים אֵ֥ת הַשָּׁמַ֖יִם וְאֵ֥ת הָאָֽרֶץ׃'
   pg.evaluate("v=>fire('ui.messageClicked',{payload:{word:'בראשית',words:['בראשית','ברא','אלהים','את','השמים','ואת','הארץ'],raw:v}})",V);pg.wait_for_timeout(300)
   ck('הכלל במשפט: תגיות ניקוד/דקדוק עם קישור לספר',pg.locator('.chips.rules [data-gsec]').count()>0)
+  ck('ארמית: לא מוצגת בפסוק עברי',pg.locator('.aram').count()==0)
   pg.click('#taambtn');pg.wait_for_timeout(200)
   ck('מפת הפסוק: חלוקה באתנחתא ובטפחא',pg.locator('.tmap .thead small:has-text("אתנחתא")').count()==1 and pg.locator('.tmap .thead small:has-text("טפחא")').count()==2)
+  A='אַמַּאי לָא קַבֵּיל מִינֵּיהּ'
+  pg.evaluate("v=>fire('ui.messageClicked',{payload:{word:'אמאי',words:['אמאי','לא','קביל','מיניה'],raw:v}})",A);pg.wait_for_timeout(300)
+  at=pg.evaluate("(document.querySelector('.aram')||{innerText:''}).innerText")
+  ck('ארמית: מילת שאלה, כינוי ובניין (זיהוי משוער)','זיהוי משוער' in at and 'מדוע' in at and 'ממנו' in at and 'פַּעֵל' in at)
   pg.evaluate("""()=>{const c0=Otzaria.call;Otzaria.call=async(m,p)=>m==='library.findBooks'&&p.query==='בראשית'?(__calls.push([m,p]),{success:true,data:[{bookId:'בראשית',title:'בראשית',type:'text'}]}):c0(m,p);
     const a=document.createElement('a');a.dataset.psk='בראשית א ג|ויאמר';a.id='pskt';a.textContent='x';document.body.appendChild(a);}""")
   pg.click('#pskt');pg.wait_for_timeout(300)

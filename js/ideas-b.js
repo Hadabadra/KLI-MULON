@@ -40,6 +40,52 @@
     c.b = ok ? Math.min(4, c.b + 1) : 0; c.d = Date.now() + INT[c.b] * DAY; A.save(); showSrs();
   }
 
+  /* ===== 2. ארמית בדף המשולב — טבלה סטטית קטנה (רק תרגומים ודאיים), כינויים, ובניינים לפי דפוס. הכל "זיהוי משוער" ===== */
+  const AR_W = { "דהא": "שהרי", "מיהו": "מכל מקום; אבל", "מאי": "מה", "היכי": "איך", "היכא": "איפה", "אמאי": "מדוע, למה", "הכא": "כאן", "התם": "שם", "השתא": "עכשיו",
+    "נמי": "גם", "איכא": "יש", "ליכא": "אין", "איתא": "ישנו, יש", "ליתא": "איננו, אין", "תנן": "שנינו (במשנה)", "תניא": "שנויה (בברייתא)", "הכי": "כך", "דילמא": "שמא", "טפי": "יותר",
+    "בהדי": "עם", "גבי": "אצל", "קמי": "לפני", "בתר": "אחרי", "אכתי": "עדיין", "ותו": "ועוד", "אטו": "וכי", "הני": "אלה", "האי": "זה", "אידך": "האחר", "כולהו": "כולם",
+    "אנן": "אנחנו", "איהו": "הוא", "אינהו": "הם", "ניהו": "הוא", "מנא": "מנין", "אלא": "אלא, אבל", "הוה": "היה", "אי": "אם", "לאו": "לא" };
+  const AR_P = { "ליה": "לו", "להו": "להם", "לן": "לנו", "ביה": "בו", "בהו": "בהם", "מיניה": "ממנו", "מינה": "ממנה", "מינייהו": "מהם", "דידיה": "שלו", "דידה": "שלה",
+    "דידהו": "שלהם", "דידי": "שלי", "דידך": "שלך", "דידן": "שלנו", "גביה": "אצלו", "קמיה": "לפניו", "בהדיה": "עמו" };
+  const AR_NOPFX = new Set(["דמאי"]);
+  const AR_AMB = new Set(["אלא", "הוה", "אי", "לאו"]); /* שכיחות גם בעברית — לבדן אינן מעידות על ארמית */
+  /* מילה בטבלה, גם עם ו־ / ד־ בראשה */
+  function arTab(w) {
+    for (const [p, pn] of [["", ""], ["ו", "ו־"], ["ד", "ד־ (ש־)"], ["וד", "וד־ (וש־)"]]) { if (p && (!w.startsWith(p) || AR_NOPFX.has(w) || (D.get(w) && !arDict(w)))) continue; const b = w.slice(p.length); /* דמאי — ערך בפני עצמו, לא ד־ + מאי */
+      if (AR_P[b]) return { b, pn, tr: AR_P[b], k: "כינוי" }; if (AR_W[b]) return { b, pn, tr: AR_W[b], k: "מילת יחס / קישור", amb: AR_AMB.has(b) }; }
+    return null;
+  }
+  /* ערך שכל הגדרותיו המילוניות מ"מילון ארמי עברי" */
+  const arDict = w => { const r = D.find(w); if (!r) return null; const src = r.s.map(x => x[2]), ok = src.includes("מילון ארמי עברי") && !src.some(x => x === "מילון עברי" || /רד"ק/.test(x));
+    return ok ? { r, tr: r.s.filter(x => x[2] === "מילון ארמי עברי").slice(0, 2).map(x => x[1]).join("; ") } : null; };
+  /* בניין לפי הניקוד (פעל עבר נסתר) או לפי התחילית; משוער תמיד */
+  const N = "[\u05B0-\u05BC\u05C1\u05C2]*", C = "[א-ת]" + "[\u05C1\u05C2]?";
+  const AR_BIN = [["אִתַּפְעַל", new RegExp("^א\u05B4י?ת\u05BC\u05B7")], ["אִתְפַּעַל", new RegExp("^א\u05B4י?ת\u05B0" + C + "\u05BC?\u05B7" + C + "\u05BC")], ["אִתְפְּעֵל", new RegExp("^א\u05B4י?ת\u05B0" + C + "\u05BC?\u05B0" + C + "\u05B5")],
+    ["אַפְעֵל", new RegExp("^א\u05B7(" + C + "\u05B0" + C + "|" + C + "\u05BC)\u05B5י?" + C + N + "$")], ["פַּעֵל", new RegExp("^" + C + "\u05BC?\u05B7" + C + "\u05BC\u05B5י?" + C + N + "$")], ["פְּעַל", new RegExp("^" + C + "\u05BC?[\u05B0\u05B2]" + C + "\u05B7" + C + N + "$")]];
+  /* סדר אחיד של הסימנים בכל אות: נקודת שי"ן, דגש, תנועה (בלי טעמים ומתג) */
+  const mk = c => /[\u05C1\u05C2]/.test(c) ? 0 : c === "\u05BC" ? 1 : 2;
+  const canon = s => String(s || "").replace(/[\u0591-\u05AF\u05BD\u05BF\u05C0\u05C3-\u05C6]/g, "").replace(/([א-ת])([\u05B0-\u05BC\u05C1\u05C2\u05C7]+)/g, (m, l, k) => l + [...k].sort((a, b) => mk(a) - mk(b)).join(""));
+  function arBin(w, raw) {
+    const v = canon(raw);
+    if (/[\u05B0-\u05BB]/.test(v)) for (const [b, re] of AR_BIN) if (re.test(v)) return b;
+    if (w.length >= 5 && /^(אית|את)/.test(w)) return "אִתְפְּעֵל / אִתְפַּעַל / אִתַּפְעַל";
+    if (w.length >= 5 && /^(מית|מת)/.test(w)) return "בינוני של אִתְפְּעֵל / אִתְפַּעַל / אִתַּפְעַל";
+    return "";
+  }
+  const AR_SUF = [["ינן", "אנחנו (כמו אמרינן)"], ["ין", "רבים (כמו אמרין)"], ["נא", "אולי גוף ראשון: אני (כמו אמינא)"], ["יה", "אולי כינוי נסתר: ־ו (שלו / אותו)"], ["ת", "אולי עבר: אתה / היא / אני (כמו אמרת)"]];
+  const arSuf = w => { if (w.length < 4) return ""; const s = AR_SUF.find(([x]) => w.endsWith(x)); return s ? "סיומת ־" + s[0] + ": " + s[1] : ""; };
+  function aram(words, raw) {
+    const rw = String(raw || "").replace(/[\u05C3:]\s*$/, "").split(/\s+/).filter(Boolean), rawOf = t => rw.find(x => KK.norm(x).split(" ").includes(t)) || "";
+    const tab = words.map(w => [w, arTab(w)]);
+    if (!tab.some(([, x]) => x && !x.amb)) return ""; /* רק כשיש בבחירה מילה ארמית מובהקת מהטבלה */
+    const rows = tab.map(([w, t]) => {
+      const dct = t ? null : arDict(w), bin = t ? "" : arBin(w, rawOf(w)), suf = t || !(dct || bin) ? "" : arSuf(w);
+      if (!t && !dct && !bin) return "";
+      return `<div class="sense"><b>${esc(w)}</b><div class="sbody">${t ? `${t.pn ? esc(t.pn) + " + " : ""}${esc(t.b)} = <b>${esc(t.tr)}</b> <small class="note">(${t.k}; טבלה מובנית)</small>` : ""}${dct ? `${esc(dct.tr)} <small class="note">(מקור: מילון ארמי עברי)</small>` : ""}${bin ? `<br><small>בניין: ${esc(bin)}?</small>` : ""}${suf ? `<br><small>${esc(suf)}</small>` : ""}</div></div>`;
+    }).join("");
+    return `<section class="aram"><h3>ארמית — זיהוי משוער</h3><p class="note">מילות יחס, קישור וכינויים שכיחים מטבלה קטנה מובנית; פירוש מילים אחרות מ"מילון ארמי עברי" שבמאגר; הבניין (פְּעַל, פַּעֵל, אַפְעֵל, אִתְפְּעֵל, אִתְפַּעַל, אִתַּפְעַל) והסיומת — לפי הניקוד והתחילית בלבד, ועלולים לטעות.</p><div class="senses">${rows}</div></section>`;
+  }
+
   /* ניתוב התרגול: נקרא מתחילת showPractice; מחזיר true כשהתצוגה כאן */
   const pr = () => { const m = ST().prSub; if (m === "srs") { showSrs(); return true; } return false; };
   document.addEventListener("click", e => {
@@ -52,5 +98,5 @@
     else if (t.dataset.srsdel) { delete srs()[t.dataset.srsdel]; A.save(); showSrs(); }
   });
 
-  window.KKB = { hero: r => srsBtn(r), pr, prBar };
+  window.KKB = { hero: r => srsBtn(r), pr, prBar, aram };
 })();
