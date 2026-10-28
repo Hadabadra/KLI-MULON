@@ -650,7 +650,7 @@
     const msg = { notaam: "בטקסט אין טעמי מקרא. בחרו פסוק מוטעם מספר התנ\"ך.", emet: "זהו פסוק בטעמי אמ\"ת (תהלים, משלי, איוב) — המפה תומכת כרגע רק בטעמי כ\"א ספרים.", empty: "הדביקו פסוק מנוקד ומוטעם." }[r.error];
     const ws = t.replace(/[\u05C3:]\s*$/, "").split(/\s+/).filter(w => w && !/^[|\u05C0]$/.test(w));
     $("#out").innerHTML = `<h2>מפת הפסוק לפי הטעמים</h2><p class="note">חלוקה דיכוטומית לפי דרגות המפסיקים: סילוק ואתנחתא, ואחריהם סגולתא, זקף וטפחא, רביע, זרקא, פשטא ותביר, ולבסוף גרש, פזר, קרני פרה ותלישא גדולה. בכל חלק — המפסיק שחותם אותו. טעמי כ"א ספרים בלבד.</p>` +
-      (msg ? `<p class="hint">${msg}</p>` : `<div class="tmap">${node(r.tree, null)}</div>`) +
+      (msg ? `<p class="hint">${msg}</p>` : `<div class="tmap">${node(r.tree, null)}</div>`) + IA("qk", t) +
       (hasNikud(t) ? `<h3>ניתוח הניקוד והטעמים</h3><p class="note">נגזר מהסימנים עצמם. "?" — מקרה מסופק או שנחלקו בו. לחיצה על תגית פותחת את הכלל בספר הדקדוק.</p><div class="senses">${ws.map((w, i) => { const tg = KK.nikudAnalyze(w, i === ws.length - 1); return `<div class="sense"><b class="nw">${esc(w)}</b><div class="chips">${tagHtml(tg) || '<small class="note">—</small>'}</div></div>`; }).join("")}</div>` : "") +
       `<div class="row"><textarea id="tmq" rows="2" placeholder="הדביקו פסוק מנוקד ומוטעם…">${esc(t)}</textarea><button class="chip pri" id="tmgo">🎼 הצג מפה</button></div>`;
     $("#tmgo").onclick = () => showTaam($("#tmq").value);
@@ -681,7 +681,7 @@
     const rows = words.map(t => { const r = D.find(t); if (!r) return `<div class="sense"><b>${esc(t)}</b><div class="sbody note">⚠ לא זוהתה — אין ערך במילון (בדקו כתיב או ניקוד)</div>${rules(t)}</div>`;
       const rk = KK.rank(r, ctx), pick = (rk.confident ? rk.best : rk.items.filter(x => x.kind !== "acr")).slice(0, 2);
       return `<div class="sense${r.n.includes(" ") ? " best" : ""}"><button class="chip pri" data-go="${esc(r.title)}">${r.n.includes(" ") ? "ביטוי: " : ""}${esc(r.title)}</button><div class="sbody">${(() => { const a = D.analyze(r.n); return a && a.root ? `<small class="note">שורש ${esc(KK.refinal(a.root))}${a.binyan ? " · " + esc(String(a.binyan).split(" (")[0]) : ""}${a.ok ? "" : " (משוער)"}</small><br>` : ""; })()}${pick.map(x => esc(r.s[x.i][1])).join("<br>")}</div>${rules(t)}</div>`; }).join("");
-    $("#out").innerHTML = `<h2>${esc(KK.norm(raw || words.join(" ")))}</h2><p class="note">ניתוח המשפט: לכל מילה — שורש ובניין (זיהוי אוטומטי, משוער) ופירוש; מילה שלא זוהתה מסומנת ⚠. לחיצה על מילה פותחת את הערך המלא. התגיות — הכלל במשפט: לחיצה פותחת את הסעיף בספר הדקדוק.</p>${hasTaam(raw) ? `<p><button class="chip pri" id="taambtn">🎼 מפת הפסוק לפי הטעמים</button></p>` : ""}<div class="senses">${rows}</div>`;
+    $("#out").innerHTML = `<h2>${esc(KK.norm(raw || words.join(" ")))}</h2><p class="note">ניתוח המשפט: לכל מילה — שורש ובניין (זיהוי אוטומטי, משוער) ופירוש; מילה שלא זוהתה מסומנת ⚠. לחיצה על מילה פותחת את הערך המלא. התגיות — הכלל במשפט: לחיצה פותחת את הסעיף בספר הדקדוק.</p>${IA("qk", raw)}${hasTaam(raw) ? `<p><button class="chip pri" id="taambtn">🎼 מפת הפסוק לפי הטעמים</button></p>` : ""}<div class="senses">${rows}</div>`;
     if ($("#taambtn")) $("#taambtn").onclick = () => showTaam(raw);
   }
 

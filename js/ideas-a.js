@@ -32,4 +32,26 @@
     el.onclick = e => { const g = e.target.closest("[data-cbk]"); if (!g) return; cc.book = cc.book === g.dataset.cbk ? "" : g.dataset.cbk; redraw(); };
     return cc.book ? (y => bookName(y) === cc.book) : null;
   };
+  /* ===== 2. קרי וכתיב בפסוק. בנוסח המקרא שבאוצריא: (כתיב) [קרי]; [קרי] לבד — קרי ולא כתיב; (כתיב) לבד — כתיב ולא קרי.
+     בדוק בקובצי המקרא: בראשית ח יז "(הוצא) [הַיְצֵ֣א]", בראשית ל יא "(בגד) [בָּ֣א] [גָ֑ד]", רות ג ה "[אֵלַ֖י]", רות ג יב "(אם)", רות ד ו "(לגאול־)[לִגְאָל־]" ===== */
+  const NK = /[\u05B0-\u05BC\u05C1\u05C2\u05C7]/;
+  A.qkParse = raw => {
+    const t = String(raw || ""), out = [];
+    for (const m of t.matchAll(/\(([^()[\]]+)\)\s*((?:\[[^[\]]+\]\s*)*)|\[([^[\]]+)\]/g)) {
+      if (m[1] !== undefined) out.push({ k: m[1].trim(), q: [...m[2].matchAll(/\[([^\]]+)\]/g)].map(x => x[1].trim()).join(" ") });
+      else out.push({ k: "", q: m[3].trim() });
+    }
+    if (out.length || !NK.test(t)) return out;
+    /* גיבוי לנוסח אחר: מילה בלי ניקוד (הכתיב) הצמודה למילה מנוקדת (הקרי) — משוער */
+    const ws = t.replace(/[\u05C3:]\s*$/, "").split(/\s+/).filter(Boolean);
+    for (let i = 0; i + 1 < ws.length; i++) { const w = ws[i].replace(/[־\u05BE]$/, ""), nx = ws[i + 1];
+      if (/^[\u05D0-\u05EA]{2,}$/.test(w) && NK.test(nx) && /[\u05D0-\u05EA]/.test(nx)) out.push({ k: w, q: nx, guess: true }); }
+    return out;
+  };
+  A.qk = raw => {
+    const a = A.qkParse(raw); if (!a.length) return "";
+    const row = x => !x.k ? `<li><b>קרי ולא כתיב:</b> ${esc(x.q)} <small class="note">— נקרא ואינו כתוב</small></li>` : !x.q ? `<li><b>כתיב ולא קרי:</b> ${esc(x.k)} <small class="note">— כתוב ואינו נקרא</small></li>`
+      : `<li><b>כתיב:</b> ${esc(x.k)} / <b>קרי:</b> ${esc(x.q)}${x.guess ? ' <small class="note">(משוער)</small>' : ""}</li>`;
+    return `<div class="row qk"><b>כתיב וקרי</b><ul>${a.map(row).join("")}</ul><span class="note">${a.some(x => x.guess) ? "זוהה לפי מילה בלי ניקוד הצמודה למילה מנוקדת — ייתכן שאינו קרי וכתיב. " : "בנוסח שבאוצריא הכתיב בסוגריים עגולים והקרי בסוגריים מרובעים. "}הכתיב — כפי שנכתב בספר התורה (בלי ניקוד); הקרי — כפי שקוראים, והניקוד שבפסוק שייך לו. <a href="#" class="blink" data-gsec="כתיב וקרי">כתיב וקרי — בספר הדקדוק</a></span></div>`;
+  };
 })();
