@@ -85,6 +85,12 @@ with sync_playwright() as p:
   n_ti=pg.locator('.tie [data-gsec]').count()
   with pg.expect_download() as d2: pg.click('#tidl')
   ck('מפתח מונחים: %d מונחים + ייצוא טקסט'%n_ti, n_ti>50 and 'otzaria.org/plugins' in open(d2.value.path(),encoding='utf-8-sig').read())
+  pg.click('[data-m="word"]');pg.fill('#q','שמר');pg.keyboard.press('Enter');pg.wait_for_timeout(300);pg.click('#conjbtn');pg.wait_for_timeout(100)
+  NF=lambda t:pg.evaluate("t=>document.querySelector('#conjbox').textContent.normalize('NFC').includes(t.normalize('NFC'))",t)
+  ck('טבלת נטייה (שמר): קל + "נוצר אוטומטית"',NF('שָׁמַרְתִּי') and NF('תִּשְׁמֹרְנָה') and NF('נוצר אוטומטית'))
+  pg.click('#conjbox [data-cjb="התפעל"]');ck('טבלת נטייה: התפעל בחילוף ת (הִשְׁתַּמֵּר)',NF('הִשְׁתַּמֵּר'))
+  pg.fill('#q','שמע');pg.keyboard.press('Enter');pg.wait_for_timeout(300);pg.click('#conjbtn')
+  ck('טבלת נטייה: שורש גרוני (שמע) — הודעה שאינו נתמך',pg.locator('#conjbox:has-text("רק בשלמים")').count()==1)
   pg.click('[data-m="root"]');pg.fill('#q','');
   ck('ללא שגיאות בתוסף '+str(errs),not errs)
   pg2=b.new_page();pg2.add_init_script(MOCK.replace("isOnline:true","isOnline:false,isOfflineMode:true"));pg2.goto(ROOT+'/index.html');pg2.wait_for_timeout(300)
