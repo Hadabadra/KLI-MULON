@@ -377,6 +377,7 @@
       ${opt("גודל גופן", "", seg("s-fs", [[90, "קטן"], [100, "רגיל"], [115, "גדול"], [130, "גדול מאוד"]], ST.fs || 100))}
       ${opt("חיפוש בספרי הדקדוק לפי שורש", "כבוי: רק הצורה המדויקת. פועל: גם צורות אחרות של השורש שבמילון (איטי יותר)", sw("s-groot", ST.gramRoot))}
       ${opt("הצעת כתיב מלא / חסר", "בערך מוצגות גם צורות בכתיב אחר שקיימות במילון (משל / מושל)", sw("s-plene", ST.plene !== false))}
+      ${opt("תרגול", "לשונית תרגול (רשות): זיהוי שורש ובניין של מילים מהמילון", sw("s-pr", ST.practice))}
       ${opt("קונקורדנציה בכל הספרייה", "כבוי (ברירת מחדל): מופעים מהתנ\"ך בלבד", sw("s-conc", ST.concAll))}
       ${opt("מיקום סרגל האותיות", "בתצוגת \"כל המילים\"", seg("s-side", [[0, "למעלה"], [1, "בצד"]], ST.azSide ? 1 : 0))}
       ${opt("סרגל האותיות פתוח כברירת מחדל", "", sw("s-fopen", ST.fOpen))}
@@ -395,6 +396,7 @@
     $("#s-groot").onchange = e => { ST.gramRoot = e.target.checked; save(); };
     $("#s-plene").onchange = e => { ST.plene = e.target.checked; save(); };
     $("#s-conc").onchange = e => { ST.concAll = e.target.checked; save(); };
+    $("#s-pr").onchange = e => { ST.practice = e.target.checked; save(); prTab(); };
     $("#nak-copy").onclick = () => { copyText(KKNakdan.FORUM); call("ui.showMessage", { message: "הקישור הועתק" }); };
     KKNakdan.scan(true).then(p => { const el = $("#nak-st"); if (el) el.textContent = p ? "🟢 הנקדן מחובר" : "⚪ הנקדן לא מחובר — המילון פועל כרגיל"; });
     $("#s-cmp").onchange = e => { ST.compact = e.target.checked; applyFs(); save(); };
@@ -553,7 +555,7 @@
     else if (t.dataset.comb) showCombined(selWords, selCtx.raw);
     else if (t.id === "clrh") { ST.hist = []; save(); showHist(); }
     else if (t.id === "clr") { $("#q").value = ""; sugList = []; renderSug(); $("#clr").classList.add("hid"); $("#q").focus(); }
-    else if (t.closest("#modes")) { mode = t.dataset.m; tabs(); if (mode === "all") showAll(); else if (mode === "about") showAbout(); else if (mode === "hist") showHist(); else if (mode === "fav") showFav(); else if (mode === "set") showSet(); else if (mode === "books") showBooks(); else if (mode === "rules") readBook(1); else if (mode === "root") $("#out").innerHTML = `<p class="hint">הקלידו שורש (למשל: שלמ) וראו את כל המילים מאותו שורש.</p>`; else if (cur) open(cur, false); }
+    else if (t.closest("#modes")) { mode = t.dataset.m; tabs(); if (mode === "all") showAll(); else if (mode === "about") showAbout(); else if (mode === "hist") showHist(); else if (mode === "fav") showFav(); else if (mode === "set") showSet(); else if (mode === "books") showBooks(); else if (mode === "rules") readBook(1); else if (mode === "pr") showPractice(); else if (mode === "root") $("#out").innerHTML = `<p class="hint">הקלידו שורש (למשל: שלמ) וראו את כל המילים מאותו שורש.</p>`; else if (cur) open(cur, false); }
   });
   $("#q").addEventListener("input", onType);
   $("#q").addEventListener("keydown", e => {
@@ -586,6 +588,34 @@
       if (h) return call("reader.openBook", { id: h.id, bookId: h.bookId, type: h.type, index: h.index, searchQuery: word }); }
     copyText(ref); await call("reader.openBook", { bookId: b.bookId, type: b.type, ref, reference: ref });
     call("ui.showMessage", { message: `נפתח ספר ${bk}; ההפניה "${ref}" הועתקה` });
+  }
+  /* 2.0: תרגול (רשות, כבוי כברירת מחדל) — זיהוי שורש ובניין. רק פעלים שלמים בעבר נסתר, שהניקוד שלהם (מהמילון) תואם בדיוק את תבנית הבניין — והשורש נלקח מהתבנית עצמה */
+  const PR_BIN = ["קל", "נפעל", "פיעל", "הפעיל", "הופעל", "התפעל"], PL = "([א-ת])", PD = "\u05BC?";
+  const PR_PAT = [["קל", "^" + PL + PD + "\u05B8" + PL + "\u05B7" + PL + "$"], ["נפעל", "^נ\u05B4" + PL + "\u05B0" + PL + "\u05B8" + PL + "$"], ["פיעל", "^" + PL + PD + "\u05B4" + PL + "\u05BC\u05B5" + PL + "$"],
+    ["הפעיל", "^ה\u05B4" + PL + "\u05B0" + PL + "\u05B4י" + PL + "$"], ["הופעל", "^ה\u05BB" + PL + "\u05B0" + PL + "\u05B7" + PL + "$"], ["התפעל", "^ה\u05B4ת\u05B0" + PL + PD + "\u05B7" + PL + "\u05BC\u05B5" + PL + "$"]].map(([b, re]) => [b, new RegExp(re)]);
+  const prRand = a => a[Math.floor(Math.random() * a.length)], prShuf = a => a.map(x => [Math.random(), x]).sort((p, q) => p[0] - q[0]).map(x => x[1]);
+  function prItem() {
+    for (let k = 0; k < 3000; k++) { const r = D.get(prRand(D.keys)); if (!r || /[^א-ת]/.test(r.n) || r.n.length < 3) continue;
+      for (const sn of r.s) { if (sn[2] !== "מילון עברי") continue; const v = String(sn[0] || "").normalize("NFC").replace(/[\u0591-\u05AF\u05BD\u05C1\u05C2]/g, "");
+        for (const [bin, re] of PR_PAT) { const m = re.exec(v); if (m && !/[אהחעריו]/.test(m[1] + m[2] + m[3]) && m[2] !== m[3]) return { r, root: KK.refinal(m[1] + m[2] + m[3]), bin }; } } }
+    return null;
+  }
+  function prTab() { let b = document.querySelector('#modes [data-m="pr"]'); if (!b) { b = document.createElement("button"); b.dataset.m = "pr"; b.textContent = "תרגול"; $("#modes").insertBefore(b, document.querySelector('#modes [data-m="hist"]')); } b.classList.toggle("hid", !ST.practice); }
+  function showPractice() {
+    mode = "pr"; tabs(); const it = prItem(), sc = ST.prScore || { ok: 0, n: 0 };
+    if (!it) { $("#out").innerHTML = '<p class="hint">לא נמצאה מילה לתרגול. נסו שוב.</p>'; return; }
+    const isRoot = Math.random() < 0.6 && KK.norm(it.r.title) !== it.root, right = isRoot ? it.root : it.bin;
+    const pool = isRoot ? [...new Set(Array.from({ length: 12 }, () => (prItem() || {}).root).filter(x => x && x !== right))].slice(0, 3) : prShuf(PR_BIN.filter(x => x !== right)).slice(0, 3);
+    const opts = prShuf([right, ...pool]);
+    $("#out").innerHTML = `<h2>תרגול</h2><p class="note">רשות. המילים — פעלים שלמים בעבר, שהניקוד שלהם במילון תואם את תבנית הבניין; השורש נלקח מהתבנית.</p>
+      <section class="card pr"><p class="prw">${esc(it.r.title)}</p><p>${isRoot ? "מהו השורש?" : "באיזה בניין?"}</p><div class="chips" id="pra">${opts.map(o => `<button class="chip" data-pa="${esc(o)}">${esc(o)}</button>`).join("")}</div><div id="prr"></div></section>
+      <p class="note" id="prs">ציון: ${sc.ok} מתוך ${sc.n} <a href="#" id="prz">איפוס</a></p>`;
+    $("#pra").onclick = e => { const b = e.target.closest("[data-pa]"); if (!b || $("#pra").dataset.done) return; $("#pra").dataset.done = 1; const ok = b.dataset.pa === right;
+      ST.prScore = { ok: sc.ok + (ok ? 1 : 0), n: sc.n + 1 }; save();
+      $("#pra").querySelectorAll("button").forEach(x => { x.disabled = true; x.classList.toggle("pri", x.dataset.pa === right); x.classList.toggle("bad", x === b && !ok); });
+      $("#prr").innerHTML = `<p>${ok ? "✓ נכון" : "✗ התשובה: " + esc(right)} · שורש ${esc(it.root)} · ${esc(it.bin)}</p><div class="chips"><button class="chip pri" id="prn">שאלה הבאה ←</button><button class="chip" data-go="${esc(it.r.title)}">פתיחת הערך</button></div>`;
+      $("#prs").firstChild.textContent = `ציון: ${ST.prScore.ok} מתוך ${ST.prScore.n} `; $("#prn").onclick = showPractice; };
+    $("#prz").onclick = e => { e.preventDefault(); ST.prScore = { ok: 0, n: 0 }; save(); showPractice(); };
   }
   /* 2.0: סעיפי ספר הדקדוק לפי מילות מפתח בכותרת (הספר משתנה — לכן חיפוש לפי מילים ולא לפי מספר סעיף) */
   let GSECS = null; const gsecs = () => GSECS || (GSECS = parseBook(BUILTIN.text));
@@ -662,5 +692,5 @@
     O.on("ui.messageClicked", d => d && d.payload && go(d.payload.word, d.payload.words, d.payload.raw));
     O.on("plugin.page_opened", p => { const prm = p && (p.param || p.params); if (prm && prm.word) go(prm.word, prm.words, prm.raw); });
   }
-  checkOnline(); load().then(() => { syncLibrary(); fOpen = !!ST.fOpen; applyFs(); $("#q").focus(); });
+  checkOnline(); load().then(() => { syncLibrary(); fOpen = !!ST.fOpen; applyFs(); prTab(); $("#q").focus(); });
 })();
