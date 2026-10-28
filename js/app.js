@@ -211,7 +211,7 @@
     mode = "books"; tabs(); $("#out").classList.add("wide");
     const lib = [["radak", "ספר השרשים לרד\"ק"], ["bachur", "ספר הבחור"], ["tzachot", "ספר צחות לראב\"ע"]];
     $("#out").innerHTML = `<h2>ספרי דקדוק</h2>
-      <section class="card bk"><h3>ספרים שייבאתם</h3><div class="opt"><button class="chip pri" data-m2="rules">📖 כללי הדקדוק (הספר המובנה)</button><button class="chip" data-m2="taam">🎼 מפת פסוק לפי הטעמים</button></div>${bookList().filter(b => !b.builtin).map(b => `<div class="opt"><button class="chip pri" data-book="${b.id}">📖 ${esc(b.title)}</button>${b.builtin ? `<small>מובנה בתוסף</small>` : `<button class="ib" data-delbook="${b.id}" title="הסרת הספר" aria-label="הסרת הספר">✕</button>`}</div>`).join("")}
+      <section class="card bk"><h3>ספרים שייבאתם</h3><div class="opt"><button class="chip pri" data-m2="rules">📖 כללי הדקדוק (הספר המובנה)</button><button class="chip" data-m2="terms">🔤 מפתח מונחים</button><button class="chip" data-m2="taam">🎼 מפת פסוק לפי הטעמים</button></div>${bookList().filter(b => !b.builtin).map(b => `<div class="opt"><button class="chip pri" data-book="${b.id}">📖 ${esc(b.title)}</button>${b.builtin ? `<small>מובנה בתוסף</small>` : `<button class="ib" data-delbook="${b.id}" title="הסרת הספר" aria-label="הסרת הספר">✕</button>`}</div>`).join("")}
         <div class="opt"><span>ייבוא ספר ידני<small>קובץ טקסט (.txt / .md) או HTML. כותרות: # פרק, ## סעיף (ב-HTML: h1–h3). הספר יופיע גם בספריית אוצריא.</small></span><label class="chip">⬆ ייבוא ספר<input type="file" id="bkfile" accept=".txt,.md,.html,.htm" hidden></label></div></section>
       <section class="card bk wide"><h3>ספרי הדקדוק שבספריית אוצריא</h3><div class="ltiles">${LIBGRAM.map(([t, a, d]) => `<button class="ltile" data-lt="${esc(t)}"><b>${esc(t)}</b><small>${esc(a)}${d ? " · " + esc(d) : ""}</small></button>`).join("")}</div><h4 class="gh">ספרים שהוספתם</h4><div class="ltiles">${(ST.extraGram || []).map(t => `<div class="ltile"><button class="chip" data-lt="${esc(t)}">${esc(t)}</button> <button class="ib" data-delgram="${esc(t)}" title="הסרה מהרשימה" aria-label="הסרה מהרשימה">✕</button></div>`).join("") || `<small class="note">עדיין לא נוספו ספרים.</small>`}</div><div class="opt"><span>הוספת ספר דקדוק מהספרייה<small>שם הספר כפי שהוא מופיע בספריית אוצריא. הספר ייכלל בחיפוש "בספרי הדקדוק שבספרייה".</small></span><input id="addgram" type="search" placeholder="שם הספר"><button class="chip" id="addgramb">הוספה</button></div>${online ? `<h4 class="gh">באתרים (נפתחים בדפדפן)</h4><div class="ltiles">${WEBGRAM.map(([t, d, u]) => `<button class="ltile" data-url="${esc(u)}"><b>${esc(t)} ↗</b><small>${esc(d)}</small></button>`).join("")}</div><p class="note">קישורים חיצוניים; התוכן שם אינו מסונן. מוסתרים כשאוצריא מוגדרת "ללא גישה לאינטרנט".</p>` : ""}<p class="note">נפתחים בקורא של אוצריא, אם הספר קיים בספרייה שלך. מתוך ערך במילון, ספר השרשים וספר הבחור נפתחים ישירות על השורש או המילה.</p></section>`;
     $("#bkfile").onchange = importBook;
@@ -242,7 +242,7 @@
       const shown = q ? secs.filter(x => (x.title + "\n" + x.lines.join("\n")).includes(q)) : secs;
       $("#bview").innerHTML = (q ? `<p class="note">${shown.length} סעיפים מכילים "${esc(q)}"</p>` : "") + (shown.length ? shown.map(x => secHtml(x, q, { on: isBm(x.id) })).join("") : '<p class="hint">לא נמצא.</p>');
     };
-    $("#out").innerHTML = `<div class="reader"><div class="rbar">${+id === 1 ? "" : `<button class="chip" id="bkback">→ ספרים</button>`}<h2>${esc(b.title)}</h2><input id="bq" type="search" placeholder="חיפוש בספר…"><button class="chip" id="bkdl">⬇ הורדה</button><button class="chip" id="bktxt" title="קובץ טקסט פשוט, להעתקה ולשימוש בתוכנות אחרות">⬇ טקסט</button><button class="chip" id="bkpdf">🖨 PDF / הדפסה</button></div>
+    $("#out").innerHTML = `<div class="reader"><div class="rbar">${+id === 1 ? "" : `<button class="chip" id="bkback">→ ספרים</button>`}<h2>${esc(b.title)}</h2><input id="bq" type="search" placeholder="חיפוש בספר…"><button class="chip" id="bkdl">⬇ הורדה</button><button class="chip" id="bktxt" title="קובץ טקסט פשוט, להעתקה ולשימוש בתוכנות אחרות">⬇ טקסט</button><button class="chip" id="bkpdf">🖨 PDF / הדפסה</button>${+id === 1 ? `<button class="chip" data-m2="terms">🔤 מפתח מונחים</button>` : ""}</div>
       ${b.note ? `<p class="note">${esc(b.note)}</p>` : ""}
       <div class="rgrid"><nav class="toc"><small class="note">לחיצה כפולה על מילה בספר — ניתוח המילה (שורש, בניין, ערך).</small><div id="bml">${bmList()}</div><b>תוכן עניינים</b><input id="tq" type="search" placeholder="חיפוש כותרת…">${secs.map(x => `<a href="#" data-sec="${x.id}" class="lv${x.lv}">${esc(x.title)}</a>`).join("")}</nav><article id="bview"></article></div></div>`;
     render("");
@@ -528,6 +528,7 @@
     else if (t.dataset.url) call("app.openUrl", { url: t.dataset.url });
     else if (t.dataset.m2 === "rules") { mode = "rules"; readBook(1); }
     else if (t.dataset.m2 === "taam") showTaam("");
+    else if (t.dataset.m2 === "terms") showTerms();
     else if (t.dataset.ext2) call("app.openUrl", { url: EXT[t.dataset.ext2](t.dataset.w) });
     else if (t.dataset.srch) { e.preventDefault(); call("reader.openSearchTab", { query: t.dataset.srch, autoSearch: true }); }
     else if (t.dataset.lib2) openLibTerm(t.dataset.lib2, D.analyze(t.dataset.w).root ? KK.refinal(D.analyze(t.dataset.w).root) : t.dataset.w);
@@ -588,6 +589,22 @@
       if (h) return call("reader.openBook", { id: h.id, bookId: h.bookId, type: h.type, index: h.index, searchQuery: word }); }
     copyText(ref); await call("reader.openBook", { bookId: b.bookId, type: b.type, ref, reference: ref });
     call("ui.showMessage", { message: `נפתח ספר ${bk}; ההפניה "${ref}" הועתקה` });
+  }
+  /* 2.0: מפתח מונחים — מכותרות הסעיפים ומההדגשות שבספר הדקדוק, בסדר אלפביתי; כל מונח מקשר לסעיף */
+  function termIndex() {
+    const m = new Map(), put = (t, sec) => { t = t.replace(/[.,;:]+$/, "").trim(); if (t.length < 2 || t.split(" ").length > 5 || /\d|^(הרחבה|דוגמה|מקור|בקצרה|הערה)$/.test(t)) return; const a = m.get(t) || m.set(t, []).get(t); if (!a.includes(sec)) a.push(sec); };
+    for (const x of gsecs()) { if (x.lv < 2) continue; put(x.title.replace(/^כלל( [א-ת]['׳]?)?:\s*/, "").replace(/\s*\([^)]*\)\s*$/, ""), x.title);
+      for (const l of x.lines) for (const b of l.matchAll(/\*\*([^*]+)\*\*/g)) put(b[1], x.title); }
+    return [...m].sort((a, b) => a[0].replace(/[^א-ת ]/g, "").localeCompare(b[0].replace(/[^א-ת ]/g, ""), "he"));
+  }
+  function showTerms() {
+    mode = "rules"; tabs(); $("#out").classList.add("wide"); const ti = termIndex(), g = {};
+    for (const [t, secs] of ti) { const k = (t.replace(/[^א-ת]/g, "")[0] || "#"); (g[k] = g[k] || []).push([t, secs]); }
+    $("#out").innerHTML = `<div class="chead"><h2>מפתח מונחים</h2><button class="chip" data-m2="rules">← לספר</button><button class="chip" id="tidl">⬇ טקסט</button></div><p class="note">${ti.length} מונחים מכותרות הסעיפים ומן ההדגשות בספר "${esc(BUILTIN.title)}". לחיצה פותחת את הסעיף.</p><input id="tiq" type="search" placeholder="סינון מונחים…">` +
+      Object.entries(g).map(([k, l]) => `<div class="row ti"><b>${esc(k)}</b><div class="chips">${l.map(([t, secs]) => `<span class="tie"><button class="chip" data-gsec="${esc(secs[0])}" title="${esc(secs.join(" · "))}">${esc(t)}</button>${secs.slice(1, 4).map((x, i) => `<a href="#" class="blink" data-gsec="${esc(x)}" title="${esc(x)}">${i + 2}</a>`).join("")}</span>`).join("")}</div></div>`).join("");
+    $("#tiq").oninput = e => { const v = e.target.value.trim(); document.querySelectorAll(".tie").forEach(x => x.classList.toggle("hid", !!v && !x.textContent.includes(v))); };
+    $("#tidl").onclick = () => { const txt = [`מפתח מונחים — ${BUILTIN.title}`, "", ...ti.map(([t, secs]) => `${t} — ${secs.join("; ")}`), "", "———", `מתוך התוסף "לשון הקודש" לאוצריא. הורדת התוסף: GitHub ${LINKS.gh} · חנות התוספים של אוצריא ${LINKS.store}`].join("\n");
+      const el = document.createElement("a"); el.href = URL.createObjectURL(new Blob(["\ufeff" + txt], { type: "text/plain;charset=utf-8" })); el.download = "מפתח מונחים.txt"; document.body.appendChild(el); el.click(); el.remove(); call("ui.showMessage", { message: "מפתח המונחים הורד כקובץ טקסט" }); };
   }
   /* 2.0: תרגול (רשות, כבוי כברירת מחדל) — זיהוי שורש ובניין. רק פעלים שלמים בעבר נסתר, שהניקוד שלהם (מהמילון) תואם בדיוק את תבנית הבניין — והשורש נלקח מהתבנית עצמה */
   const PR_BIN = ["קל", "נפעל", "פיעל", "הפעיל", "הופעל", "התפעל"], PL = "([א-ת])", PD = "\u05BC?";

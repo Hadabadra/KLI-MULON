@@ -74,6 +74,10 @@ with sync_playwright() as p:
   ck('קונקורדנציה מציגה מופעים',pg.locator('#conc .res').count()>0)
   ck('קונקורדנציה: צורה ללא מופעים בשורה עם 0',pg.locator('#cforms .chip.zero').count()>0)
   pg.screenshot(path=TMP+'/conc.png',full_page=True)
+  pg.click('[data-m="rules"]');pg.wait_for_timeout(300);pg.click('#out .rbar [data-m2="terms"]');pg.wait_for_timeout(300)
+  n_ti=pg.locator('.tie [data-gsec]').count()
+  with pg.expect_download() as d2: pg.click('#tidl')
+  ck('מפתח מונחים: %d מונחים + ייצוא טקסט'%n_ti, n_ti>50 and 'otzaria.org/plugins' in open(d2.value.path(),encoding='utf-8-sig').read())
   pg.click('[data-m="root"]');pg.fill('#q','');
   ck('ללא שגיאות בתוסף '+str(errs),not errs)
   pg2=b.new_page();pg2.add_init_script(MOCK.replace("isOnline:true","isOnline:false,isOfflineMode:true"));pg2.goto(ROOT+'/index.html');pg2.wait_for_timeout(300)
