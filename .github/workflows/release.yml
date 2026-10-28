@@ -22,7 +22,12 @@ jobs:
           awk "/^## $V/{f=1;next}/^## /{f=0}f" CHANGELOG.md > notes.md
           printf '\n### Checksum\n```\n%s\n```\n' "$(cat SHA256.txt)" >> notes.md
           echo "V=$V" >> $GITHUB_ENV
+      - name: Build grammar .docx
+        if: env.SKIP != '1'
+        run: |
+          pip install python-docx
+          python3 tools/build_docx.py docs/grammar.md milon-klei-kodesh-grammar.docx
       - name: Release
         if: env.SKIP != '1'
         env: { GH_TOKEN: '${{ github.token }}' }
-        run: gh release create "v$V" "milon-klei-kodesh-$V.otzplugin" --title "קונקורדנציה $V" --notes-file notes.md --target "$GITHUB_SHA"
+        run: gh release create "v$V" "milon-klei-kodesh-$V.otzplugin" milon-klei-kodesh-grammar.docx --title "קונקורדנציה $V" --notes-file notes.md --target "$GITHUB_SHA"
