@@ -14,6 +14,8 @@
 ## התקנה
 הורידו את קובץ ה-`.otzplugin` מדף ה-Releases, ובאוצריא: **כלים ← תוספים ← התקן תוסף חדש**.
 
+ספר הדקדוק ("ספר הדקדוק — לשון הקודש") זמין גם כקובץ Word ‏(`milon-klei-kodesh-grammar.docx`) להורדה מאותו דף [Releases](https://github.com/Hadabadra/KLI-MULON/releases), לקריאה ולהדפסה מחוץ לאוצריא.
+
 ## מבנה
 ```
 manifest.json  index.html  background.html
@@ -22,6 +24,7 @@ css/  data/ (dict.js — המילון, mh-index.js — שמות הערכים ש�
 tools/build_dict.py       ← בונה את המילון מקובץ ה-ZIM
 tools/build_mh_index.js   ← בונה את אינדקס עינים למקרא
 tools/build_roadmap.py    ← ממיר את docs/ROADMAP.md להטמעה בתוסף
+tools/build_docx.py       ← ממיר את docs/grammar.md לקובץ Word (דורש python-docx)
 docs/ROADMAP.md           ← מסמך תכנון ותוכנית עבודה
 ```
 
