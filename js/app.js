@@ -102,7 +102,7 @@
     const links = {}; for (const [k, t] of r.l || []) (links[k] = links[k] || []).push(t);
     $("#out").innerHTML =
       `<div class="pager"><span>${stack.length ? `<button class="chip" id="back">→ חזרה</button>` : ""}</span></div>
-       <div class="hero"><h2>${esc(r.title)}</h2></div>` +
+       <div class="hero"><h2>${esc(r.title)}</h2>${window.KKB ? KKB.hero(r) : ""}</div>` +
       (selWords.length > 1 ? `<div class="row selrow"><b>מילים בבחירה</b><div class="chips"><button class="chip" data-comb="1">📋 דף משולב</button>${selWords.map(t => chip(t, "", t === r.title ? "pri" : "")).join("")}</div></div>` : "") +
       `<div class="row"><div class="chips"><button class="chip pri" id="osearch">${IC.search} חפש באוצריא</button><button class="chip" id="orel">📖 פסוקים ומפרשים קשורים</button><button class="chip" id="oconc">📚 קונקורדנציה לתנ"ך</button></div></div><div id="rel"></div>` +
       (isAcr ? "" : `<div class="row"><b>במילוני הספרייה</b><div class="chips"><button class="chip" data-lib="radak">ספר השרשים לרד"ק — שורש ${esc(KK.refinal(root))}</button><button class="chip" data-lib="bachur">ספר הבחור</button>${online ? `<button class="chip" id="oeven">אבן שושן ↗</button><button class="chip" data-ext="wiktionary">${wkHas(cur.title.replace(/[^\u05D0-\u05EA ]/g, "")) ? "ויקימילון — הערך ↗" : "ויקימילון (חיפוש) ↗"}</button><button class="chip" data-ext="wikisource">ויקיטקסט ↗</button><button class="chip" data-ext="academy">האקדמיה ללשון ↗</button>` : ""}</div>${online ? `<span class="note">קישורים חיצוניים בלבד, נפתחים בדפדפן ומוסתרים רק כשאוצריא מוגדרת "ללא גישה לאינטרנט". התוכן שם אינו מסונן. אבן שושן — מנוי באתר, והמילה מועתקת להדבקה.</span>` : ""}</div>`) +
@@ -619,12 +619,12 @@
   }
   function prTab() { let b = document.querySelector('#modes [data-m="pr"]'); if (!b) { b = document.createElement("button"); b.dataset.m = "pr"; b.textContent = "תרגול"; $("#modes").insertBefore(b, document.querySelector('#modes [data-m="hist"]')); } b.classList.toggle("hid", !ST.practice); }
   function showPractice() {
-    mode = "pr"; tabs(); const it = prItem(), sc = ST.prScore || { ok: 0, n: 0 };
+    mode = "pr"; tabs(); if (window.KKB && KKB.pr()) return; /* 2.0: כרטיסיות שינון / תרגול ניקוד — js/ideas-b.js */ const it = prItem(), sc = ST.prScore || { ok: 0, n: 0 };
     if (!it) { $("#out").innerHTML = '<p class="hint">לא נמצאה מילה לתרגול. נסו שוב.</p>'; return; }
     const isRoot = Math.random() < 0.6 && KK.norm(it.r.title) !== it.root, right = isRoot ? it.root : it.bin;
     const pool = isRoot ? [...new Set(Array.from({ length: 12 }, () => (prItem() || {}).root).filter(x => x && x !== right))].slice(0, 3) : prShuf(PR_BIN.filter(x => x !== right)).slice(0, 3);
     const opts = prShuf([right, ...pool]);
-    $("#out").innerHTML = `<h2>תרגול</h2><p class="note">רשות. המילים — פעלים שלמים בעבר, שהניקוד שלהם במילון תואם את תבנית הבניין; השורש נלקח מהתבנית.</p>
+    $("#out").innerHTML = `<h2>תרגול</h2>${window.KKB ? KKB.prBar("root") : ""}<p class="note">רשות. המילים — פעלים שלמים בעבר, שהניקוד שלהם במילון תואם את תבנית הבניין; השורש נלקח מהתבנית.</p>
       <section class="card pr"><p class="prw">${esc(it.r.title)}</p><p>${isRoot ? "מהו השורש?" : "באיזה בניין?"}</p><div class="chips" id="pra">${opts.map(o => `<button class="chip" data-pa="${esc(o)}">${esc(o)}</button>`).join("")}</div><div id="prr"></div></section>
       <p class="note" id="prs">ציון: ${sc.ok} מתוך ${sc.n} <a href="#" id="prz">איפוס</a></p>`;
     $("#pra").onclick = e => { const b = e.target.closest("[data-pa]"); if (!b || $("#pra").dataset.done) return; $("#pra").dataset.done = 1; const ok = b.dataset.pa === right;
@@ -709,5 +709,6 @@
     O.on("ui.messageClicked", d => d && d.payload && go(d.payload.word, d.payload.words, d.payload.raw));
     O.on("plugin.page_opened", p => { const prm = p && (p.param || p.params); if (prm && prm.word) go(prm.word, prm.words, prm.raw); });
   }
+  window.KKAPP = Object.assign(window.KKAPP || {}, { st: () => ST, D, save, call, esc, chip, showPractice }); /* 2.0: ממשק לקבצי ההרחבה (js/ideas-*.js) */
   checkOnline(); load().then(() => { syncLibrary(); fOpen = !!ST.fOpen; applyFs(); prTab(); $("#q").focus(); });
 })();
