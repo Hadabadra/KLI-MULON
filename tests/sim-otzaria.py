@@ -1,4 +1,8 @@
+import os, tempfile
 from playwright.sync_api import sync_playwright
+ROOT='file://'+os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+TMP=tempfile.gettempdir()
+EXE=os.environ.get('CHROME') or ('/opt/pw-browsers/chromium' if os.path.exists('/opt/pw-browsers/chromium') else None)
 MOCK = """
 window.__calls=[];window.__h={};
 window.Otzaria={on:(e,f)=>(window.__h[e]=window.__h[e]||[]).push(f),
@@ -17,11 +21,11 @@ window.fire=(e,d)=>Promise.all((window.__h[e]||[]).map(f=>f(d)));
 res=[]
 def ck(n,c): res.append(('✓' if c else '✗')+' '+n)
 with sync_playwright() as p:
-  b=p.chromium.launch()
+  b=p.chromium.launch(**({'executable_path':EXE} if EXE else {}))
   # background
   pg=b.new_page();errs=[];pg.on('pageerror',lambda e:errs.append(str(e)))
   pg.add_init_script(MOCK+"window.__st={noAcr:true,tLen:'short'};")
-  pg.goto('file:///home/claude/kli-mulon/background.html')
+  pg.goto(ROOT+'/background.html')
   pg.evaluate("window.__sel='בטחון';fire('plugin.boot');fire('reader.selection_changed',{text:'בטחון'})");pg.wait_for_timeout(900)
   msg=pg.evaluate("__calls.filter(c=>c[0]==='ui.showMessage').map(c=>c[1].message)")
   ck('הודעה קופצת ברקע: '+str(msg[:1]),len(msg)==1)
@@ -33,33 +37,33 @@ with sync_playwright() as p:
   # panel
   pg=b.new_page(viewport={'width':900,'height':900});errs=[];pg.on('pageerror',lambda e:errs.append(str(e)))
   pg.add_init_script(MOCK+"window.__nak=true;")
-  pg.goto('file:///home/claude/kli-mulon/index.html');pg.wait_for_timeout(300)
+  pg.goto(ROOT+'/index.html');pg.wait_for_timeout(300)
   pg.evaluate("fire('ui.messageClicked',{payload:{word:'שלום',words:['שלום','עליכם'],raw:'שלום עליכם'}})");pg.wait_for_timeout(300)
-  ck('דף משולב נפתח',pg.locator('text=דף משולב של המילים').count()>0)
+  ck('דף משולב נפתח',pg.locator('text=ניתוח המשפט').count()>0 and pg.locator('[data-go="שלום"]').count()>0)
   pg.evaluate("window.__sel='בטחון';fire('reader.toolbar_item_clicked',{})");pg.wait_for_timeout(500)
   ck('כפתור סרגל הקורא פותח ערך',pg.locator('h2:has-text("בטחון")').count()>0)
   ck('שורש בטחון = בטח',pg.locator('[data-root="בטח"]').count()>0)
   ck('הנקדן נקרא בבחירה',pg.evaluate("__calls.some(c=>c[0]==='network.fetchStream'&&/api\\/nikud/.test(c[1].url))"))
   pg.evaluate("window.__sel='דמי';fire('app.command',{command:'lookup'})");pg.wait_for_timeout(500)
   ck('קיצור מקשים פותח ערך; ההגדרה "זמרת" הוסרה',pg.locator('h2:has-text("דמי")').count()>0 and pg.locator('text=זמרת').count()==0)
-  print('DBG',pg.locator('#out').inner_text()[:300])
   pg.click('[data-like="0"]');pg.click('[data-m="fav"]');ck('מועדפים + כפתור ייצוא',pg.locator('#favexp').count()==1)
   with pg.expect_download() as d: pg.click('#favexp')
   t=open(d.value.path(),encoding='utf-8-sig').read();ck('ייצוא כולל קישורי GitHub וחנות','github.com/Hadabadra/KLI-MULON' in t and 'otzaria.org/plugins' in t)
   pg.click('[data-m="set"]');pg.wait_for_timeout(300)
   ck('הגדרות: נקדן מחובר',pg.locator('text=🟢 הנקדן מחובר').count()>0)
   pg.click('#s-fs button[data-v="130"]');ck('גודל גופן',pg.evaluate("document.documentElement.style.fontSize")=='130%')
-  pg.screenshot(path='/tmp/claude-0/set2.png',full_page=True)
+  pg.screenshot(path=TMP+'/set2.png',full_page=True)
   pg.evaluate("window.__sel='בטחון';fire('app.command',{command:'lookup'})");pg.wait_for_timeout(400)
   ck('כפתור אבן שושן מוצג במצב מקוון',pg.locator('#oeven').count()==1)
   pg.click('[data-lib="radak"]');pg.wait_for_timeout(300)
   ck('רד"ק נפתח על השורש בטח',pg.evaluate("__calls.some(c=>c[0]==='reader.openBook'&&c[1].searchQuery==='בטח')"))
   pg.click('#oconc');pg.wait_for_timeout(1500)
-  ck('קונקורדנציה מציגה מופעים',pg.locator('text=מופעים').count()>0)
-  pg.screenshot(path='/tmp/claude-0/conc.png',full_page=True)
+  ck('קונקורדנציה מציגה מופעים',pg.locator('#conc .res').count()>0)
+  ck('קונקורדנציה: צורה ללא מופעים בשורה עם 0',pg.locator('#cforms .chip.zero').count()>0)
+  pg.screenshot(path=TMP+'/conc.png',full_page=True)
   pg.click('[data-m="root"]');pg.fill('#q','');
   ck('ללא שגיאות בתוסף '+str(errs),not errs)
-  pg2=b.new_page();pg2.add_init_script(MOCK.replace("isOnline:true","isOnline:false,isOfflineMode:true"));pg2.goto('file:///home/claude/kli-mulon/index.html');pg2.wait_for_timeout(300)
+  pg2=b.new_page();pg2.add_init_script(MOCK.replace("isOnline:true","isOnline:false,isOfflineMode:true"));pg2.goto(ROOT+'/index.html');pg2.wait_for_timeout(300)
   pg2.fill('#q','בטחון');pg2.keyboard.press('Enter');pg2.wait_for_timeout(300)
   ck('במצב מנותק אבן שושן מוסתר',pg2.locator('#oeven').count()==0 and pg2.locator('[data-lib="radak"]').count()==1)
 print('\n'.join(res))
