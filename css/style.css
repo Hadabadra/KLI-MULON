@@ -266,3 +266,17 @@ body.compact #bview{font-size:1em;line-height:1.65}
 .ranks b{min-width:4.5em;font-family:var(--font-ui)}
 .moza{display:flex;gap:.4em;flex-wrap:wrap}.moza div{flex:1;min-width:5em;text-align:center;padding:.5em;border-radius:var(--radius-md);background:linear-gradient(180deg,var(--color-primary-subtle),var(--color-surface))}
 .moza b{display:block;font-size:1.3em;color:var(--color-primary)}.moza small{font-family:var(--font-ui);color:var(--color-on-surface-variant)}
+
+/* ===== 1.10.0: סרגל אחד (חיפוש + לשוניות), כרטיסי כלל, סימניות ===== */
+header{display:flex;flex-wrap:wrap;align-items:center;gap:.4em .8em}
+header .search{flex:1 1 15em;min-width:12em}
+header nav#modes{flex:0 1 auto;margin-top:0;min-width:0}
+.bsec.rule{border-inline-start:.25em solid var(--color-primary-subtle);padding-inline-start:.8em}
+.rk{margin:.35em 0;padding:.45em .8em;border-radius:var(--radius-md);background:var(--color-surface-container-low)}
+.rk b{color:var(--color-primary);margin-inline-end:.4em;font-size:.9em}
+.rk-s{background:var(--color-primary-subtle)}
+.rk-m{font-size:.92em}
+.rk-d{border:1px dashed var(--color-outline-variant);background:none}
+.bm{border:0;background:none;cursor:pointer;color:var(--color-on-surface-variant);font-size:.85em;margin-inline-start:.4em}
+.bm.on{color:var(--color-primary)}
+#bml hr{border:0;border-top:1px solid var(--color-outline-variant);margin:.4em 0}
