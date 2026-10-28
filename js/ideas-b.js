@@ -125,6 +125,16 @@
     $("#nkz").onclick = e => { e.preventDefault(); s.nkScore = { ok: 0, n: 0 }; A.save(); showNk(); };
   }
 
+  /* ===== 4. תגית לשון בערך — רק לפי מקור ההגדרה שבמאגר (אין בתוסף אינדקס תנ"ך ואין מקור ללשון חכמים בנפרד) ===== */
+  const AR_SRC = "מילון ארמי עברי", RD_SRC = 'ספר השרשים לרד"ק';
+  function lsnTags(r) {
+    if (/["'״׳]/.test(r.title)) return "";
+    const lex = r.s.filter(x => KK.kindOf(x[2]) === "lex"), ar = lex.filter(x => x[2] === AR_SRC).length, out = [];
+    if (ar) out.push([ar === lex.length ? "ארמית" : "ארמית (בחלק מההגדרות)", `לפי מקור ההגדרה: ${AR_SRC} (${ar} מתוך ${lex.length} הגדרות מילוניות)`]);
+    if (lex.some(x => x[2] === RD_SRC)) out.push(["לשון המקרא", `לשורש ${r.title} יש ערך ב${RD_SRC} — מילון לשון המקרא`]);
+    return out.length ? `<span class="chips lsn">${out.map(([t, ti]) => `<span class="chip tg" title="${esc(ti)}">${esc(t)}</span>`).join("")}</span>` : "";
+  }
+
   /* ניתוב התרגול: נקרא מתחילת showPractice; מחזיר true כשהתצוגה כאן */
   const pr = () => { const m = ST().prSub; if (m === "srs") { showSrs(); return true; } if (m === "nikud") { showNk(); return true; } return false; };
   document.addEventListener("click", e => {
@@ -137,5 +147,5 @@
     else if (t.dataset.srsdel) { delete srs()[t.dataset.srsdel]; A.save(); showSrs(); }
   });
 
-  window.KKB = { hero: r => srsBtn(r), pr, prBar, aram };
+  window.KKB = { hero: r => lsnTags(r) + srsBtn(r), pr, prBar, aram };
 })();

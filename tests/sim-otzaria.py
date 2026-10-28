@@ -91,6 +91,10 @@ with sync_playwright() as p:
   n_ti=pg.locator('.tie [data-gsec]').count()
   with pg.expect_download() as d2: pg.click('#tidl')
   ck('מפתח מונחים: %d מונחים + ייצוא טקסט'%n_ti, n_ti>50 and 'otzaria.org/plugins' in open(d2.value.path(),encoding='utf-8-sig').read())
+  pg.fill('#q','איכא');pg.keyboard.press('Enter');pg.wait_for_timeout(300)
+  ck('תגית לשון: "ארמית" לפי מקור ההגדרה',pg.locator('.hero .lsn .chip:text-is("ארמית")').count()==1)
+  pg.fill('#q','עגם');pg.keyboard.press('Enter');pg.wait_for_timeout(300)
+  ck('תגית לשון: "לשון המקרא" לפי ספר השרשים',pg.locator('.hero .lsn .chip:has-text("לשון המקרא")').count()==1 and pg.locator('.hero .lsn:has-text("ארמית")').count()==0)
   pg.click('[data-m="root"]');pg.fill('#q','');
   ck('ללא שגיאות בתוסף '+str(errs),not errs)
   pg2=b.new_page();pg2.add_init_script(MOCK.replace("isOnline:true","isOnline:false,isOfflineMode:true"));pg2.goto(ROOT+'/index.html');pg2.wait_for_timeout(300)
