@@ -49,6 +49,11 @@ with sync_playwright() as p:
   K='כָּל־הַחַיָּ֨ה אֲשֶֽׁר־אִתְּךָ֜ מִכָּל־בָּשָׂ֗ר (הוצא) [הַיְצֵ֣א] אִתָּ֑ךְ'  # בראשית ח יז, כפי שבנוסח אוצריא
   pg.evaluate("v=>fire('ui.messageClicked',{payload:{word:'כל',words:['כל','החיה','אשר','אתך'],raw:v}})",K);pg.wait_for_timeout(300)
   ck('קרי וכתיב: כתיב הוצא / קרי היצא',pg.locator('.qk li:has-text("הוצא")').count()==1 and pg.locator('.qk li:has-text("הַיְצֵ֣א")').count()==1)
+  ck('ארמית: לא מוצגת בפסוק עברי',pg.locator('.aram').count()==0)
+  A='אַמַּאי לָא קַבֵּיל מִינֵּיהּ'
+  pg.evaluate("v=>fire('ui.messageClicked',{payload:{word:'אמאי',words:['אמאי','לא','קביל','מיניה'],raw:v}})",A);pg.wait_for_timeout(300)
+  at=pg.evaluate("(document.querySelector('.aram')||{innerText:''}).innerText")
+  ck('ארמית: מילת שאלה, כינוי ובניין (זיהוי משוער)','זיהוי משוער' in at and 'מדוע' in at and 'ממנו' in at and 'פַּעֵל' in at)
   pg.evaluate("""()=>{const c0=Otzaria.call;Otzaria.call=async(m,p)=>m==='library.findBooks'&&p.query==='בראשית'?(__calls.push([m,p]),{success:true,data:[{bookId:'בראשית',title:'בראשית',type:'text'}]}):c0(m,p);
     const a=document.createElement('a');a.dataset.psk='בראשית א ג|ויאמר';a.id='pskt';a.textContent='x';document.body.appendChild(a);}""")
   pg.click('#pskt');pg.wait_for_timeout(300)
@@ -67,11 +72,19 @@ with sync_playwright() as p:
   ck('תרגול כבוי כברירת מחדל',pg.locator('#modes [data-m="pr"].hid').count()==1)
   pg.check('#s-pr');pg.click('#modes [data-m="pr"]');pg.wait_for_timeout(300);pg.click('#pra [data-pa] >> nth=0');pg.wait_for_timeout(100)
   ck('תרגול: שאלה, 4 תשובות וציון',pg.locator('#pra [data-pa]').count()==4 and pg.locator('#prs:has-text("מתוך 1")').count()==1)
+  pg.click('[data-prm="srs"]');pg.wait_for_timeout(150);pg.click('[data-srsadd="hist"]');pg.wait_for_timeout(150);pg.click('#srsflip');pg.wait_for_timeout(100)
+  n0=pg.locator('.srs .back').count();pg.click('[data-srsok="1"]');pg.wait_for_timeout(100)
+  ck('כרטיסיות שינון: הוספה מההיסטוריה, צד ב, "ידעתי" מעביר לתא 2',n0==1 and pg.evaluate("Object.values(KKAPP.st().srs).filter(c=>c.b===1&&c.d>Date.now()+864e5).length")==1)
+  pg.click('[data-prm="nikud"]');pg.wait_for_timeout(200);nko=pg.locator('#nka [data-nk]').count();hid=pg.locator('.prw .nkt').count();pg.click('#nka [data-nk] >> nth=0');pg.wait_for_timeout(100)
+  ck('תרגול ניקוד: אות מסומנת, 4 אפשרויות וציון',nko==4 and hid==1 and pg.locator('#nks:has-text("מתוך 1")').count()==1)
+  pg.click('[data-prm="root"]');pg.wait_for_timeout(100)
   pg.click('[data-m="set"]');pg.wait_for_timeout(200)
   pg.click('#s-fs button[data-v="130"]');ck('גודל גופן',pg.evaluate("document.documentElement.style.fontSize")=='130%')
   pg.screenshot(path=TMP+'/set2.png',full_page=True)
   pg.evaluate("window.__sel='בטחון';fire('app.command',{command:'lookup'})");pg.wait_for_timeout(400)
   ck('כפתור אבן שושן מוצג במצב מקוון',pg.locator('#oeven').count()==1)
+  pg.evaluate("delete KKAPP.st().srs['בטחון']");pg.click('[data-m="word"]');pg.wait_for_timeout(100);pg.click('.hero [data-srs]')
+  ck('כפתור "לשינון" בערך מוסיף כרטיסייה',pg.evaluate("!!KKAPP.st().srs['בטחון']") and pg.locator('.hero [data-srs]:has-text("בשינון")').count()==1)
   pg.click('[data-lib="radak"]');pg.wait_for_timeout(300)
   ck('רד"ק נפתח על השורש בטח',pg.evaluate("__calls.some(c=>c[0]==='reader.openBook'&&c[1].searchQuery==='בטח')"))
   pg.click('#oconc');pg.wait_for_timeout(1500)
@@ -85,6 +98,10 @@ with sync_playwright() as p:
   n_ti=pg.locator('.tie [data-gsec]').count()
   with pg.expect_download() as d2: pg.click('#tidl')
   ck('מפתח מונחים: %d מונחים + ייצוא טקסט'%n_ti, n_ti>50 and 'otzaria.org/plugins' in open(d2.value.path(),encoding='utf-8-sig').read())
+  pg.fill('#q','איכא');pg.keyboard.press('Enter');pg.wait_for_timeout(300)
+  ck('תגית לשון: "ארמית" לפי מקור ההגדרה',pg.locator('.hero .lsn .chip:text-is("ארמית")').count()==1)
+  pg.fill('#q','עגם');pg.keyboard.press('Enter');pg.wait_for_timeout(300)
+  ck('תגית לשון: "לשון המקרא" לפי ספר השרשים',pg.locator('.hero .lsn .chip:has-text("לשון המקרא")').count()==1 and pg.locator('.hero .lsn:has-text("ארמית")').count()==0)
   pg.click('[data-m="root"]');pg.fill('#q','');
   pg.click('[data-m="root"]') if pg.locator('[data-m="books"]').count()==0 else None
   pg.evaluate("document.querySelector('[data-m=\"books\"]') && document.querySelector('[data-m=\"books\"]').click()");pg.wait_for_timeout(300)
