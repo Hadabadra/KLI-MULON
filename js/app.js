@@ -184,7 +184,7 @@
   function secHtml(x, q, bm) {
     const hl = t => { let h = esc(t).replace(/\[\[([^|\]]+)\|([^\]]*)\]\]/g, (m, a, b) => a === "חיפוש" ? `<a href="#" class="blink" data-srch="${b}">🔍 ${b}</a>` : `<a href="#" class="blink" data-lt="${a}" data-lq="${b}">${b ? a + ": " + b : a} ↗</a>`).replace(/\[\[([^\]]+)\]\]/g, (m, a) => `<a href="#" class="blink" data-lt="${a}">${a} ↗</a>`).replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>"); if (q) { const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"); h = h.replace(re, m => `<mark>${m}</mark>`); } return h; };
     let out = "", list = false, tbl = null, rule = false;
-    const flush = () => { if (list) { out += "</ul>"; list = false; } if (tbl) { out += `<div class="tblw"><table>${tbl.map((r, i) => `<tr>${r.map(c => i ? `<td>${hl(c)}</td>` : `<th>${hl(c)}</th>`).join("")}</tr>`).join("")}</table></div>`; tbl = null; } };
+    const flush = () => { if (list) { out += "</ul>"; list = false; } if (tbl) { out += `<div class="tblw"><table${tbl[0][0] === "צורה" ? ' class="glyph"' : ""}>${tbl.map((r, i) => `<tr>${r.map(c => i ? `<td>${hl(c)}</td>` : `<th>${hl(c)}</th>`).join("")}</tr>`).join("")}</table></div>`; tbl = null; } };
     for (const l of x.lines) {
       const t = l.trim();
       if (t.startsWith("|")) { if (list) { out += "</ul>"; list = false; } (tbl = tbl || []).push(t.slice(1).split("|").map(c => c.trim())); continue; }
@@ -233,7 +233,7 @@
     };
     $("#out").innerHTML = `<div class="reader"><div class="rbar">${+id === 1 ? "" : `<button class="chip" id="bkback">→ ספרים</button>`}<h2>${esc(b.title)}</h2><input id="bq" type="search" placeholder="חיפוש בספר…"><button class="chip" id="bkdl">⬇ הורדה</button><button class="chip" id="bkpdf">🖨 PDF / הדפסה</button></div>
       ${b.note ? `<p class="note">${esc(b.note)}</p>` : ""}
-      <div class="rgrid"><nav class="toc"><div id="bml">${bmList()}</div><b>תוכן עניינים</b><input id="tq" type="search" placeholder="חיפוש כותרת…">${secs.map(x => `<a href="#" data-sec="${x.id}" class="lv${x.lv}">${esc(x.title)}</a>`).join("")}</nav><article id="bview"></article></div></div>`;
+      <div class="rgrid"><nav class="toc"><small class="note">לחיצה כפולה על מילה בספר — ניתוח המילה (שורש, בניין, ערך).</small><div id="bml">${bmList()}</div><b>תוכן עניינים</b><input id="tq" type="search" placeholder="חיפוש כותרת…">${secs.map(x => `<a href="#" data-sec="${x.id}" class="lv${x.lv}">${esc(x.title)}</a>`).join("")}</nav><article id="bview"></article></div></div>`;
     render("");
     $("#bq").oninput = deb(e => render(e.target.value.trim()), 250);
     if ($("#bkback")) $("#bkback").onclick = showBooks;
@@ -245,6 +245,7 @@
       copyText(`${LINKS.gh}\n${LINKS.store}`); call("ui.showMessage", { message: "הספר הורד; קישורי ההורדה של התוסף הועתקו" }); };
     $("#bkpdf").onclick = async () => { $("#bq").value = ""; render(""); document.body.classList.add("printing"); const f = document.createElement("p"); f.className = "pfoot"; f.textContent = `הורדת התוסף "לשון הקודש": ${LINKS.gh} · ${LINKS.store}`; $("#bview").appendChild(f);
       const r = await call("ui.exportPdf", { fileName: b.title, pageSize: "a4", marginMm: 15 }); if (!r || r.success === false) await call("ui.print", { pageSize: "a4", marginMm: 15 }); document.body.classList.remove("printing"); f.remove(); };
+    $("#bview").addEventListener("dblclick", () => { const w = String(window.getSelection() || "").trim().replace(/[^\u0591-\u05C7\u05D0-\u05EA"'״׳]/g, ""); if (/[\u05D0-\u05EA]{2,}/.test(w)) go(w); }); /* 1.10.0: ניתוח מילה מתוך הספר */
     $("#bview").addEventListener("click", e => { const t = e.target.closest("[data-bm]"); if (!t) return; e.preventDefault(); const sid = t.dataset.bm, x = secs.find(y => y.id === sid);
       ST.bmarks = isBm(sid) ? (ST.bmarks || []).filter(m => !(m.id === +id && m.sec === sid)) : [...(ST.bmarks || []), { id: +id, sec: sid, title: x ? x.title : sid }]; save();
       t.classList.toggle("on", isBm(sid)); t.textContent = isBm(sid) ? "★" : "☆"; $("#bml").innerHTML = bmList(); });
