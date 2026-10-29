@@ -118,7 +118,7 @@
        <div class="hero"><h2>${esc(r.title)}</h2>${window.KKB ? KKB.hero(r) : ""}</div>` + formRow(r) +
       (selWords.length > 1 ? `<div class="row selrow"><b>מילים בבחירה</b><div class="chips"><button class="chip" data-comb="1">📋 דף משולב</button>${selWords.map(t => chip(t, "", t === r.title ? "pri" : "")).join("")}</div></div>` : "") +
       `<div class="row"><div class="chips"><button class="chip pri" id="osearch">${IC.search} חפש באוצריא</button><button class="chip" id="orel">📖 פסוקים ומפרשים קשורים</button><button class="chip" id="oconc">📚 קונקורדנציה לתנ"ך</button></div></div><div id="rel"></div>` +
-      (isAcr ? "" : `<div class="row"><b>במילוני הספרייה</b><div class="chips"><button class="chip" data-lib="radak">ספר השרשים לרד"ק — שורש ${esc(KK.refinal(root))}</button><button class="chip" data-lib="bachur">ספר הבחור</button>${online ? `<button class="chip" id="oeven">אבן שושן ↗</button><button class="chip" data-ext="wiktionary">${wkHas(cur.title.replace(/[^\u05D0-\u05EA ]/g, "")) ? "ויקימילון — הערך ↗" : "ויקימילון (חיפוש) ↗"}</button><button class="chip" data-ext="wikisource">ויקיטקסט ↗</button><button class="chip" data-ext="academy">האקדמיה ללשון ↗</button>` : ""}</div>${online ? `<span class="note">קישורים חיצוניים בלבד, נפתחים בדפדפן ומוסתרים רק כשאוצריא מוגדרת "ללא גישה לאינטרנט". התוכן שם אינו מסונן. אבן שושן — מנוי באתר, והמילה מועתקת להדבקה.</span>` : ""}</div>`) +
+      (isAcr ? "" : `<div class="row"><b>במילוני הספרייה</b><div class="chips"><button class="chip" data-lib="radak">ספר השרשים לרד"ק — שורש ${esc(KK.refinal(root))}</button><button class="chip" data-lib="bachur">ספר הבחור</button>${online ? `<button class="chip" id="omilog" data-ext="milog">מילוג ↗</button><button class="chip" data-ext="wiktionary">${wkHas(cur.title.replace(/[^\u05D0-\u05EA ]/g, "")) ? "ויקימילון — הערך ↗" : "ויקימילון (חיפוש) ↗"}</button><button class="chip" data-ext="wikisource">ויקיטקסט ↗</button><button class="chip" data-ext="academy">האקדמיה ללשון ↗</button>` : ""}</div>${online ? `<span class="note">קישורים חיצוניים בלבד, נפתחים בדפדפן ומוסתרים רק כשאוצריא מוגדרת "ללא גישה לאינטרנט". התוכן שם אינו מסונן.</span>` : ""}</div>`) +
       sensesHtml(r) + (isAcr ? "" : pleneRow(r.title)) +
       Object.entries(links).map(([k, a]) => chipRow(k.replace("_", " "), a)).join("") +
       mhRow(isAcr ? [] : MH.find([r.n, ...(selCtx.words || [])], D)) +
@@ -183,7 +183,7 @@
   }
   window.addEventListener("online", () => checkOnline(true)); 
   let WK = null; const wkHas = w => { if (!WK) WK = new Set(String(window.KK_WIKT || "").split("|")); return WK.has(w); }; /* 1.10.0: קישור ישיר לערך בוויקימילון כשהערך קיים */
-  const EXT = { wiktionary: w => wkHas(w) ? "https://he.wiktionary.org/wiki/" + encodeURIComponent(w) : "https://he.wiktionary.org/w/index.php?search=" + encodeURIComponent(w), wikisource: w => "https://he.wikisource.org/w/index.php?search=" + encodeURIComponent(w), academy: w => "https://hebrew-academy.org.il/?s=" + encodeURIComponent(w) };
+  const EXT = { wiktionary: w => wkHas(w) ? "https://he.wiktionary.org/wiki/" + encodeURIComponent(w) : "https://he.wiktionary.org/w/index.php?search=" + encodeURIComponent(w), wikisource: w => "https://he.wikisource.org/w/index.php?search=" + encodeURIComponent(w), milog: w => "https://milog.co.il/" + encodeURIComponent(w.replace(/ /g, "_")), academy: w => "https://hebrew-academy.org.il/?s=" + encodeURIComponent(w) };
   async function openExt(k) { const r = await call("app.openUrl", { url: EXT[k](cur.title.replace(/[^\u05D0-\u05EA ]/g, "")) }); if (!r || r.success === false) call("ui.showMessage", { message: "לא ניתן לפתוח את האתר" }); }
   async function openEven() {
     copyText(cur.title.replace(/[^\u05D0-\u05EA ]/g, ""));
@@ -313,7 +313,7 @@
                   : await call("reader.openBook", { bookId: b.bookId, searchQuery: term || "" });
     if (!r || r.success === false) call("ui.showMessage", { message: `לא ניתן לפתוח את "${b.title || title}".` });
   }
-  const WEBGRAM = [["אבן שושן", "המילון המלא (מנוי באתר)", "https://www.even-shoshan.co.il/"], ["האקדמיה ללשון — מילון המונחים", "מונחי דקדוק ולשון", "https://terms.hebrew-academy.org.il/"], ["ויקימילון", "ערכים ונטיות", "https://he.wiktionary.org/"], ["האקדמיה ללשון העברית", "החלטות בדקדוק", "https://hebrew-academy.org.il/topic/hahlatot/grammardecisions/"], ["היברובוקס", "ספרי דקדוק סרוקים (חיפוש באתר)", "https://hebrewbooks.org/"], ["ויקיטקסט", "חיפוש \"דקדוק\"", "https://he.wikisource.org/w/index.php?search=%D7%93%D7%A7%D7%93%D7%95%D7%A7"]];
+  const WEBGRAM = [["מילוג", "מילון עברי־עברי מקוון", "https://milog.co.il/"], ["האקדמיה ללשון — מילון המונחים", "מונחי דקדוק ולשון", "https://terms.hebrew-academy.org.il/"], ["ויקימילון", "ערכים ונטיות", "https://he.wiktionary.org/"], ["האקדמיה ללשון העברית", "החלטות בדקדוק", "https://hebrew-academy.org.il/topic/hahlatot/grammardecisions/"], ["היברובוקס", "ספרי דקדוק סרוקים (חיפוש באתר)", "https://hebrewbooks.org/"], ["ויקיטקסט", "חיפוש \"דקדוק\"", "https://he.wikisource.org/w/index.php?search=%D7%93%D7%A7%D7%93%D7%95%D7%A7"]];
   /* ספרי הדקדוק שבספריית אוצריא (לפי רשימת הספרייה) */
   const LIBGRAM = [["ספר השרשים", "רד\"ק", "מילון השורשים של המקרא"], ["ספר מכלול", "רד\"ק", "תורת הדקדוק השיטתית"], ["מחברת מנחם", "ר' מנחם בן סרוק", "מילון המקרא הראשון בעברית; שיטת השורש בן שתי אותיות"],
     ["ספר אותיות הנוח (תרגום ראבע)", "ר' יהודה חיוג'", "יסוד שיטת השורש בן שלוש אותיות"], ["ספר אותיות הנוח (תרגום רמבג)", "ר' יהודה חיוג'", ""], ["ספר פעלי הכפל (תרגום ראבע)", "ר' יהודה חיוג'", "השורשים הכפולים (ע\"ע)"], ["ספר פעלי הכפל (תרגום רמבג)", "ר' יהודה חיוג'", ""],
@@ -364,7 +364,7 @@
     return false;
   }
   /* 1.8.0: מילה שאינה במאגר — המילה בלבד עם קישורים (בלי הגדרה) */
-  const linksRow = (w, hits) => `<div class="row inl"><b>קישורים</b><div class="chips"><button class="chip pri" data-srch="${esc(w)}">${IC.search} חפש באוצריא</button><button class="chip" data-lib2="radak" data-w="${esc(w)}">ספר השרשים לרד"ק</button>${hits.map(h => `<button class="chip" data-mhg="${esc(h.g)}" data-mhn="${esc(h.name)}">עינים למקרא — ${esc(KK.MH_LABEL[h.g] || h.g)}: ${esc(h.name)}${h.byRoot ? " (לפי השורש)" : ""} ↗</button>`).join("")}${online ? `<button class="chip" data-even="${esc(w)}">אבן שושן ↗</button>${Object.keys(EXT).map(k => `<button class="chip" data-ext2="${k}" data-w="${esc(w)}">${EXTN[k]} ↗</button>`).join("")}` : ""}</div></div>`;
+  const linksRow = (w, hits) => `<div class="row inl"><b>קישורים</b><div class="chips"><button class="chip pri" data-srch="${esc(w)}">${IC.search} חפש באוצריא</button><button class="chip" data-lib2="radak" data-w="${esc(w)}">ספר השרשים לרד"ק</button>${hits.map(h => `<button class="chip" data-mhg="${esc(h.g)}" data-mhn="${esc(h.name)}">עינים למקרא — ${esc(KK.MH_LABEL[h.g] || h.g)}: ${esc(h.name)}${h.byRoot ? " (לפי השורש)" : ""} ↗</button>`).join("")}${online ? `<button class="chip" data-even="${esc(w)}">מילוג ↗</button>${Object.keys(EXT).map(k => `<button class="chip" data-ext2="${k}" data-w="${esc(w)}">${EXTN[k]} ↗</button>`).join("")}` : ""}</div></div>`;
   const EXTN = { wiktionary: "ויקימילון", wikisource: "ויקיטקסט", academy: "האקדמיה ללשון" };
   const sugHtml = a => a.length ? `<div class="row"><b>אולי התכוונתם</b><div class="chips">${a.map(x => chip(x.title)).join("")}</div></div>` : "";
   function showRoot(root) {
@@ -555,7 +555,7 @@
     else if (t.dataset.ext2) call("app.openUrl", { url: EXT[t.dataset.ext2](t.dataset.w) });
     else if (t.dataset.srch) { e.preventDefault(); call("reader.openSearchTab", { query: t.dataset.srch, autoSearch: true }); }
     else if (t.dataset.lib2) openLibTerm(t.dataset.lib2, D.analyze(t.dataset.w).root ? KK.refinal(D.analyze(t.dataset.w).root) : t.dataset.w);
-    else if (t.dataset.even) { copyText(t.dataset.even); call("app.openUrl", { url: "https://www.even-shoshan.co.il/" }); call("ui.showMessage", { message: "המילה הועתקה — הדביקו אותה בחיפוש של אבן שושן" }); }
+    else if (t.dataset.even) { copyText(t.dataset.even); call("app.openUrl", { url: "https://milog.co.il/" + encodeURIComponent(t.dataset.even) }); call("ui.showMessage", { message: "נפתח מילוג" }); }
     else if (t.dataset.delgram) { e.preventDefault(); ST.extraGram = (ST.extraGram || []).filter(x => x !== t.dataset.delgram); libGramBooks = null; save(); showBooks(); }
     else if (t.dataset.lt) { e.preventDefault(); openTitle(t.dataset.lt, t.dataset.lq || ""); }
     else if (t.dataset.cf !== undefined) {}
