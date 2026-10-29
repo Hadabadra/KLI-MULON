@@ -58,7 +58,7 @@
   }
   class Lex {
     constructor(o = {}) { this.o = o; this.hs = null; this.tnk = null; this.mod = null; this.roots = null; }
-    _hs() { if (!this.hs) { this.hs = new Map(); const H = this.o.hs; if (H) { this.hsD = H.d.map(hsText); for (const l of H.w.split("|")) { const t = l.indexOf("\t"); this.hs.set(l.slice(0, t), l.slice(t + 1)); } } } return this.hs; }
+    _hs() { if (!this.hs) { this.hs = new Map(); const H = this.o.hs; if (H) { this.hsD = H.d.map(hsText); for (const l of (H.w || H.p.join("|")).split("|")) { const t = l.indexOf("\t"); this.hs.set(l.slice(0, t), l.slice(t + 1)); } } } return this.hs; }
     hsGet(w) { const r = this._hs().get(w); if (!r) return null; return r.split(",").map(a => { const i = a.lastIndexOf(":"); return { lemma: a.slice(0, i), m: this.hsD[+a.slice(i + 1)] }; }); }
     _tnk() { if (!this.tnk) { this.tnk = new Map(); for (const l of String(this.o.forms || "").split("|")) { const [n, v, c, ref, root] = l.split("~"); if (n) this.tnk.set(n, { v, c: +c, ref, root: root || "" }); } } return this.tnk; }
     tnkGet(w) { return this._tnk().get(w) || null; }
