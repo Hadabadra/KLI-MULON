@@ -97,16 +97,16 @@
   function formRow(r) {
     const f = r.form || {}, t = f.t || D.firstRef(r.n), sp = D.splits(r.n), bs = f.bases || [];
     const parts = [];
-    if (t) parts.push(`<div class="row inl"><b>בתנ"ך</b><div class="chips"><button class="chip pri" data-psk="${esc(t.ref + "|" + r.n)}" title="פתיחת המופע הראשון"><i class=ic ic-pin></i> ${esc(t.ref)}</button></div><span class="note">${t.v ? esc(t.v) + " · " : ""}${t.c} מופעים בצורה זו — כל צורות השורש בקונקורדנציה</span></div>`);
+    if (t) parts.push(`<div class="row inl"><b>בתנ"ך</b><div class="chips"><button class="chip pri" data-psk="${esc(t.ref + "|" + r.n)}" title="פתיחת המופע הראשון"><i class=oi data-i=pin></i> ${esc(t.ref)}</button></div><span class="note">${t.v ? esc(t.v) + " · " : ""}${t.c} מופעים בצורה זו — כל צורות השורש בקונקורדנציה</span></div>`);
     else { /* 2.1.3: המילה בתנ"ך רק עם אות שימוש (אביונה ← הָאֲבִיּוֹנָה) — לא לכתוב "אינה בתנ"ך" */
       const L = D.lex, pf = []; if (L) for (const p of ["ה", "ו", "ב", "כ", "ל", "מ", "ש", "וה", "וב", "וכ", "ול", "ומ", "מה", "שה", "בה", "כה", "לה"]) { const x = L.tnkGet(p + r.n); if (x) pf.push({ p, x }); if (pf.length >= 4) break; }
-      if (pf.length) parts.push(`<div class="row inl"><b>בתנ"ך</b><div class="chips">${pf.map(({ p, x }) => `<button class="chip pri" data-psk="${esc(x.ref + "|" + p + r.n)}" title="פתיחת המופע הראשון"><i class=ic ic-pin></i> ${esc(p + "' + " + KK.refinal(r.n))} · ${esc(x.ref)}</button>`).join("")}</div><span class="note">המילה נמצאת בתנ"ך עם אות שימוש${pf[0].x.v ? " (" + esc(pf[0].x.v) + ")" : ""} — כל צורות השורש בקונקורדנציה</span></div>`);
+      if (pf.length) parts.push(`<div class="row inl"><b>בתנ"ך</b><div class="chips">${pf.map(({ p, x }) => `<button class="chip pri" data-psk="${esc(x.ref + "|" + p + r.n)}" title="פתיחת המופע הראשון"><i class=oi data-i=pin></i> ${esc(p + "' + " + KK.refinal(r.n))} · ${esc(x.ref)}</button>`).join("")}</div><span class="note">המילה נמצאת בתנ"ך עם אות שימוש${pf[0].x.v ? " (" + esc(pf[0].x.v) + ")" : ""} — כל צורות השורש בקונקורדנציה</span></div>`);
       else parts.push(`<div class="row inl"><b>בתנ"ך</b><span class="note">הצורה הזו, גם עם אותיות שימוש, אינה בתנ"ך — צורות השורש בקונקורדנציה</span></div>`); }
     if (f.morph && f.morph.length) parts.push(`<div class="row inl"><b>ניתוח</b><span>${f.morph.map(esc).join("<br>")}</span></div>`);
     if (bs.length && bs[0].how !== "~") parts.push(chipRow("ערך הבסיס", bs.map(b => b.r.title).filter((x, i, a) => a.indexOf(x) === i)));
     if (sp.length) parts.push(`<div class="row inl"><b>אפשר גם</b><div class="chips">${sp.map(x => `<button class="chip" data-go="${esc(x.rest)}">${esc(x.p)} + ${esc(KK.refinal(x.rest))}</button>`).join("")}</div><span class="note">אות שימוש ומילה (לפי ההקשר)</span></div>`);
     if (r.virtual && !f.known) parts.push(`<p class="note">המילה אינה במאגרי הצורות (תנ"ך, Hspell, מילוג, ויקימילון, האקדמיה). ייתכן שהיא בכתיב אחר — אפשר לחפש אותה באוצריא ובקונקורדנציה.</p>`);
-    parts.push(`<div class="row inl"><b>תיקון</b><div class="chips"><button class="chip" data-rep="-1"><i class=ic ic-edit></i> הוספת פירוש או תיקון לערך</button></div><span class="note">גם לערך שאין לו פירוש במילון</span></div>`);
+    parts.push(`<div class="row inl"><b>תיקון</b><div class="chips"><button class="chip" data-rep="-1"><i class=oi data-i=edit></i> הוספת פירוש או תיקון לערך</button></div><span class="note">גם לערך שאין לו פירוש במילון</span></div>`);
     return parts.join("");
   }
   function open(r, push = true) {
@@ -120,14 +120,14 @@
     $("#out").innerHTML =
       `<div class="pager"><span>${stack.length ? `<button class="chip" id="back">→ חזרה</button>` : ""}</span></div>
        <div class="hero"><h2>${esc(r.title)}</h2>${window.KKB ? KKB.hero(r) : ""}</div>` + formRow(r) +
-      (selWords.length > 1 ? `<div class="row selrow"><b>מילים בבחירה</b><div class="chips"><button class="chip" data-comb="1"><i class=ic ic-clip></i> דף משולב</button>${selWords.map(t => chip(t, "", t === r.title ? "pri" : "")).join("")}</div></div>` : "") +
-      `<div class="row"><div class="chips"><button class="chip pri" id="osearch">${IC.search} חפש באוצריא</button><button class="chip" id="orel"><i class=ic ic-book></i> פסוקים ומפרשים קשורים</button><button class="chip" id="oconc"><i class=ic ic-lib></i> קונקורדנציה לתנ"ך</button></div></div><div id="rel"></div>` +
+      (selWords.length > 1 ? `<div class="row selrow"><b>מילים בבחירה</b><div class="chips"><button class="chip" data-comb="1"><i class=oi data-i=clip></i> דף משולב</button>${selWords.map(t => chip(t, "", t === r.title ? "pri" : "")).join("")}</div></div>` : "") +
+      `<div class="row"><div class="chips"><button class="chip pri" id="osearch">${IC.search} חפש באוצריא</button><button class="chip" id="orel"><i class=oi data-i=book></i> פסוקים ומפרשים קשורים</button><button class="chip" id="oconc"><i class=oi data-i=lib></i> קונקורדנציה לתנ"ך</button></div></div><div id="rel"></div>` +
       (isAcr ? "" : `<div class="row"><b>במילוני הספרייה</b><div class="chips"><button class="chip" data-lib="radak">ספר השרשים לרד"ק — שורש ${esc(KK.refinal(root))}</button><button class="chip" data-lib="bachur">ספר הבחור</button>${online ? `<button class="chip" id="omilog" data-ext="milog">מילוג ↗</button><button class="chip" data-ext="wiktionary">${wkHas(cur.title.replace(/[^\u05D0-\u05EA ]/g, "")) ? "ויקימילון — הערך ↗" : "ויקימילון (חיפוש) ↗"}</button><button class="chip" data-ext="wikisource">ויקיטקסט ↗</button><button class="chip" data-ext="academy">האקדמיה ללשון ↗</button>` : ""}</div>${online ? `<span class="note">קישורים חיצוניים בלבד, נפתחים בדפדפן ומוסתרים רק כשאוצריא מוגדרת "ללא גישה לאינטרנט". התוכן שם אינו מסונן.</span>` : ""}</div>`) +
       sensesHtml(r) + (isAcr ? "" : pleneRow(r.title)) +
       Object.entries(links).map(([k, a]) => chipRow(k.replace("_", " "), a)).join("") +
       mhRow(isAcr ? [] : MH.find([r.n, ...(selCtx.words || [])], D)) +
       (isAcr ? "" : `<div id="libhits"></div>`) +
-      (isAcr ? "" :       `<div class="row"><b>${an.ok ? (an.src === "rd" ? "שורש (מאומת מול ספר השרשים) · בניין משוער" : "שורש (נמצא במילון) · בניין משוער") : "שורש משוער, לא מאומת"}</b><div class="chips"><button class="chip pri" data-root="${esc(root)}">שורש: ${esc(KK.refinal(root))}</button>${(an.alts || []).map(x => `<button class="chip" data-root="${esc(x)}">או: ${esc(KK.refinal(x))}</button>`).join("")}<button class="chip" data-gram="הבניינים"><i class=ic ic-book></i> ${esc(bin)} — בדקדוק</button>${IA("conjBtn", r, an)}</div>
+      (isAcr ? "" :       `<div class="row"><b>${an.ok ? (an.src === "rd" ? "שורש (מאומת מול ספר השרשים) · בניין משוער" : "שורש (נמצא במילון) · בניין משוער") : "שורש משוער, לא מאומת"}</b><div class="chips"><button class="chip pri" data-root="${esc(root)}">שורש: ${esc(KK.refinal(root))}</button>${(an.alts || []).map(x => `<button class="chip" data-root="${esc(x)}">או: ${esc(KK.refinal(x))}</button>`).join("")}<button class="chip" data-gram="הבניינים"><i class=oi data-i=book></i> ${esc(bin)} — בדקדוק</button>${IA("conjBtn", r, an)}</div>
        <span class="note">זיהוי השורש והבניין הוא הערכה אוטומטית ועלול לטעות.</span></div>`) +
       chipRow("מאותו שורש", same.map(x => x.title)) + chipRow("מילים דומות", sim.map(x => x.title)) +
       `<div class="pager">${nb.prev ? chip(nb.prev.title, "", "") .replace(">", ">→ ") : "<span></span>"}${nb.next ? chip(nb.next.title).replace(">", ">← ") : ""}</div>`;
@@ -212,7 +212,7 @@
     return secs.filter(x => x.title !== "פתיחה" || x.lines.some(l => l.trim())).map((x, i) => ({ ...x, id: "s" + i }));
   }
   function secHtml(x, q, bm) {
-    const hl = t => { let h = esc(t).replace(/\[\[([^|\]]+)\|([^\]]*)\]\]/g, (m, a, b) => a === "חיפוש" ? `<a href="#" class="blink" data-srch="${b}"><i class=ic ic-search></i> ${b}</a>` : a === "פסוק" ? `<a href="#" class="blink psk" data-psk="${b}"><i class=ic ic-book></i> ${b.split("|")[0]}</a>` : `<a href="#" class="blink" data-lt="${a}" data-lq="${b}">${b ? a + ": " + b : a} ↗</a>`).replace(/\[\[([^\]]+)\]\]/g, (m, a) => `<a href="#" class="blink" data-lt="${a}">${a} ↗</a>`).replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>"); if (q) { const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"); h = h.replace(re, m => `<mark>${m}</mark>`); } return h; };
+    const hl = t => { let h = esc(t).replace(/\[\[([^|\]]+)\|([^\]]*)\]\]/g, (m, a, b) => a === "חיפוש" ? `<a href="#" class="blink" data-srch="${b}"><i class=oi data-i=search></i> ${b}</a>` : a === "פסוק" ? `<a href="#" class="blink psk" data-psk="${b}"><i class=oi data-i=book></i> ${b.split("|")[0]}</a>` : `<a href="#" class="blink" data-lt="${a}" data-lq="${b}">${b ? a + ": " + b : a} ↗</a>`).replace(/\[\[([^\]]+)\]\]/g, (m, a) => `<a href="#" class="blink" data-lt="${a}">${a} ↗</a>`).replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>"); if (q) { const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"); h = h.replace(re, m => `<mark>${m}</mark>`); } return h; };
     let out = "", list = false, tbl = null, rule = false;
     const flush = () => { if (list) { out += "</ul>"; list = false; } if (tbl) { out += `<div class="tblw"><table${tbl[0][0] === "צורה" ? ' class="glyph"' : ""}>${tbl.map((r, i) => `<tr>${r.map(c => i ? `<td>${hl(c)}</td>` : `<th>${hl(c)}</th>`).join("")}</tr>`).join("")}</table></div>`; tbl = null; } };
     for (const l of x.lines) {
@@ -231,7 +231,7 @@
     mode = "books"; tabs(); $("#out").classList.add("wide");
     const lib = [["radak", "ספר השרשים לרד\"ק"], ["bachur", "ספר הבחור"], ["tzachot", "ספר צחות לראב\"ע"]];
     $("#out").innerHTML = `<h2>ספרי דקדוק</h2>
-      <section class="card bk"><h3>ספרים שייבאתם</h3><div class="opt"><button class="chip pri" data-m2="rules"><i class=ic ic-book></i> כללי הדקדוק (הספר המובנה)</button><button class="chip" data-m2="audio"><i class=ic ic-vol></i> השמעת הטעמים</button><button class="chip" data-ia="prep"><i class=ic ic-note></i> הכנה לפרק</button><button class="chip" data-m2="terms"><i class=ic ic-text></i> מפתח מונחים</button><button class="chip" data-m2="taam"><i class=ic ic-music></i> מפת פסוק לפי הטעמים</button></div>${bookList().filter(b => !b.builtin).map(b => `<div class="opt"><button class="chip pri" data-book="${b.id}"><i class=ic ic-book></i> ${esc(b.title)}</button>${b.builtin ? `<small>מובנה בתוסף</small>` : `<button class="ib" data-delbook="${b.id}" title="הסרת הספר" aria-label="הסרת הספר">✕</button>`}</div>`).join("")}
+      <section class="card bk"><h3>ספרים שייבאתם</h3><div class="opt"><button class="chip pri" data-m2="rules"><i class=oi data-i=book></i> כללי הדקדוק (הספר המובנה)</button><button class="chip" data-m2="audio"><i class=oi data-i=vol></i> השמעת הטעמים</button><button class="chip" data-ia="prep"><i class=oi data-i=note></i> הכנה לפרק</button><button class="chip" data-m2="terms"><i class=oi data-i=text></i> מפתח מונחים</button><button class="chip" data-m2="taam"><i class=oi data-i=music></i> מפת פסוק לפי הטעמים</button></div>${bookList().filter(b => !b.builtin).map(b => `<div class="opt"><button class="chip pri" data-book="${b.id}"><i class=oi data-i=book></i> ${esc(b.title)}</button>${b.builtin ? `<small>מובנה בתוסף</small>` : `<button class="ib" data-delbook="${b.id}" title="הסרת הספר" aria-label="הסרת הספר">✕</button>`}</div>`).join("")}
         <div class="opt"><span>ייבוא ספר ידני<small>קובץ טקסט (.txt / .md) או HTML. כותרות: # פרק, ## סעיף (ב-HTML: h1–h3). הספר יופיע גם בספריית אוצריא.</small></span><label class="chip">⬆ ייבוא ספר<input type="file" id="bkfile" accept=".txt,.md,.html,.htm" hidden></label></div></section>
       <section class="card bk wide"><h3>ספרי הדקדוק שבספריית אוצריא</h3><div class="ltiles">${LIBGRAM.map(([t, a, d]) => `<button class="ltile" data-lt="${esc(t)}"><b>${esc(t)}</b><small>${esc(a)}${d ? " · " + esc(d) : ""}</small></button>`).join("")}</div><h4 class="gh">ספרים שהוספתם</h4><div class="ltiles">${(ST.extraGram || []).map(t => `<div class="ltile"><button class="chip" data-lt="${esc(t)}">${esc(t)}</button> <button class="ib" data-delgram="${esc(t)}" title="הסרה מהרשימה" aria-label="הסרה מהרשימה">✕</button></div>`).join("") || `<small class="note">עדיין לא נוספו ספרים.</small>`}</div><div class="opt"><span>הוספת ספר דקדוק מהספרייה<small>שם הספר כפי שהוא מופיע בספריית אוצריא. הספר ייכלל בחיפוש "בספרי הדקדוק שבספרייה".</small></span><input id="addgram" type="search" placeholder="שם הספר"><button class="chip" id="addgramb">הוספה</button></div>${online ? `<h4 class="gh">באתרים (נפתחים בדפדפן)</h4><div class="ltiles">${WEBGRAM.map(([t, d, u]) => `<button class="ltile" data-url="${esc(u)}"><b>${esc(t)} ↗</b><small>${esc(d)}</small></button>`).join("")}</div><p class="note">קישורים חיצוניים; התוכן שם אינו מסונן. מוסתרים כשאוצריא מוגדרת "ללא גישה לאינטרנט".</p>` : ""}<p class="note">נפתחים בקורא של אוצריא, אם הספר קיים בספרייה שלך. מתוך ערך במילון, ספר השרשים וספר הבחור נפתחים ישירות על השורש או המילה.</p></section>`;
     $("#bkfile").onchange = importBook;
@@ -263,7 +263,7 @@
       setTimeout(() => window.KKAudio && KKAudio.inline($("#bview")), 0);
       $("#bview").innerHTML = (q ? `<p class="note">${shown.length} סעיפים מכילים "${esc(q)}"</p>` : "") + (shown.length ? shown.map(x => secHtml(x, q, { on: isBm(x.id) })).join("") : '<p class="hint">לא נמצא.</p>');
     };
-    $("#out").innerHTML = `<div class="reader"><div class="rbar">${+id === 1 ? "" : `<button class="chip" id="bkback">→ ספרים</button>`}<h2>${esc(b.title)}</h2><input id="bq" type="search" placeholder="חיפוש בספר…">${+id === 1 ? `<button class="chip pri" data-m2="terms" title="מפתח המונחים של הספר"><i class=ic ic-text></i> מפתח מונחים</button><button class="chip" data-m2="audio" title="השמעת הטעמים לפי העדות"><i class=ic ic-vol></i> טעמים</button>` : ""}<details class="expm"><summary class="ib" title="ייצוא והורדה" aria-label="ייצוא והורדה">⬇</summary><div class="expl"><button class="chip" id="bkdoc">Word (.doc)</button><button class="chip" id="bkpdf">PDF / הדפסה</button><button class="chip" id="bkdl">דף אינטרנט (.html)</button><button class="chip" id="bktxt">טקסט (.txt)</button>${+id === 1 && online ? `<button class="chip" id="bkdocx">Word מעוצב (.docx) מ-GitHub ↗</button>` : ""}<small class="note">בכל קובץ — קישורי הורדה של התוסף</small></div></details></div>
+    $("#out").innerHTML = `<div class="reader"><div class="rbar">${+id === 1 ? "" : `<button class="chip" id="bkback">→ ספרים</button>`}<h2>${esc(b.title)}</h2><input id="bq" type="search" placeholder="חיפוש בספר…">${+id === 1 ? `<button class="chip pri" data-m2="terms" title="מפתח המונחים של הספר"><i class=oi data-i=text></i> מפתח מונחים</button><button class="chip" data-m2="audio" title="השמעת הטעמים לפי העדות"><i class=oi data-i=vol></i> טעמים</button>` : ""}<details class="expm"><summary class="ib" title="ייצוא והורדה" aria-label="ייצוא והורדה">⬇</summary><div class="expl"><button class="chip" id="bkdoc">Word (.doc)</button><button class="chip" id="bkpdf">PDF / הדפסה</button><button class="chip" id="bkdl">דף אינטרנט (.html)</button><button class="chip" id="bktxt">טקסט (.txt)</button>${+id === 1 && online ? `<button class="chip" id="bkdocx">Word מעוצב (.docx) מ-GitHub ↗</button>` : ""}<small class="note">בכל קובץ — קישורי הורדה של התוסף</small></div></details></div>
       ${b.note ? `<p class="note">${esc(b.note)}</p>` : ""}
       <div class="rgrid"><nav class="toc"><small class="note">לחיצה כפולה על מילה בספר — ניתוח המילה (שורש, בניין, ערך).</small><div id="bml">${bmList()}</div><b>תוכן עניינים</b><input id="tq" type="search" placeholder="חיפוש כותרת…">${secs.map(x => `<a href="#" data-sec="${x.id}" class="lv${x.lv}">${esc(x.title)}</a>`).join("")}</nav><article id="bview"></article></div></div>`;
     render("");
@@ -355,7 +355,7 @@
     const w = KK.norm(q), r = D.find(w), secs = parseBook(BUILTIN.text).filter(x => (x.title + "\n" + x.lines.join("\n")).includes(w));
     mode = "word"; tabs(); cur = r || null; $("#q").value = w;
     if (r) open(r); else lookup(w);
-    if (secs.length) $("#out").insertAdjacentHTML("afterbegin", `<div class="row inl"><b>בספר הדקדוק</b><div class="chips">${secs.slice(0, 12).map(x => `<button class="chip" data-gsec="${esc(x.title)}" data-gq="${esc(w)}"><i class=ic ic-book></i> ${esc(x.title)}</button>`).join("")}</div></div>`);
+    if (secs.length) $("#out").insertAdjacentHTML("afterbegin", `<div class="row inl"><b>בספר הדקדוק</b><div class="chips">${secs.slice(0, 12).map(x => `<button class="chip" data-gsec="${esc(x.title)}" data-gq="${esc(w)}"><i class=oi data-i=book></i> ${esc(x.title)}</button>`).join("")}</div></div>`);
   }
   function lookup(text, push = true) {
     if (!selWords.length) selCtx = { raw: text, words: [] };
@@ -379,9 +379,9 @@
   function showFav() {
     mode = "fav"; tabs();
     const items = ST.likes.map(k => { const [n, i] = k.split("#"), r = D.get(n); return r && r.s[+i] ? { r, i: +i, k } : null; }).filter(Boolean);
-    $("#out").innerHTML = `<h2>מועדפים</h2>` + (items.length ? `<p><button class="chip" id="favexp">⬇ ייצוא מועדפים</button></p><p class="note">הגדרות שסימנתם <i class=ic ic-thumb></i>. לחיצה על הכותרת פותחת את הערך.</p><div class="senses">${items.map(x =>
+    $("#out").innerHTML = `<h2>מועדפים</h2>` + (items.length ? `<p><button class="chip" id="favexp">⬇ ייצוא מועדפים</button></p><p class="note">הגדרות שסימנתם <i class=oi data-i=thumb></i>. לחיצה על הכותרת פותחת את הערך.</p><div class="senses">${items.map(x =>
       `<div class="sense"><button class="chip pri" data-go="${esc(x.r.title)}">${esc(x.r.title)}</button><div class="sbody">${esc(x.r.s[x.i][1])}</div><div class="tb"><button class="ib on" data-unfav="${esc(x.k)}" title="הסר ממועדפים" aria-label="הסר ממועדפים">${IC.up}</button></div></div>`).join("")}</div>`
-      : `<p class="hint">עדיין אין מועדפים. לחצו <i class=ic ic-thumb></i> על הגדרה כדי לשמור אותה כאן.</p>`);
+      : `<p class="hint">עדיין אין מועדפים. לחצו <i class=oi data-i=thumb></i> על הגדרה כדי לשמור אותה כאן.</p>`);
   }
   function showHist() {
     $("#out").innerHTML = ST.hist.length ? `<div class="hist"><h2>היסטוריה</h2><div class="chips">${ST.hist.map(t => chip(t)).join("")}</div><p><button class="chip" id="clrh">נקה היסטוריה</button></p></div>` : `<p class="hint">אין היסטוריה עדיין.</p>`;
@@ -410,7 +410,7 @@
      </section>
      <section class="card"><h3>הנקדן המקומי</h3>
       ${opt("ניקוד הבחירה בעזרת הנקדן", "כשהתוסף \"הנקדן\" פועל, המילה מנוקדת לפי המשפט, וכך נבחר הפירוש הנכון (למשל אָשֵׁר / אֲשֶׁר)", sw("s-nak", ST.nakdan))}
-      <div class="opt"><span id="nak-st">בודק חיבור…</span><span class="chips"><button class="chip" id="nak-copy"><i class=ic ic-clip></i> העתקת קישור להורדה</button></span></div>
+      <div class="opt"><span id="nak-st">בודק חיבור…</span><span class="chips"><button class="chip" id="nak-copy"><i class=oi data-i=clip></i> העתקת קישור להורדה</button></span></div>
       <p class="note">הנקדן הוא תוסף אוצריא נפרד (באדיבות יוסף שלום בן שטרית) שאינו בחנות; מורידים אותו מהפורום: ${KKNakdan.FORUM}</p>
      </section>
      <section class="card"><h3>קיצורים</h3><p class="note">Ctrl+Alt+M על מילה מסומנת פותח את המילון. אפשר לשנות במסך ההגדרות של אוצריא ← קיצורי מקשים. יש גם כפתור בסרגל הקורא.</p></section></div>`;
@@ -457,7 +457,7 @@
   function showAbout() {
     mode = "about"; tabs();
     $("#out").innerHTML = `<div class="about"><h2>לשון הקודש</h2><p class="note">מילון, שורשים וקונקורדנציה לתנ"ך, מבוססי מאגר כליקודש (לשעבר "מילון כליקודש" / "קונקורדנציה").</p><p>גרסה ${esc(window.KK_VERSION || "")} · ${D.keys.length.toLocaleString("he")} ערכים עם פירוש · ${D.lex ? D.lex._hs().size.toLocaleString("he") : 0} צורות עבריות בכל הנטיות · ${D.lex ? D.lex._tnk().size.toLocaleString("he") : 0} צורות בתנ"ך — לכל צורה ערך</p>
-     <p><button class="chip pri" id="genrep"><i class=ic ic-mail></i> שליחת משוב או דיווח כללי</button></p>
+     <p><button class="chip pri" id="genrep"><i class=oi data-i=mail></i> שליחת משוב או דיווח כללי</button></p>
      <h3>על המילון</h3><p>התוסף נבנה על פי מאגר המילון של פרויקט כליקודש (KleiKodeshProject), בקובץ הנושא את השם milon-klei-kodesh (גרסת המאגר: 13.10.2026). כל ההגדרות, הנרדפים, הניגודים וראשי התיבות לקוחים ממנו, והמקור של כל הגדרה מצוין בערך עצמו. אין בתוסף תוכן מילוני נוסף.</p><p><b>נוספו:</b> קישורי הכרטסות מבוססים על רשימת שמות הערכים של התוסף "עינים למקרא" מאת חד בדרא (שמות בלבד; התוכן נשאר אצלם).</p>
      <p class="note"><b>שימו לב:</b> המאגר עדיין צריך סינון, ותהליך הסינון טרם הסתיים. ייתכנו בו ערכים לא מילוניים (כגון שמות פרטיים), הגדרות כפולות או לא מדויקות, וערכים חסרים.</p>
      <p class="note">השורשים והבניינים אינם חלק מהמאגר. הם הערכה אוטומטית של התוסף ועלולים לטעות.</p>
@@ -692,7 +692,7 @@
     $("#out").innerHTML = `<h2>מפת הפסוק לפי הטעמים</h2><p class="note">חלוקה דיכוטומית לפי דרגות המפסיקים: סילוק ואתנחתא, ואחריהם סגולתא, זקף וטפחא, רביע, זרקא, פשטא ותביר, ולבסוף גרש, פזר, קרני פרה ותלישא גדולה. בכל חלק — המפסיק שחותם אותו. טעמי כ"א ספרים בלבד.</p>` +
       (msg ? `<p class="hint">${msg}</p>` : `<div class="tmap">${node(r.tree, null)}</div>`) + IA("qk", t) +
       (hasNikud(t) ? `<h3>ניתוח הניקוד והטעמים</h3><p class="note">נגזר מהסימנים עצמם. "?" — מקרה מסופק או שנחלקו בו. לחיצה על תגית פותחת את הכלל בספר הדקדוק.</p><div class="senses">${ws.map((w, i) => { const tg = KK.nikudAnalyze(w, i === ws.length - 1); return `<div class="sense"><b class="nw">${esc(w)}</b><div class="chips">${tagHtml(tg) || '<small class="note">—</small>'}</div></div>`; }).join("")}</div>` : "") +
-      `<div class="row"><textarea id="tmq" rows="2" placeholder="הדביקו פסוק מנוקד ומוטעם…">${esc(t)}</textarea><button class="chip pri" id="tmgo"><i class=ic ic-music></i> הצג מפה</button></div>`;
+      `<div class="row"><textarea id="tmq" rows="2" placeholder="הדביקו פסוק מנוקד ומוטעם…">${esc(t)}</textarea><button class="chip pri" id="tmgo"><i class=oi data-i=music></i> הצג מפה</button></div>`;
     $("#tmgo").onclick = () => showTaam($("#tmq").value);
   }
   /* 2.0: "הכלל במשפט" — לכל מילה בדף המשולב, סעיפי הספר לפי הניתוח (בניין, גזרה, אותיות השימוש) */
@@ -718,10 +718,10 @@
     mode = "word"; tabs(); cur = null; const ctx = { raw: raw || "", words };
     const rw = String(raw || "").replace(/[\u05C3:]\s*$/, "").split(/\s+/).filter(Boolean), rawOf = t => rw.find(x => KK.norm(x).split(" ").includes(t)) || ""; /* 2.0: המילה המנוקדת מתוך הבחירה */
     const rules = t => { const x = rawOf(t), tg = [...ruleTags(x, D.analyze(t), t), ...(hasNikud(x) ? KK.nikudAnalyze(x, x === rw[rw.length - 1]) : [])]; return tg.length ? `<div class="chips rules">${tagHtml(tg)}</div>` : ""; };
-    const rows = words.map(t => { const r = D.find(t); if (!r) return `<div class="sense"><b>${esc(t)}</b><div class="sbody note"><i class=ic ic-warn></i> לא זוהתה — אין ערך במילון (בדקו כתיב או ניקוד)</div>${rules(t)}</div>`;
+    const rows = words.map(t => { const r = D.find(t); if (!r) return `<div class="sense"><b>${esc(t)}</b><div class="sbody note"><i class=oi data-i=warn></i> לא זוהתה — אין ערך במילון (בדקו כתיב או ניקוד)</div>${rules(t)}</div>`;
       const rk = KK.rank(r, ctx), pick = (rk.confident ? rk.best : rk.items.filter(x => x.kind !== "acr")).slice(0, 2);
       return `<div class="sense${r.n.includes(" ") ? " best" : ""}"><button class="chip pri" data-go="${esc(r.title)}">${r.n.includes(" ") ? "ביטוי: " : ""}${esc(r.title)}</button><div class="sbody">${(() => { const a = D.analyze(r.n); return a && a.root ? `<small class="note">שורש ${esc(KK.refinal(a.root))}${a.binyan ? " · " + esc(String(a.binyan).split(" (")[0]) : ""}${a.ok ? "" : " (משוער)"}</small><br>` : ""; })()}${pick.map(x => esc(r.s[x.i][1])).join("<br>")}</div>${rules(t)}</div>`; }).join("");
-    $("#out").innerHTML = `<h2>${esc(KK.norm(raw || words.join(" ")))}</h2><p class="note">ניתוח המשפט: לכל מילה — שורש ובניין (זיהוי אוטומטי, משוער) ופירוש; מילה שלא זוהתה מסומנת <i class=ic ic-warn></i>. לחיצה על מילה פותחת את הערך המלא. התגיות — הכלל במשפט: לחיצה פותחת את הסעיף בספר הדקדוק.</p>${IA("qk", raw)}${hasTaam(raw) ? `<p><button class="chip pri" id="taambtn"><i class=ic ic-music></i> מפת הפסוק לפי הטעמים</button></p>` : ""}<div class="senses">${rows}</div>${window.KKB ? KKB.aram(words, raw) : ""}`;
+    $("#out").innerHTML = `<h2>${esc(KK.norm(raw || words.join(" ")))}</h2><p class="note">ניתוח המשפט: לכל מילה — שורש ובניין (זיהוי אוטומטי, משוער) ופירוש; מילה שלא זוהתה מסומנת <i class=oi data-i=warn></i>. לחיצה על מילה פותחת את הערך המלא. התגיות — הכלל במשפט: לחיצה פותחת את הסעיף בספר הדקדוק.</p>${IA("qk", raw)}${hasTaam(raw) ? `<p><button class="chip pri" id="taambtn"><i class=oi data-i=music></i> מפת הפסוק לפי הטעמים</button></p>` : ""}<div class="senses">${rows}</div>${window.KKB ? KKB.aram(words, raw) : ""}`;
     if ($("#taambtn")) $("#taambtn").onclick = () => showTaam(raw);
   }
 

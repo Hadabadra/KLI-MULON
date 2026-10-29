@@ -113,7 +113,7 @@
   }
   const BINS = ["קל", "נפעל", "פיעל", "פועל", "הפעיל", "הופעל", "התפעל"];
   const binOf = b => /התפעל/.test(b) ? "התפעל" : /הופעל/.test(b) ? "הופעל" : /הפעיל/.test(b) ? "הפעיל" : /נפעל/.test(b) ? "נפעל" : /^פיעל/.test(b) ? "פיעל" : "קל";
-  A.conjBtn = (r, an) => an && an.ok && an.root && an.root.length === 3 && !/^שם/.test(an.binyan || "") && !/[ '"]/.test(r.n) ? `<button class="chip" id="conjbtn" data-cjr="${esc(an.root)}" data-cjb="${esc(binOf(an.binyan || ""))}"><i class=ic ic-clip></i> טבלת נטייה</button>` : "";
+  A.conjBtn = (r, an) => an && an.ok && an.root && an.root.length === 3 && !/^שם/.test(an.binyan || "") && !/[ '"]/.test(r.n) ? `<button class="chip" id="conjbtn" data-cjr="${esc(an.root)}" data-cjb="${esc(binOf(an.binyan || ""))}"><i class=oi data-i=clip></i> טבלת נטייה</button>` : "";
   function conjHtml(root, bin) {
     const why = strong(root), head = `<h4 class="gh">טבלת נטייה: שורש ${esc(KK.refinal(root))}</h4>`;
     if (why) return head + `<p class="hint">הטבלה האוטומטית תומכת כרגע רק בשלמים (${esc(why)}). <a href="#" class="blink" data-gsec="טבלאות נטייה של הגזרות">טבלאות הגזרות בספר הדקדוק</a></p>`;
@@ -121,7 +121,7 @@
     if (dot === null) return head + `<p class="hint">לא ידוע מהמילון אם הש' בשורש היא שׁ ימנית או שׂ שמאלית, ולכן הטבלה אינה מוצגת.</p>`;
     const R = [...root].map(ch => ({ ch, dot: ch === "ש" ? dot : "" })), T = A.conjTable(bin, R);
     return head + `<div class="chips">${BINS.map(b => `<button class="chip${b === bin ? " pri" : ""}" data-cjr="${esc(root)}" data-cjb="${b}">${b}</button>`).join("")}</div>` +
-      `<p class="note"><b><i class=ic ic-warn></i> נוצר אוטומטית — עלול לטעות.</b> הבניין שזוהה הוא הערכה; ייתכן שהפועל אינו בא בבניין הזה כלל. ${esc(T.note)}</p>` +
+      `<p class="note"><b><i class=oi data-i=warn></i> נוצר אוטומטית — עלול לטעות.</b> הבניין שזוהה הוא הערכה; ייתכן שהפועל אינו בא בבניין הזה כלל. ${esc(T.note)}</p>` +
       `<div class="tblw"><table><tr><th>גוף</th><th>עבר</th><th>עתיד</th>${T.imp ? "<th>ציווי</th>" : ""}</tr>${P.map((p, i) => `<tr><td>${p}</td><td>${esc(T.past[i])}</td><td>${esc(i === 8 ? T.fut[8] + " / " + T.fut[9] : T.fut[i])}</td>${T.imp ? `<td>${esc({ 1: T.imp[0], 2: T.imp[1], 6: T.imp[2], 7: T.imp[3] }[i] || "")}</td>` : ""}</tr>`).join("")}</table></div>` +
       `<p><b>בינוני:</b> ${esc(T.ben.join(", "))}${T.ben2 ? ` · <b>${T.ben2[0]}:</b> ${esc(T.ben2[1])}` : ""}${T.mak.length ? ` · <b>מקור:</b> ${T.mak.map(([l, f]) => (l && l !== "מקור" ? l + ": " : "") + esc(f)).join(", ")}` : (T.imp ? "" : " · בבניין סביל אין ציווי")}</p>` +
       `<p class="note"><a href="#" class="blink" data-gsec="${bin === "קל" ? "טבלת נטייה מלאה: בניין קל" : "טבלאות נטייה מלאות: שאר הבניינים"}">הטבלאות בספר הדקדוק</a></p>`;
@@ -153,10 +153,10 @@
     const st = A.getST(), thr = st.prepThr || 15, el = $("#out"); el.classList.add("wide");
     el.innerHTML = `<div class="chead"><h2>הכנה לפרק</h2><button class="chip" id="prepback">→ ספרי דקדוק</button></div><p class="note">הדביקו פרק או קטע (או קחו את הבחירה בספר) — ותקבלו את המילים שאינן נפוצות, עם שורש ופירוש קצר מהמילון. "נפוצות" נקבע לפי מספר ההופעות של המילה בהגדרות המילון; מילים קצרות ומילות יחס (את, אשר, על) מושמטות. השורש והפירוש — זיהוי אוטומטי, משוער.</p>
       <textarea id="prept" rows="5" placeholder="הדביקו כאן פרק או קטע…">${esc(text || "")}</textarea>
-      <div class="chips"><button class="chip pri" id="prepgo"><i class=ic ic-note></i> הכן רשימה</button><button class="chip" id="prepsel">מהבחירה בספר</button>${THR.map(([v, l]) => `<button class="chip${v === thr ? " pri" : ""}" data-pthr="${v}">${l}</button>`).join("")}<button class="chip" id="prepdl">⬇ טקסט</button></div><div id="prepres"></div>`;
+      <div class="chips"><button class="chip pri" id="prepgo"><i class=oi data-i=note></i> הכן רשימה</button><button class="chip" id="prepsel">מהבחירה בספר</button>${THR.map(([v, l]) => `<button class="chip${v === thr ? " pri" : ""}" data-pthr="${v}">${l}</button>`).join("")}<button class="chip" id="prepdl">⬇ טקסט</button></div><div id="prepres"></div>`;
     let list = [];
     const run = () => { list = prepList($("#prept").value, A.getST().prepThr || 15);
-      $("#prepres").innerHTML = !$("#prept").value.trim() ? "" : list.length ? `<p class="note">${list.length} מילים</p><div class="senses">${list.map(x => `<div class="sense"><button class="chip pri" data-go="${esc(x.t || KK.norm(x.w))}">${esc(x.w)}</button><div class="sbody">${x.root ? `<small class="note">שורש ${esc(x.root)}${x.t && KK.norm(x.t) !== KK.norm(x.w) ? " · ערך: " + esc(x.t) : ""}</small><br>` : ""}${x.d ? esc(x.d) : '<span class="note"><i class=ic ic-warn></i> אין ערך במילון</span>'}</div></div>`).join("")}</div>` : '<p class="hint">לא נמצאו מילים לא נפוצות.</p>'; };
+      $("#prepres").innerHTML = !$("#prept").value.trim() ? "" : list.length ? `<p class="note">${list.length} מילים</p><div class="senses">${list.map(x => `<div class="sense"><button class="chip pri" data-go="${esc(x.t || KK.norm(x.w))}">${esc(x.w)}</button><div class="sbody">${x.root ? `<small class="note">שורש ${esc(x.root)}${x.t && KK.norm(x.t) !== KK.norm(x.w) ? " · ערך: " + esc(x.t) : ""}</small><br>` : ""}${x.d ? esc(x.d) : '<span class="note"><i class=oi data-i=warn></i> אין ערך במילון</span>'}</div></div>`).join("")}</div>` : '<p class="hint">לא נמצאו מילים לא נפוצות.</p>'; };
     $("#prepgo").onclick = run; $("#prepback").onclick = () => $('#modes [data-m="books"]').click();
     $("#prepsel").onclick = async () => { const g = await A.call("reader.getSelection"); const t = g.success && g.data && (g.data.sourceSelectedText || g.data.text); if (t) { $("#prept").value = t; run(); } else A.call("ui.showMessage", { message: "לא נבחר טקסט בספר" }); };
     el.querySelectorAll("[data-pthr]").forEach(b => b.onclick = () => { A.getST().prepThr = +b.dataset.pthr; A.save && A.save(); el.querySelectorAll("[data-pthr]").forEach(x => x.classList.toggle("pri", x === b)); run(); });

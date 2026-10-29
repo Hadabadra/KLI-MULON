@@ -47,7 +47,7 @@
       const txt = bx.closest(".bsec") ? bx.closest(".bsec").textContent : "";
       const ts = TAAM.filter(t => txt.includes(base(t)) || (t.includes("(") && txt.includes(t.replace(/^.*\((.*)\)$/, "$1"))));
       const rec = ts.flatMap(t => TRAD.filter(s => have.includes(t + "|" + s)).map(s => [t, s]));
-      bx.innerHTML = `<b><i class=ic ic-vol></i> השמעה</b>` + (rec.length ? rec.map(([t, s]) => `<button class="chip" data-aplay="${esc(t + "|" + s)}">▶ ${esc(base(t))} · ${esc(s)}</button>`).join("")
+      bx.innerHTML = `<b><i class=oi data-i=vol></i> השמעה</b>` + (rec.length ? rec.map(([t, s]) => `<button class="chip" data-aplay="${esc(t + "|" + s)}">▶ ${esc(base(t))} · ${esc(s)}</button>`).join("")
         : `<span class="note">${ts.length ? "לטעמים שבסעיף זה" : "לסעיף זה"} אין עדיין הקלטות.</span><button class="chip" data-m2="audio">הוספת הקלטות</button>`);
     }
     if (!root.__aplay) { root.__aplay = true; root.addEventListener("click", async e => { const p = e.target.closest(".ainl [data-aplay]"); if (!p) return; const b = await get(p.dataset.aplay); if (!b) return; if (player) { player.pause(); URL.revokeObjectURL(player.src); } player = new Audio(URL.createObjectURL(b)); player.play().catch(() => {}); }); }
