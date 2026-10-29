@@ -1,6 +1,6 @@
 (function () {
   const $ = s => document.querySelector(s), O = window.Otzaria;
-  const D = new KK.Dict(window.KK_DICT), MH = new KK.MhIndex(window.MH_INDEX);
+  const D = new KK.Dict(window.KK_DICT).useLex(new KK.Lex({ forms: window.KK_FORMS, hs: window.KK_HS, milog: window.KK_MILOG, wikt: window.KK_WIKT, academy: window.KK_ACADEMY })), MH = new KK.MhIndex(window.MH_INDEX);
   let fOpen = false, allLetter = "א", allShown = 0, mode = "word", cur = null, stack = [], sugList = [], sugIdx = -1;
   let ST = { auto: true, mode: "toast", maxWords: 8, hist: [], likes: [], azSide: false, fOpen: false, noAcr: false, fs: 100, nakdan: true, concAll: false };
   let selWords = [], selCtx = { raw: "", words: [] };
@@ -93,6 +93,18 @@
     mode = "word"; tabs(); cur = null;
     $("#out").innerHTML = `<h2>${esc(KK.norm(text))}</h2><p class="hint">אין ערך במילון, אבל יש כרטסת בעינים למקרא.</p>` + mhRow(hits);
   }
+  /* 2.1.0: לכל מילה — המקום הראשון בתנ"ך, הפירוק הדקדוקי, ערך הבסיס, ופירוק לאות שימוש ("מעל" = מ + על; "בגד" = ב + גד) */
+  function formRow(r) {
+    const f = r.form || {}, t = f.t || D.firstRef(r.n), sp = D.splits(r.n), bs = f.bases || [];
+    const parts = [];
+    if (t) parts.push(`<div class="row inl"><b>בתנ"ך</b><div class="chips"><button class="chip pri" data-psk="${esc(t.ref + "|" + r.n)}" title="פתיחת המופע הראשון">📍 ${esc(t.ref)}</button></div><span class="note">${t.v ? esc(t.v) + " · " : ""}${t.c} מופעים בצורה זו — כל צורות השורש בקונקורדנציה</span></div>`);
+    else parts.push(`<div class="row inl"><b>בתנ"ך</b><span class="note">הצורה הזו אינה בתנ"ך — צורות השורש בקונקורדנציה</span></div>`);
+    if (f.morph && f.morph.length) parts.push(`<div class="row inl"><b>ניתוח</b><span>${f.morph.map(esc).join("<br>")}</span></div>`);
+    if (bs.length && bs[0].how !== "~") parts.push(chipRow("ערך הבסיס", bs.map(b => b.r.title).filter((x, i, a) => a.indexOf(x) === i)));
+    if (sp.length) parts.push(`<div class="row inl"><b>אפשר גם</b><div class="chips">${sp.map(x => `<button class="chip" data-go="${esc(x.rest)}">${esc(x.p)} + ${esc(KK.refinal(x.rest))}</button>`).join("")}</div><span class="note">אות שימוש ומילה (לפי ההקשר)</span></div>`);
+    if (r.virtual && !f.known) parts.push(`<p class="note">המילה אינה במאגרי הצורות (תנ"ך, Hspell, מילוג, ויקימילון, האקדמיה). ייתכן שהיא בכתיב אחר — אפשר לחפש אותה באוצריא ובקונקורדנציה.</p>`);
+    return parts.join("");
+  }
   function open(r, push = true) {
     if (!r) return; if (push && cur) stack.push(cur.n); cur = r; mode = "word"; tabs();
     ST.hist = [r.title, ...ST.hist.filter(x => x !== r.title)].slice(0, 60); saveNow();
@@ -103,7 +115,7 @@
     const links = {}; for (const [k, t] of r.l || []) (links[k] = links[k] || []).push(t);
     $("#out").innerHTML =
       `<div class="pager"><span>${stack.length ? `<button class="chip" id="back">→ חזרה</button>` : ""}</span></div>
-       <div class="hero"><h2>${esc(r.title)}</h2>${window.KKB ? KKB.hero(r) : ""}</div>` +
+       <div class="hero"><h2>${esc(r.title)}</h2>${window.KKB ? KKB.hero(r) : ""}</div>` + formRow(r) +
       (selWords.length > 1 ? `<div class="row selrow"><b>מילים בבחירה</b><div class="chips"><button class="chip" data-comb="1">📋 דף משולב</button>${selWords.map(t => chip(t, "", t === r.title ? "pri" : "")).join("")}</div></div>` : "") +
       `<div class="row"><div class="chips"><button class="chip pri" id="osearch">${IC.search} חפש באוצריא</button><button class="chip" id="orel">📖 פסוקים ומפרשים קשורים</button><button class="chip" id="oconc">📚 קונקורדנציה לתנ"ך</button></div></div><div id="rel"></div>` +
       (isAcr ? "" : `<div class="row"><b>במילוני הספרייה</b><div class="chips"><button class="chip" data-lib="radak">ספר השרשים לרד"ק — שורש ${esc(KK.refinal(root))}</button><button class="chip" data-lib="bachur">ספר הבחור</button>${online ? `<button class="chip" id="oeven">אבן שושן ↗</button><button class="chip" data-ext="wiktionary">${wkHas(cur.title.replace(/[^\u05D0-\u05EA ]/g, "")) ? "ויקימילון — הערך ↗" : "ויקימילון (חיפוש) ↗"}</button><button class="chip" data-ext="wikisource">ויקיטקסט ↗</button><button class="chip" data-ext="academy">האקדמיה ללשון ↗</button>` : ""}</div>${online ? `<span class="note">קישורים חיצוניים בלבד, נפתחים בדפדפן ומוסתרים רק כשאוצריא מוגדרת "ללא גישה לאינטרנט". התוכן שם אינו מסונן. אבן שושן — מנוי באתר, והמילה מועתקת להדבקה.</span>` : ""}</div>`) +
@@ -123,8 +135,10 @@
   async function openLib(which) { return openLibTerm(which, which === "radak" ? KK.refinal(D.analyze(cur.n).root) : cur.title.replace(/[^\u05D0-\u05EA ]/g, "")); }
   /* קונקורדנציה לתנ"ך: כל צורות השורש שבמילון, וכל המופעים שלהן בתנ"ך מתוך ספריית אוצריא */
   async function showConc(r) {
-    mode = "conc"; tabs(); const an = D.analyze(r.n); $("#out").classList.add("wide");
-    const forms = [r.title.replace(/[^א-ת]/g, ""), KK.refinal(an.root), ...D.byRoot(an.root).map(x => x.title.replace(/[^א-ת]/g, ""))].filter((x, i, a) => x && a.indexOf(x) === i).slice(0, 16);
+    mode = "conc"; tabs(); const an0 = D.analyze(r.n), an = r.form && r.form.root ? { ...an0, root: r.form.root, ok: true } : (D.firstRef(r.n) && D.firstRef(r.n).root ? { ...an0, root: D.firstRef(r.n).root, ok: true } : an0); $("#out").classList.add("wide");
+    /* 2.1.0: כל צורות השורש שבתנ"ך (בכל הנטיות), ואחריהן צורות מהמילון; צורה עם אות שימוש שהצורה בלעדיה כבר ברשימה — מכוסה בחיפוש עם קידומות */
+    const all = [r.n, ...D.tnkByRoot(an.root), KK.refinal(an.root), ...D.byRoot(an.root).map(x => x.title)].map(x => KK.refinal(KK.norm(x).replace(/[^א-ת]/g, ""))).filter((x, i, a) => x && a.indexOf(x) === i);
+    const fset = new Set(all), forms = all.filter((x, i) => i === 0 || ![1, 2].some(k => /^[והבכלמש]+$/.test(x.slice(0, k)) && fset.has(x.slice(k)))).slice(0, 220);
     $("#out").innerHTML = `<div class="chead"><h2>קונקורדנציה: ${esc(r.title)}</h2><button class="chip" id="cback" title="חזרה לערך">חזרה לערך ←</button></div><p class="note">שורש ${esc(KK.refinal(an.root))}${an.ok ? "" : " (משוער)"} · ${forms.length} צורות · ${ST.concAll ? "מכל ספריית אוצריא" : "מתוך ספרי התנ\"ך בלבד"}, כולל קידומות. <a href="#" id="cscope">${ST.concAll ? "הגבל לתנ\"ך" : "חפש בכל הספרייה"}</a></p><div class="row"><div class="search mini"><input id="cq" placeholder="הוסיפו צורה לחיפוש…"></div></div><div id="cforms" class="chips"></div><div id="cchart"></div><div id="conc"><p class="note"><span class="spin"></span>אוסף מופעים…</p></div>`;
     const card = (x, q) => `<a class="res" href="#" data-open='${esc(JSON.stringify({ id: x.id, bookId: x.bookId, type: x.type, index: x.index, q }))}'><b>${esc(plain(x.reference || x.book || ""))}</b><span>${hlForm(x.text, q)}</span></a>`;
     const out = [], box = () => $("#conc"); let pick = "";
@@ -334,7 +348,7 @@
   }
   function lookup(text, push = true) {
     if (!selWords.length) selCtx = { raw: text, words: [] };
-    const r = D.find(text);
+    const r = D.find(text) || (KK.norm(text).includes(" ") ? null : D.lookup(text));
     if (r) return open(r, push), true;
     const mhHits = MH.find(KK.norm(text).split(" "), D);
     mode = "word"; tabs(); cur = null; const w = KK.norm(text);

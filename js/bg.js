@@ -1,7 +1,7 @@
 /* רקע: מזהה אוטומטית מילה מסומנת בזמן לימוד ומציג הודעה לחיצה עם ההסבר */
 (function () {
   const O = window.Otzaria; if (!O) return;
-  const D = new KK.Dict(window.KK_DICT), MH = new KK.MhIndex(window.MH_INDEX);
+  const D = new KK.Dict(window.KK_DICT).useLex(new KK.Lex({ forms: window.KK_FORMS, hs: window.KK_HS, milog: window.KK_MILOG, wikt: window.KK_WIKT, academy: window.KK_ACADEMY })), MH = new KK.MhIndex(window.MH_INDEX);
   const DEF = { auto: true, mode: "toast", maxWords: 8, tLen: "normal", nakdan: true };
   let S = { ...DEF }, last = "", lastAt = 0, timer = null;
   const call = async (m, p) => { try { return await O.call(m, p || {}); } catch (e) { return { success: false }; } };
@@ -12,9 +12,13 @@
   function short(r, ctx) {
     const rk = KK.rank(r, ctx); if (S.noAcr) { rk.items = rk.items.filter(x => x.kind !== "acr"); rk.best = (rk.best || []).filter(x => x.kind !== "acr"); if (!rk.items.length) return null; } const order = ["lex", "enc", "laaz", "acr"];
     let pick = rk.confident ? rk.best.slice(0, 2) : order.map(k => rk.items.find(x => x.kind === k)).filter(Boolean).slice(0, 2);
-    const d = pick.map(x => r.s[x.i][1]).filter(Boolean).join(" | ");
-    const mx = S.tLen === "short" ? 60 : 150;
-    return `${r.title}: ${d.length > mx ? d.slice(0, mx - 3) + "…" : d}` + (S.tLen === "short" ? "" : " — לחצו לפרטים");
+    let d = pick.map(x => r.s[x.i][1]).filter(Boolean).join(" | "), head = r.title;
+    /* 2.1.0: צורה שאינה ערך — "גפנו (מ"גפן"): <פירוש הבסיס>"; ולכל מילה — המקום הראשון בתנ"ך */
+    if (r.form) { const b = r.form.bases && r.form.bases[0], core = KK.CORE[r.n], def = core ? r.s[0] : r.s.find((x, i) => i > 0 && x[1]);
+      if (b && b.how !== "~" && b.r.n !== r.n) head += ` (${b.how ? b.how.replace(" + ", "' + ") : "מ־"}${b.r.title})`;
+      d = def ? def[1] : (r.form.morph[0] || r.s[0][1]); }
+    const fr = (r.form && r.form.t) || D.firstRef(r.n), mx = S.tLen === "short" ? 60 : 150;
+    return `${head}: ${d.length > mx ? d.slice(0, mx - 3) + "…" : d}` + (fr && S.tLen !== "short" ? ` · ראשון בתנ"ך: ${fr.ref}` : "") + (S.tLen === "short" ? "" : " — לחצו לפרטים");
   }
   function onSel(data) {
     clearTimeout(timer);

@@ -20,8 +20,55 @@
   const blocked = (t, x) => (x[2] === "המכלול" && BLOCK_ENC.test(x[1])) || BLOCK_DEF.some(([w, d]) => t === w && x[1] === d);
   const SUPP = 'בטח שלט כשר עלב רעב זכר חסר דמה פדה קדש נתנ הלכ שתה שוב שנא לבש חזק רעה מצא בקש ארכ מלא שבע עמד יכל לקח יצא ישב קומ בוא שומ שמר ידע ראה עשה שמע פתח למד קרא שלח מות ירד זכר שבר ברכ נהג כנס מלכ פסק דרש עבד ישע ירא אהב ארג בחר גנב הרג חפצ טהר ירש סבב סלח רדפ תפש ברא רפא צמא ברח ברק'.split(' '); /* 2.0: ברא ועוד — חסרו, ולכן "ברא" נותח כ-ראה */
   const PRE = "והבכלמש";
+  const PRE2 = new Set("וה וב וכ ול ומ וש שה שב שכ של שמ מה מש כש לכ וכש ולכ ושה ושב ושל ומה".split(" "));
   const SUF = ["תי", "ותיהם", "ותיו", "יהם", "ותי", "ות", "ים", "ין", "תם", "תן", "נו", "כם", "כן", "ה", "י", "ך", "ו", "ם", "ן", "ת"];
 
+  /* 2.1.0: מילות היסוד — מילות יחס, שלילה, קישור, כינויים ותיאורים, שבמאגר חסרו או פורשו שלא כעניינן ("לא" לא זוהתה; "כי" הוצגה כאות יוונית).
+     [ניקוד, פירוש]. נכתב בתוסף. */
+  const CORE = {};
+  for (const [w, nk, d] of [
+    ["לא", "לֹא", "מילת שלילה: אין כך, היפך ההן"], ["לו", "לוּ", "מילת תנאי ומשאלה (\"לוּ\"); וגם \"לוֹ\" — ל' עם כינוי הנסתר"], ["אל", "אַל", "\"אַל\" — מילת שלילה לבקשה ולאיסור; \"אֶל\" — מילת יחס: לקראת, לעבר; \"אֵל\" — שם"],
+    ["על", "עַל", "מילת יחס: מעל, על גבי; וגם: בעניין, בגלל, אצל"], ["את", "אֶת", "\"אֶת\" — מילת יחס המציינת את המושא הישיר; וגם: עם (\"אִתּוֹ\"); \"אַתְּ\" — כינוי נוכחת"],
+    ["כי", "כִּי", "מילת קישור: משום ש־, ש־; וגם: אם, כאשר, אלא, אכן (לפי ההקשר)"], ["אשר", "אֲשֶׁר", "מילת זיקה: ש־, אשר; וגם: כאשר, באופן ש־. \"אָשֵׁר\" — שם השבט"],
+    ["אם", "אִם", "מילת תנאי; וגם שאלה (\"האם\") ושבועה. \"אֵם\" — הורה"], ["גם", "גַּם", "מילת תוספת: אף, וכן"], ["אף", "אַף", "מילת תוספת: גם, אפילו; וגם \"אַף\" — חוטם, כעס"],
+    ["רק", "רַק", "מילת הגבלה: בלבד, אך"], ["אך", "אַךְ", "מילת הגבלה: רק; וגם הדגשה: אכן, אבל"], ["אבל", "אֲבָל", "\"אֲבָל\" — אכן, אולם; \"אָבֵל\" — מתאבל"],
+    ["הנה", "הִנֵּה", "מילת הצבעה והתעוררות: ראה, הרי; וגם \"הֵנָּה\" — לכאן"], ["הן", "הֵן", "\"הֵן\" — הנה, אם; וגם כינוי נסתרות"], ["פן", "פֶּן", "מילת חשש: שמא, שלא"],
+    ["בלי", "בְּלִי", "מילת שלילה: לא, בלא"], ["בלתי", "בִּלְתִּי", "מילת שלילה: לבלתי, חוץ מ־"], ["אין", "אֵין", "מילת שלילה: לא קיים, לא יש"], ["אין", "אַיִן", "שלילה"],
+    ["יש", "יֵשׁ", "מילת קיום: קיים, ישנו"], ["עוד", "עוֹד", "מילת תוספת והמשך: שוב, עדיין"], ["עד", "עַד", "מילת יחס: עד, לשיעור; וגם \"עֵד\" — מעיד"],
+    ["מן", "מִן", "מילת יחס: מתוך, מאת, מ־"], ["עם", "עִם", "\"עִם\" — מילת יחס: יחד; \"עַם\" — אומה"], ["בין", "בֵּין", "מילת יחס: בתוך, בין זה לזה"],
+    ["תחת", "תַּחַת", "מילת יחס: מתחת; וגם: במקום, בעבור"], ["אחר", "אַחַר", "\"אַחַר\" — אחרי (זמן ומקום); \"אַחֵר\" — שונה"], ["אחרי", "אַחֲרֵי", "מילת יחס: לאחר, בעקבות"],
+    ["לפני", "לִפְנֵי", "מילת יחס: נוכח, לעיני; וגם קודם (זמן)"], ["אצל", "אֵצֶל", "מילת יחס: סמוך ל־"], ["נגד", "נֶגֶד", "מילת יחס: מול, כנגד"], ["כמו", "כְּמוֹ", "מילת דמיון: כ־"],
+    ["למען", "לְמַעַן", "מילת תכלית: בעבור, כדי"], ["יען", "יַעַן", "מילת סיבה: משום ש־"], ["לכן", "לָכֵן", "מילת תוצאה: משום כך"], ["עתה", "עַתָּה", "מילת זמן: כעת, עכשיו"],
+    ["אז", "אָז", "מילת זמן: בעת ההיא"], ["טרם", "טֶרֶם", "מילת זמן: לפני ש־, עדיין לא"], ["כה", "כֹּה", "מילת הצבעה: כך, כאן"], ["כן", "כֵּן", "\"כֵּן\" — כך, אמת; \"כַּן\" — בסיס"],
+    ["פה", "פֹּה", "\"פֹּה\" — כאן; \"פֶּה\" — איבר הדיבור"], ["שם", "שָׁם", "\"שָׁם\" — במקום ההוא; \"שֵׁם\" — כינוי, תואר"], ["איה", "אַיֵּה", "מילת שאלה: היכן"],
+    ["איך", "אֵיךְ", "מילת שאלה ותמיהה: באיזה אופן"], ["מה", "מָה", "מילת שאלה ותמיהה"], ["מי", "מִי", "מילת שאלה על אדם"], ["למה", "לָמָּה", "מילת שאלה: מדוע"], ["מדוע", "מַדּוּעַ", "מילת שאלה: למה"],
+    ["אנכי", "אָנֹכִי", "כינוי גוף ראשון: אני"], ["אני", "אֲנִי", "כינוי גוף ראשון יחיד"], ["אנחנו", "אֲנַחְנוּ", "כינוי גוף ראשון רבים"], ["אתה", "אַתָּה", "כינוי נוכח יחיד"],
+    ["אתם", "אַתֶּם", "כינוי נוכחים"], ["אתן", "אַתֶּן", "כינוי נוכחות"], ["הוא", "הוּא", "כינוי נסתר יחיד"], ["היא", "הִיא", "כינוי נסתרת יחידה"], ["הם", "הֵם", "כינוי נסתרים"], ["המה", "הֵמָּה", "כינוי נסתרים"],
+    ["זה", "זֶה", "כינוי רמז לזכר קרוב"], ["זאת", "זֹאת", "כינוי רמז לנקבה קרובה"], ["אלה", "אֵלֶּה", "כינוי רמז לרבים"], ["כל", "כָּל", "מילת כמות: כולו, כל אחד"], ["מאד", "מְאֹד", "מילת הפלגה: הרבה"],
+    ["נא", "נָא", "מילת בקשה: בבקשה, עתה"], ["הלא", "הֲלֹא", "שאלה שתשובתה חיובית: והרי"], ["אולי", "אוּלַי", "מילת ספק"], ["פתאם", "פִּתְאֹם", "בלא הכנה, לפתע"], ["יחד", "יַחַד", "ביחד, כאחד"],
+    ["ש", "שֶׁ", "אות שימוש: אשר"], ["בעד", "בְּעַד", "מילת יחס: בשביל; וגם: דרך, סביב"], ["לבד", "לְבַד", "בלבד, חוץ מ־"], ["זולת", "זוּלַת", "חוץ מ־"], ["אפס", "אֶפֶס", "\"אֶפֶס\" — אין, רק, אך; וגם קצה"]
+  ]) if (!CORE[w]) CORE[w] = [nk, d];
+  /* מאגר הצורות: תנ"ך (data/forms.js), Hspell (data/hspell.js), מילוג, ויקימילון, האקדמיה. נטען בעצלות. */
+  const HSM = { "ע": "שם עצם", "פ": "פועל", "ת": "שם תואר", "ז": "זכר", "נ": "נקבה", "יחיד": "יחיד", "רבים": "רבים", "זוגי": "זוגי", "1": "גוף ראשון", "2": "גוף שני", "3": "גוף שלישי",
+    "עבר": "עבר", "עתיד": "עתיד", "הווה": "הווה", "ציווי": "ציווי", "מקור": "מקור", "סמיכות": "נסמך", "פרטי": "שם פרטי", "x": "", "ב": "מקור נטוי (עם ב')", "ל": "מקור נטוי (עם ל')" };
+  function hsText(d) {
+    const [main, suf] = d.split("כינוי/"), t = main.split(",").filter(Boolean).map(x => HSM[x] !== undefined ? HSM[x] : x).filter(Boolean);
+    if (suf !== undefined) { const p = suf.split(","); t.push("עם כינוי " + [p[1] && HSM[p[1]], p[0] && HSM[p[0]], p[2] && HSM[p[2]]].filter(Boolean).join(" ")); }
+    return t.join(", ");
+  }
+  class Lex {
+    constructor(o = {}) { this.o = o; this.hs = null; this.tnk = null; this.mod = null; this.roots = null; }
+    _hs() { if (!this.hs) { this.hs = new Map(); const H = this.o.hs; if (H) { this.hsD = H.d.map(hsText); for (const l of H.w.split("|")) { const t = l.indexOf("\t"); this.hs.set(l.slice(0, t), l.slice(t + 1)); } } } return this.hs; }
+    hsGet(w) { const r = this._hs().get(w); if (!r) return null; return r.split(",").map(a => { const i = a.lastIndexOf(":"); return { lemma: a.slice(0, i), m: this.hsD[+a.slice(i + 1)] }; }); }
+    _tnk() { if (!this.tnk) { this.tnk = new Map(); for (const l of String(this.o.forms || "").split("|")) { const [n, v, c, ref, root] = l.split("~"); if (n) this.tnk.set(n, { v, c: +c, ref, root: root || "" }); } } return this.tnk; }
+    tnkGet(w) { return this._tnk().get(w) || null; }
+    byRoot(r) { if (!this.roots) { this.roots = new Map(); for (const [n, x] of this._tnk()) if (x.root) (this.roots.get(x.root) || this.roots.set(x.root, []).get(x.root)).push(n); }
+      return (this.roots.get(r) || []).slice().sort((a, b) => this.tnk.get(b).c - this.tnk.get(a).c); }
+    known(w) {
+      if (!this.mod) { this.mod = new Set(); for (const k of ["milog", "wikt"]) for (const x of String(this.o[k] || "").split("|")) if (x) this.mod.add(x); if (this.o.academy) for (const x of Object.keys(this.o.academy)) this.mod.add(x); }
+      return !!(this._tnk().has(w) || this._hs().has(w) || this.mod.has(w));
+    }
+  }
   class Dict {
     constructor(data) {
       this.map = new Map(); this.keys = []; this.radak = new Set();
@@ -40,7 +87,54 @@
         const u = unfinal(k); if (u.length === 3 && !/[ '"]/.test(u)) this.known.add(u);
       }
     }
-    get(n) { return this.map.get(n) || null; }
+    get(n) { return this.map.get(n) || (this.vc && this.vc.get(n)) || (this.lex && n && this.lex.known(n) ? this.virtual(n) : null); }
+    /* 2.1.0: כל מילה — ערך. מאגר צורות (תנ"ך, Hspell, מילוג, ויקימילון, האקדמיה) ומילות יסוד; צורה שאינה ערך במאגר
+       נעשית ערך משלה: הצורה, הפירוק (מין, מספר, גוף, זמן, כינוי), השורש, המקום הראשון בתנ"ך, וערך הבסיס עם פירושיו. */
+    useLex(L) { this.lex = L; this.vc = new Map(); return this; }
+    lookup(word) {
+      const w = norm(word); if (!w || /^[^\u05D0-\u05EA]*$/.test(w)) return null;
+      const c = CORE[w]; if (c && !this.vc.has(w)) return this.virtual(w);
+      return this.map.get(w) || this.vc.get(w) || this.virtual(w);
+    }
+    /* פירוק לאות שימוש + מילה: "מעל" = מ + על; "בבננה" = ב + בננה */
+    splits(w) {
+      w = norm(w); const out = [], L = this.lex;
+      for (let i = 1; i <= 3 && w.length - i >= 2; i++) {
+        const p = w.slice(0, i); if (i === 1 ? !PRE.includes(p) : !PRE2.has(p)) continue;
+        const rest = w.slice(i); if (CORE[rest] || this.map.has(rest) || (L && (L.hsGet(rest) || L.tnkGet(rest)))) out.push({ p, rest });
+      }
+      return out;
+    }
+    /* ערכי הבסיס: קודם הבסיס הדקדוקי מ-Hspell (גם אחרי הסרת אותיות שימוש), ואחר כך הסרת סיומות/קידומות במאגר */
+    bases(w) {
+      const L = this.lex, out = [], seen = new Set([w]);
+      const add = (b, m, how) => { b = norm(b); if (!b || seen.has(b)) return; const r = this.map.get(b) || (CORE[b] || (b !== w && b.length < w.length && L && L.known(b)) ? this.virtual(b) : null); if (!r) return; seen.add(b); out.push({ r, m, how }); };
+      for (const sp of [{ p: "", rest: w }, ...this.splits(w)]) {
+        for (const a of (L ? L.hsGet(sp.rest) : []) || []) add(a.lemma === "=" ? sp.rest : a.lemma, a.m, sp.p ? sp.p + " + " : "");
+        if (out.length) break;
+      }
+      if (!out.length && !(L && L.known(w))) for (const c of this.candidates(w).slice(1)) { const r = this.map.get(c); if (r && !seen.has(c)) { seen.add(c); out.push({ r, m: "", how: "~" }); break; } }
+      return out;
+    }
+    virtual(w) {
+      const L = this.lex, real = this.map.get(w), t = L ? L.tnkGet(w) : null, core = CORE[w];
+      let hs = L ? L.hsGet(w) : null, pre = ""; if (L && !hs) for (const sp of this.splits(w)) { const h = L.hsGet(sp.rest); if (h) { hs = h; pre = sp.p; break; } }
+      let bs0 = core ? [] : this.bases(w);
+      if (t && bs0.length > 1) { const end = t.v.slice(-2), f = b => !(end === "\u05D5\u05B9" && /גוף ראשון רבים$/.test(b.m)) && !(/\u05D5\u05BC$/.test(t.v) && /גוף שלישי זכר יחיד$/.test(b.m)); if (bs0.some(f)) bs0 = bs0.filter(f); }
+      const bs = bs0, an = this.analyze(w), root = (t && t.root) || (bs[0] && !bs[0].how ? this.analyze(bs[0].r.n).root : an.root);
+      const morph = (pre ? hs.map(a => ({ ...a, m: `${pre}' + ${a.m}` })) : t && bs.length && hs ? hs.filter(a => bs.some(b => b.m === a.m) || a.lemma === "=") : hs || []).map(a => a.m).filter((x, i, a) => x && a.indexOf(x) === i);
+      const desc = [core ? core[1] : "", morph.length ? morph.join(" / ") : "",
+        bs.length ? (bs[0].how === "~" ? `קרוב במאגר: "${bs[0].r.title}" (ייתכן שאינו אותו עניין)` : (bs[0].how && w === bs[0].how.replace(" + ", "") + bs[0].r.n ? `${bs[0].how.replace(" + ", "' + ")}"${bs[0].r.title}"` : (bs[0].how ? `${bs[0].how.replace(" + ", "' + ")}` : "") + `נטייה של "${bs.map(b => b.r.title).filter((x, i, a) => a.indexOf(x) === i).join("\" / \"")}"`)) : "",
+        t ? `בתנ"ך ${t.c} פעמים; ראשון: ${t.ref}` : ""].filter(Boolean).join(" · ") || "מילה שאינה במאגר הפירושים";
+      const s = [[t ? t.v : (core ? core[0] : ""), desc, core ? "מילות היסוד (התוסף)" : "צורת המילה (התוסף)"]];
+      if (real) s.push(...real.s);
+      for (const b of bs) for (const x of b.r.s) s.push([x[0], x[1], `${x[2]} · בערך ${b.r.title}`]);
+      const v = { title: real ? real.title : refinal(w), n: w, s, l: real ? real.l : [], virtual: !real, form: { t, morph, root, bases: bs, known: !!(t || hs || core || (L && L.known(w))) } };
+      if (this.vc) this.vc.set(w, v); return v;
+    }
+    /* כל צורות השורש בתנ"ך (לקונקורדנציה), לפי מספר המופעים */
+    tnkByRoot(root) { return this.lex ? this.lex.byRoot(unfinal(norm(root)).replace(/[^\u05D0-\u05EA]/g, "")) : []; }
+    firstRef(w) { const L = this.lex; if (!L) return null; w = norm(w); return L.tnkGet(w) || (this.splits(w).map(x => L.tnkGet(x.rest)).find(Boolean)) || null; }
     /* מילה כפי שבטקסט → ערך. סדר העדפה: פחות הסרות קודם. */
     candidates(word) {
       const w = norm(word), out = [], seen = new Set();
@@ -56,12 +150,13 @@
       }
       return out;
     }
-    find(word) { for (const c of this.candidates(word)) { const r = this.map.get(c); if (r) return r; } return null; }
+    find(word) { const w0 = norm(word); if (this.lex && w0 && !w0.includes(" ") && !this.map.has(w0) && (CORE[w0] || this.lex.known(w0))) return this.lookup(w0);
+      for (const c of this.candidates(word)) { const r = this.map.get(c); if (r) return r; } return null; }
     /* בחירה של כמה מילים: קודם כביטוי שלם, ואז כל מילה בנפרד; גם מילה חלקית (קידומת) */
     resolve(text, max = 8) {
       const t = norm(text), out = { phrase: null, phrases: [], words: [] };
       if (!t) return out;
-      out.phrase = this.find(t);
+      out.phrase = this.lex && !t.includes(" ") ? this.lookup(t) : this.find(t);
       /* ביטויים של כמה מילים בתוך הבחירה (צירופים קבועים, "אי אפשר" וכד'), הארוכים קודם (#3, 1.6.0) */
       const ws = t.split(" ").slice(0, max), used = new Set();
       if (!out.phrase || ws.length < 2) for (let len = Math.min(5, ws.length - (out.phrase ? 1 : 0)); len >= 2; len--) for (let i = 0; i + len <= ws.length; i++) {
@@ -72,7 +167,7 @@
       }
       const seen = new Set();
       for (const w of t.split(" ").slice(0, max)) {
-        let r = this.find(w);
+        let r = this.lex ? this.lookup(w) : this.find(w);
         if (!r && w.length >= 3) { const s = this.suggest(w, 12).find(x => x.n.startsWith(w) && !/[ '"]/.test(x.n) && x.n.length <= w.length + 2); if (s) r = s; }
         if (r && !seen.has(r.n)) { seen.add(r.n); out.words.push(r); }
       }
@@ -135,6 +230,7 @@
       for (const [r, label, cost] of cands) {
         if (this.radak.has(r) && cost <= 3.5) put(rd, r, label, cost); else if (this.known.has(r)) put(dk, r, label, cost);
       }
+      if (w.length === 3 && !rd.has(w) && this.known.has(w) && !/^[והבכלמש]/.test(w) && !/[והי]$/.test(w)) put(rd, w, "שם / פעל", -0.1); /* 2.1.0: מילה תלת־אותית שהיא ערך במילון — היא השורש (גפן, בגד) */
       const tier = rd.size ? rd : dk;                   // קודם שורשים מאומתים (רד"ק + רשימה נפוצה), ורק אחר כך כל ערך תלת-אותי במילון
       if (tier.size) {
         const arr = [...tier.values()].sort((a, b) => a.cost - b.cost);
@@ -225,7 +321,7 @@
   /* דירוג הגדרות לפי הקשר: ניקוד, מילים אחרות בבחירה, והעדפת פירוש מילוני על פני ראשי תיבות/אנציקלופדיה */
   const VOW = /[\u05B0-\u05BB\u05C7]/g;
   const vowels = s => (String(s || "").match(VOW) || []).join("");
-  const kindOf = src => /ראשי תיבות/.test(src) ? "acr" : /לעזי/.test(src) ? "laaz" : src === "המכלול" ? "enc" : "lex";
+  const kindOf = src => /ראשי תיבות/.test(src) ? "acr" : /לעזי/.test(src) ? "laaz" : /^המכלול( ·|$)/.test(src) ? "enc" : "lex";
   function rank(r, ctx = {}) {
     const raw = ctx.raw || "", words = (ctx.words || []).map(norm).filter(x => x.length >= 2);
     const vs = vowels(raw), hasQ = /["'״׳]/.test(raw), toks = new Set();
@@ -404,6 +500,6 @@
     });
     return out;
   }
-  g.KK = { nikudAnalyze, taamMap, norm, Dict, skeleton, rank, kindOf, refinal, MhIndex, MH_ID, MH_LABEL };
+  g.KK = { Lex, CORE, hsText, nikudAnalyze, taamMap, norm, Dict, skeleton, rank, kindOf, refinal, MhIndex, MH_ID, MH_LABEL };
   if (typeof module !== "undefined") module.exports = g.KK;
 })(typeof window !== "undefined" ? window : globalThis);
