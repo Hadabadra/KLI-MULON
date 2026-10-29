@@ -220,6 +220,7 @@
       flush(); if (t) out += /^ראו גם/.test(t) ? `<p class="see">${hl(t).replace(/&quot;([^&]+?)&quot;/g, (m, x) => `<a href="#" class="blink" data-gsec="${x}">${x}</a>`)}</p>` : `<p>${hl(t)}</p>`;
     }
     flush();
+    if (/טעמ/.test(x.title) && !/קמץ|שווא/.test(x.title)) out += `<div class="ainl"></div>`; /* 2.1.0: השמעת הטעמים במקומם בספר */
     return `<section class="bsec lv${x.lv}${rule ? " rule" : ""}" id="${x.id}"><h${x.lv + 2}>${hl(x.title)}${bm ? `<button class="bm${bm.on ? " on" : ""}" data-bm="${x.id}" title="סימנייה" aria-label="סימנייה">${bm.on ? "★" : "☆"}</button>` : ""}</h${x.lv + 2}>${out}</section>`;
   }
   async function showBooks() {
@@ -255,9 +256,10 @@
     const bmList = () => { const l = bmk(); return l.length ? `<b>סימניות</b>${l.map(m => `<a href="#" data-sec="${m.sec}" class="lv3">★ ${esc(m.title)}</a>`).join("")}<hr>` : ""; };
     const render = q => {
       const shown = q ? secs.filter(x => (x.title + "\n" + x.lines.join("\n")).includes(q)) : secs;
+      setTimeout(() => window.KKAudio && KKAudio.inline($("#bview")), 0);
       $("#bview").innerHTML = (q ? `<p class="note">${shown.length} סעיפים מכילים "${esc(q)}"</p>` : "") + (shown.length ? shown.map(x => secHtml(x, q, { on: isBm(x.id) })).join("") : '<p class="hint">לא נמצא.</p>');
     };
-    $("#out").innerHTML = `<div class="reader"><div class="rbar">${+id === 1 ? "" : `<button class="chip" id="bkback">→ ספרים</button>`}<h2>${esc(b.title)}</h2><input id="bq" type="search" placeholder="חיפוש בספר…"><button class="chip" id="bkdl">⬇ הורדה</button><button class="chip" id="bktxt" title="קובץ טקסט פשוט, להעתקה ולשימוש בתוכנות אחרות">⬇ טקסט</button><button class="chip" id="bkpdf">🖨 PDF / הדפסה</button>${+id === 1 ? `<button class="chip" data-m2="terms">🔤 מפתח מונחים</button>` : ""}</div>
+    $("#out").innerHTML = `<div class="reader"><div class="rbar">${+id === 1 ? "" : `<button class="chip" id="bkback">→ ספרים</button>`}<h2>${esc(b.title)}</h2><input id="bq" type="search" placeholder="חיפוש בספר…">${+id === 1 ? `<button class="chip pri" data-m2="terms" title="מפתח המונחים של הספר">🔤 מפתח מונחים</button><button class="chip" data-m2="audio" title="השמעת הטעמים לפי העדות">🔊 טעמים</button>` : ""}<details class="expm"><summary class="ib" title="ייצוא והורדה" aria-label="ייצוא והורדה">⬇</summary><div class="expl"><button class="chip" id="bkdoc">Word (.doc)</button><button class="chip" id="bkpdf">PDF / הדפסה</button><button class="chip" id="bkdl">דף אינטרנט (.html)</button><button class="chip" id="bktxt">טקסט (.txt)</button>${+id === 1 && online ? `<button class="chip" id="bkdocx">Word מעוצב (.docx) מ-GitHub ↗</button>` : ""}<small class="note">בכל קובץ — קישורי הורדה של התוסף</small></div></details></div>
       ${b.note ? `<p class="note">${esc(b.note)}</p>` : ""}
       <div class="rgrid"><nav class="toc"><small class="note">לחיצה כפולה על מילה בספר — ניתוח המילה (שורש, בניין, ערך).</small><div id="bml">${bmList()}</div><b>תוכן עניינים</b><input id="tq" type="search" placeholder="חיפוש כותרת…">${secs.map(x => `<a href="#" data-sec="${x.id}" class="lv${x.lv}">${esc(x.title)}</a>`).join("")}</nav><article id="bview"></article></div></div>`;
     render("");
@@ -266,6 +268,11 @@
     $("#tq").oninput = e => { const v = e.target.value.trim(); document.querySelectorAll(".toc a").forEach(a => a.classList.toggle("hid", !!v && !a.textContent.includes(v))); };
     const io = "IntersectionObserver" in window ? new IntersectionObserver(es => { for (const x of es) if (x.isIntersecting) { document.querySelectorAll(".toc a.on").forEach(a => a.classList.remove("on")); const a = document.querySelector(`.toc a[data-sec="${x.target.id}"]`); if (a) { a.classList.add("on"); a.scrollIntoView({ block: "nearest" }); } } }, { rootMargin: "-20% 0px -70% 0px" }) : null;
     if (io) document.querySelectorAll("#bview .bsec").forEach(x => io.observe(x));
+    const bookHtml = word => `<!DOCTYPE html><html lang="he" dir="rtl"${word ? ' xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"' : ""}><head><meta charset="UTF-8"><title>${esc(b.title)}</title><style>body{font-family:David,serif;direction:rtl;line-height:1.7}h1,h2,h3,h4{font-family:David,serif}table{border-collapse:collapse}td,th{border:1px solid #999;padding:2px 6px}</style></head><body><h1>${esc(b.title)}</h1>${b.note ? `<p><i>${esc(b.note)}</i></p>` : ""}${secs.map(x => secHtml(x, "")).join("")}<hr><p>מתוך התוסף "לשון הקודש" לאוצריא. הורדת התוסף: <a href="${LINKS.gh}">GitHub</a> ${esc(LINKS.gh)} · <a href="${LINKS.store}">חנות התוספים של אוצריא</a> ${esc(LINKS.store)}</p></body></html>`;
+    /* 2.1.0: ייצוא ל-Word מתוך התוסף (מסמך HTML ש-Word פותח עם הכותרות והטבלאות) */
+    $("#bkdoc").onclick = () => { const el = document.createElement("a"); el.href = URL.createObjectURL(new Blob(["\ufeff" + bookHtml(true)], { type: "application/msword" })); el.download = b.title.replace(/[\\/:*?"<>|]/g, "") + ".doc"; document.body.appendChild(el); el.click(); el.remove(); call("ui.showMessage", { message: "הספר הורד כקובץ Word" }); };
+    if ($("#bkdocx")) $("#bkdocx").onclick = () => call("app.openUrl", { url: LINKS.gh });
+    document.querySelector(".expm").addEventListener("click", e => { if (e.target.closest(".expl button")) e.currentTarget.removeAttribute("open"); });
     $("#bkdl").onclick = () => { const h = `<!DOCTYPE html><html lang="he" dir="rtl"><head><meta charset="UTF-8"><title>${esc(b.title)}</title></head><body style="font-family:David,serif;max-width:50em;margin:2em auto;line-height:1.7"><h1>${esc(b.title)}</h1>${b.note ? `<p><i>${esc(b.note)}</i></p>` : ""}${secs.map(x => secHtml(x, "")).join("")}<hr><p>מתוך התוסף "לשון הקודש" לאוצריא. הורדת התוסף: <a href="${LINKS.gh}">GitHub</a> · <a href="${LINKS.store}">חנות התוספים של אוצריא</a></p></body></html>`;
       const el = document.createElement("a"); el.href = URL.createObjectURL(new Blob(["\ufeff" + h], { type: "text/html;charset=utf-8" })); el.download = b.title.replace(/[\\/:*?"<>|]/g, "") + ".html"; document.body.appendChild(el); el.click(); el.remove();
       copyText(`${LINKS.gh}\n${LINKS.store}`); call("ui.showMessage", { message: "הספר הורד; קישורי ההורדה של התוסף הועתקו" }); };

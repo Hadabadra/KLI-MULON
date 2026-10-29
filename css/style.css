@@ -309,3 +309,10 @@ table.glyph td:first-child{font-size:1.8em;line-height:1.6;text-align:center;fon
 .tie.hid{display:none}
 #tiq{margin:.3em 0 .6em;padding:.35em .6em;border-radius:var(--radius-pill);border:1px solid var(--color-outline-variant);background:var(--color-surface);color:var(--color-on-surface)}
 .atbl{border-collapse:collapse;font-size:.92em}.atbl th,.atbl td{border:1px solid var(--color-outline-variant);padding:.25em .45em;text-align:center;white-space:nowrap}.atbl tbody th{text-align:start;font-weight:600}.atbl .chip{padding:.15em .6em}
+/* 2.1.0: תפריט ייצוא בפינה */
+.rbar{position:relative}
+.expm{margin-inline-start:auto;position:relative}
+.expm>summary{list-style:none;font-size:1.2em;line-height:1;padding:.35em .5em}
+.expm>summary::-webkit-details-marker{display:none}
+.expl{position:absolute;inset-inline-end:0;top:2.4em;z-index:20;display:flex;flex-direction:column;gap:.35em;padding:.6em;min-width:13em;background:var(--color-surface-container-high);border-radius:var(--radius-md);box-shadow:0 .3em 1em var(--color-shadow)}
+.ainl{margin:.6em 0;display:flex;flex-wrap:wrap;gap:.35em;align-items:center}
