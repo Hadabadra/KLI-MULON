@@ -121,7 +121,7 @@
       `<div class="pager"><span>${stack.length ? `<button class="chip" id="back">→ חזרה</button>` : ""}</span><button class="chip" id="allback" title="חזרה לרשימת כל המילים">כל המילים ←</button></div>
        <div class="hero"><h2>${esc(r.title)}</h2>${window.KKB ? KKB.hero(r) : ""}</div>` + formRow(r) +
       (selWords.length > 1 ? `<div class="row selrow"><b>מילים בבחירה</b><div class="chips"><button class="chip" data-comb="1"><i class=oi data-i=clip></i> דף משולב</button>${selWords.map(t => chip(t, "", t === r.title ? "pri" : "")).join("")}</div></div>` : "") +
-      `<div class="row"><div class="chips"><button class="chip pri" id="osearch">${IC.search} חפש באוצריא</button><button class="chip" id="orel"><i class=oi data-i=book></i> פסוקים ומפרשים קשורים</button><button class="chip" id="oconc"><i class=oi data-i=lib></i> קונקורדנציה לתנ"ך</button></div></div><div id="rel"></div>` +
+      `<div class="row"><div class="chips"><button class="chip pri" id="osearch">${IC.search} חפש באוצריא</button><button class="chip" id="orel"><i class=oi data-i=book></i> פסוקים ומפרשים קשורים</button><button class="chip" id="oconc"><i class=oi data-i=lib></i> קונקורדנציה לתנ"ך</button><button class="chip" id="ofirst" title="חיפוש המילה בספרייה לפי סדר התקופות">מקור ראשון בספרייה (משוער)</button></div></div><div id="rel"></div><div id="first"></div>` +
       (isAcr ? "" : `<div class="row"><b>במילוני הספרייה</b><div class="chips">${an.ok ? `<button class="chip" data-lib="radak">ספר השרשים לרד"ק — שורש ${esc(KK.refinal(root))}</button>` : ""}<button class="chip" data-lib="bachur">ספר הבחור</button>${online ? `<button class="chip" id="omilog" data-ext="milog">מילוג ↗</button><button class="chip" data-ext="wiktionary">${wkHas(cur.title.replace(/[^\u05D0-\u05EA ]/g, "")) ? "ויקימילון — הערך ↗" : "ויקימילון (חיפוש) ↗"}</button><button class="chip" data-ext="wikisource">ויקיטקסט ↗</button><button class="chip" data-ext="academy">האקדמיה ללשון ↗</button>` : ""}</div>${online ? `<span class="note">קישורים חיצוניים בלבד, נפתחים בדפדפן ומוסתרים רק כשאוצריא מוגדרת "ללא גישה לאינטרנט". התוכן שם אינו מסונן.</span>` : ""}</div>`) +
       sensesHtml(r) + (isAcr ? "" : pleneRow(r.title)) +
       Object.entries(links).map(([k, a]) => chipRow(k.replace("_", " "), a)).join("") +
@@ -485,7 +485,7 @@
     $("#s-fopen").onchange = e => { ST.fOpen = e.target.checked; fOpen = ST.fOpen; save(); };
   }
   /* 2.2.0: "מילים" — כל המילים מכל המאגרים, עם סינון לפי אות, מקור, הופעה בתנ"ך ומקור ההגדרה */
-  let ALLW = null; const AF = { src: "", tnk: "", def: "" };
+  let ALLW = null; const AF = { src: "d", tnk: "", def: "" }; /* 2.4.0: ברירת המחדל — ערכים עם פירוש בלבד; שאר המאגרים בסינון */
   function allWords() {
     if (ALLW) return ALLW; const m = new Map(), add = (w, c) => { w = KK.norm(w); if (!w || /[ "'״׳\-]/.test(w) || w.length < 2 || (c !== "d" && /^(.)\1+$/.test(w))) return; const o = m.get(w) || ""; if (!o.includes(c)) m.set(w, o + c); };
     for (const k of D.keys) add(k, "d"); for (const [src, c] of [[window.KK_MILOG, "g"], [window.KK_WIKT, "w"]]) for (const w of String(src || "").split("|")) add(w, c);
@@ -508,8 +508,12 @@
     $("#out").innerHTML = `<div class="allhead"><h2>כל המילים</h2><button class="ftoggle ${fOpen ? "" : "on"}" id="ftog" aria-expanded="${fOpen}">${fOpen ? "✕ סגירת הסינון" : "☰ סינון"}</button></div>
       ${fOpen ? "" : `<div class="fsum">אות: ${allLetter}${AF.src ? " · " + SRCN[AF.src] : ""}${AF.tnk ? (AF.tnk === "1" ? " · בתנ\"ך" : " · לא בתנ\"ך") : ""}${AF.def ? " · " + esc(AF.def) : ""} · ${list.length.toLocaleString("he")} מילים</div>`}
       <div class="${ST.azSide && fOpen ? "allwrap" : ""}">${az}<div class="allbody">${fOpen ? `<p class="note">${list.length.toLocaleString("he")} מילים באות ${allLetter} · חיפוש בשורה למעלה מציג רק את המילה המבוקשת</p>` : ""}
-      <div class="tiles">${part.map(([w, c]) => { const r = c.includes("d") ? D.get(w) : null; return `<button class="tile" data-go="${esc(r ? r.title : KK.refinal(w))}"><b>${esc(r ? r.title : KK.refinal(w))}</b><small>${esc(r ? (r.s[0] || [])[1] || "" : [...c].map(x => SRCN[x]).join(" · "))}</small></button>`; }).join("")}</div>` +
+      <p class="chips"><button class="chip" id="libchk" title="חיפוש כל מילה בעמוד בספריית אוצריא">בדיקה בספרייה למילים בעמוד</button></p><div class="tiles">${part.map(([w, c]) => { const r = c.includes("d") ? D.get(w) : null; return `<button class="tile" data-go="${esc(r ? r.title : KK.refinal(w))}"><b>${esc(r ? r.title : KK.refinal(w))}</b><small>${esc(r ? (r.s[0] || [])[1] || "" : [...c].map(x => SRCN[x]).join(" · "))}</small></button>`; }).join("")}</div>` +
       (allShown < list.length ? `<p style="text-align:center"><button class="chip pri" id="more">הצג עוד (${(list.length - allShown).toLocaleString("he")})</button></p>` : "") + `</div></div>`;
+    $("#libchk").onclick = async () => { const b = $("#libchk"); b.disabled = true; const tiles = [...document.querySelectorAll(".tiles .tile")]; let k = 0;
+      for (const el of tiles) { if (mode !== "word" || !el.isConnected) return; k++; b.textContent = `בודק… ${k}/${tiles.length}`; const w = el.dataset.go.replace(/[^\u05D0-\u05EA]/g, ""); const h = await runSearch(w, { limit: 1 });
+        el.classList.toggle("inlib", h.length > 0); el.classList.toggle("nolib", !h.length); el.querySelector("b").insertAdjacentHTML("beforeend", h.length ? ' <span class="lib-ok">✓</span>' : ' <span class="lib-no">✗</span>'); }
+      b.textContent = "✓ נמצאה בספרייה · ✗ לא נמצאה (בכתיב זה)"; };
     for (const [id, k] of [["afsrc", "src"], ["aftnk", "tnk"], ["afdef", "def"]]) { const el = $("#" + id); if (el) el.onchange = e => { AF[k] = e.target.value; allShown = 0; showAll(null); }; }
   }
   const LETTERS = "אבגדהוזחטיכלמנסעפצקרשת".split(""), PAGE = 120; /* 1.7.0: הוחזרו — חסרו מאז 1.3.0 ולכן "כל המילים" לא נפתחה */
@@ -591,6 +595,28 @@
   const hlForm = (t, f) => { const h = esc(plain(t)); if (!f) return h; const N = "[\u0591-\u05C7]*", L = [...KK.norm(f).replace(/[^\u05D0-\u05EA]/g, "")];
     if (!L.length) return h; const fin = c => ({ "כ": "[כך]", "מ": "[מם]", "נ": "[נן]", "פ": "[פף]", "צ": "[צץ]" }[c] || c);
     try { return h.replace(new RegExp("([\u05D0-\u05EA]" + N + "){0,3}" + L.map(fin).join(N) + N, "g"), m => `<mark>${m}</mark>`); } catch (e) { return h; } };
+  /* 2.4.0: מקור ראשון בספרייה לפי סדר התקופות (כמו באבן שושן) — חיפוש בכל תקופה לפי סדרה; משוער: תלוי בחלוקת הקטגוריות של הספרייה ובכתיב */
+  const PERIODS = [["תנ\"ך", ["/תנך"]], ["משנה ותוספתא", ["/משנה", "/תוספתא"]], ["תלמוד", ["/תלמוד בבלי", "/תלמוד ירושלמי"]], ["מדרש", ["/מדרש"]], ["ראשונים", ["/ראשונים"]], ["אחרונים", ["/אחרונים"]]];
+  const catOf = x => String(x.categoryPath || x.category || x.path || "");
+  async function firstSource(r) {
+    const box = $("#first"); if (!box) return; const q = r.title.replace(/[^\u05D0-\u05EA ]/g, "").trim() || r.n;
+    box.innerHTML = '<p class="note"><span class="spin"></span>מחפש לפי סדר התקופות…</p>';
+    for (const [name, cats] of PERIODS) {
+      let hits = name.startsWith("תנ") ? (await runSearch(q, { ...((await tanakhBooks()) ? { books: await tanakhBooks() } : { categories: cats }), limit: 6, order: "catalogue" })).filter(isTanakh) : await runSearch(q, { categories: cats, limit: 6, order: "catalogue" });
+      if (!name.startsWith("תנ")) hits = hits.filter(x => !isTanakh(x) && (!catOf(x) || cats.some(c => catOf(x).includes(c.slice(1)))));
+      if (hits.length) { const x = hits[0], unv = !name.startsWith("תנ") && !catOf(x);
+        box.innerHTML = `<div class="row"><b>מקור ראשון (משוער)</b><span>${esc(name)}: <a href="#" data-open='${esc(JSON.stringify({ id: x.id, bookId: x.bookId, type: x.type, index: x.index, q: r.n }))}'>${esc(plain(x.reference || x.book || ""))}</a></span><span class="note">${unv ? "התקופה לא אומתה מול קטגוריית הספר · " : ""}לפי החיפוש בספריית אוצריא בכתיב זה; ייתכן מקור קדום יותר בכתיב אחר.</span></div>`; return; }
+    }
+    box.innerHTML = `<p class="note">המילה לא נמצאה בספריית אוצריא בכתיב זה.</p>`;
+  }
+  /* 2.4.0: פסוק שהודבק בלי טעמים — הפסוק המוטעם מן התנ"ך שבספרייה */
+  async function verseFromLib(text) {
+    const n = KK.norm(text); if (n.split(" ").length < 2) return null;
+    try { const bks = await tanakhBooks(); const hits = (await runSearch(n, bks ? { books: bks, limit: 4 } : { categories: ["/תנך"], limit: 4 })).filter(isTanakh);
+      for (const x of hits) { const v = plain(x.text); if (!/[\u0591-\u05AF]/.test(v)) continue; const ws = v.split(/\s+/), N = KK.norm(v).split(" ");
+        const want = n.split(" "); for (let i = 0; i + want.length <= N.length; i++) if (want.every((w, k) => N[i + k] === w)) return { text: ws.slice(i, i + want.length).join(" "), ref: plain(x.reference || "") }; } } catch (e) {}
+    return null;
+  }
   async function related(r) {
     const box = $("#rel"); box.innerHTML = '<p class="note"><span class="spin"></span>מחפש באוצריא…</p>';
     const q = r.title.replace(/[^\u05D0-\u05EA ]/g, "").trim() || r.n;
@@ -636,7 +662,7 @@
 
   document.addEventListener("click", e => {
     if (!e.target.closest(".search")) { sugList = []; renderSug(); }
-    const t = e.target.closest("[data-go],[data-root],[data-i],[data-mhg],[data-rep],[data-copy],[data-like],[data-open],[data-unfav],[data-comb],[data-lib],[data-book],[data-delbook],[data-delgram],[data-libopen],[data-gram],[data-ext],[data-ext2],[data-url],[data-m2],[data-srch],[data-lib2],[data-even],[data-lt],[data-cf],[data-gsec],[data-psk],[data-mhs],#genrep,#oconc,#oeven,#favexp,#osearch,#orel,#ftog,[data-letter],#more,#back,#clrh,#modes button,#clr,#allback"); if (!t) return;
+    const t = e.target.closest("[data-go],[data-root],[data-i],[data-mhg],[data-rep],[data-copy],[data-like],[data-open],[data-unfav],[data-comb],[data-lib],[data-book],[data-delbook],[data-delgram],[data-libopen],[data-gram],[data-ext],[data-ext2],[data-url],[data-m2],[data-srch],[data-lib2],[data-even],[data-lt],[data-cf],[data-gsec],[data-psk],[data-mhs],#genrep,#oconc,#ofirst,#libchk,#oeven,#favexp,#osearch,#orel,#ftog,[data-letter],#more,#back,#clrh,#modes button,#clr,#allback"); if (!t) return;
     if (t.dataset.mhg) openMh(t.dataset.mhg, t.dataset.mhn);
     else if (t.dataset.rep !== undefined) report(cur, +t.dataset.rep);
     else if (t.dataset.copy !== undefined) { const s = cur.s[+t.dataset.copy]; copyText(`${cur.title}: ${s[1]}`); }
@@ -646,6 +672,7 @@
     else if (t.id === "osearch") call("reader.openSearchTab", { query: cur.title.replace(/[^\u05D0-\u05EA ]/g, ""), autoSearch: true });
     else if (t.id === "orel") related(cur);
     else if (t.id === "oconc") showConc(cur);
+    else if (t.id === "ofirst") firstSource(cur);
     else if (t.id === "oeven") openEven();
     else if (t.dataset.ext) openExt(t.dataset.ext);
     else if (t.dataset.url) call("app.openUrl", { url: t.dataset.url });
@@ -820,7 +847,8 @@
       $("#nthq").onkeydown = e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) showAnalyze($("#nthq").value); }; };
     if (!text) { NTH = null; $("#out").innerHTML = `<h2>ניתוח משפט</h2><p class="note">לכל מילה: הניקוד, השורש והבניין (זיהוי אוטומטי, משוער), פירוש קצר, וכללי הדקדוק, הניקוד והטעמים שבה. כשאין ניקוד בטקסט — הוא מושלם מהנקדן המקומי, ואם אינו מותקן — מצורת המילה בתנ"ך או מהמילון. טעמים אי אפשר להשלים: הם מנותחים כשהם בטקסט (העתקה מספר תנ"ך מוטעם באוצריא). Ctrl+Enter — ניתוח.</p>` + box; return wire(); }
     $("#out").innerHTML = `<h2>ניתוח משפט</h2>` + box + `<p class="note"><span class="spin"></span>מנתח…</p>`; wire();
-    let voc = text, vsrc = "טקסט"; if (!NIK.test(text)) { const v = await KKNakdan.voc(text, ST.nakdan !== false); if (v !== text && NIK.test(v)) { voc = v; vsrc = "נקדן"; } }
+    let voc = text, vsrc = "טקסט", vref = "";
+    if (!/[\u0591-\u05AF]/.test(text)) { const vl = await verseFromLib(text); if (vl) { voc = vl.text; vsrc = "התנ\"ך שבספרייה"; vref = vl.ref; } } if (!NIK.test(voc)) { const v = await KKNakdan.voc(text, ST.nakdan !== false); if (v !== text && NIK.test(v)) { voc = v; vsrc = "נקדן"; } }
     const raws = voc.replace(/[\u05C3:]\s*$/, "").split(/\s+/).filter(w => w && !/^[|\u05C0]$/.test(w)).slice(0, 60);
     const rows = raws.map((raw, k) => { const n = KK.norm(raw), parts = n.split(" ").filter(Boolean), t = parts[parts.length - 1] || n;
       const r = D.find(t), an = D.analyze(t); let nk = NIK.test(raw) ? raw.replace(TAM, "") : "", ns = nk ? vsrc : "";
@@ -829,13 +857,13 @@
       const tags = [...ruleTags(NIK.test(raw) ? raw : (nk || raw), an, t), ...(nk ? KK.nikudAnalyze(nk, k === raws.length - 1) : [])];
       let def = best && r ? r.s[best.i][1] : ""; if ((!best || /התוסף|המכלול|ויקי/.test(r.s[best.i][2] || "")) && an.root) { const rr = D.get(an.root) || D.find(KK.refinal(an.root)); const sn = rr && rr.s.find(x => !/התוסף|המכלול|ויקי/.test(x[2] || "")); if (sn) def = `מן ${rr.title}: ${sn[1]}`; }
       return { raw, n: t, r, an, nk, ns, def, tags, taam: taamOf(raw) }; });
-    NTH = { text, voc, vsrc, rows };
+    NTH = { text, voc, vsrc, rows, vref };
     const sum = {}; for (const x of rows) for (const g of x.tags) sum[g.t] = (sum[g.t] || 0) + 1;
-    const tm = /[\u0591-\u05AF]/.test(text) ? KK.taamMap(text) : null;
+    const tm = /[\u0591-\u05AF]/.test(voc) ? KK.taamMap(voc) : null;
     const tnode = (nd, pe, r) => `<div class="tnode lv${Math.min(nd.end.lv, 4)}"><div class="thead"><span class="tw">${r.units.slice(nd.from, nd.to + 1).map(u => esc(u.text)).join(" ")}</span>${nd.end === pe ? "" : `<small>${esc(nd.end.name || "")}</small>`}</div>${nd.kids ? `<div class="tkids">${nd.kids.map(c => tnode(c, nd.end, r)).join("")}</div>` : ""}</div>`;
     $("#out").innerHTML = `<h2>ניתוח משפט</h2>` + box +
       `<section class="card"><h3>הכללים בטקסט</h3>${Object.keys(sum).length ? `<div class="chips">${tagHtml(Object.keys(sum).map(t => ({ ...rows.flatMap(x => x.tags).find(g => g.t === t), t: t + (sum[t] > 1 ? " ×" + sum[t] : "") })))}</div>` : `<p class="note">לא זוהו כללים.</p>`}
-       <p class="note">ניקוד: ${vsrc === "טקסט" && NIK.test(text) ? "מהטקסט" : vsrc === "נקדן" ? "הושלם בנקדן המקומי" : "חסר בטקסט — הושלם לכל מילה מצורתה בתנ\"ך או מהמילון, ללא התאמה להקשר"} · טעמים: ${tm ? (tm.error ? "יש, אך " + (tm.error === "emet" ? "בטעמי אמ\"ת (תהלים, משלי, איוב) — המפה תומכת בטעמי כ\"א ספרים" : "לא ניתן לבנות מפה") : "יש — מפת הפסוק למטה") : "אין בטקסט"}</p></section>
+       <p class="note">${vref ? `הפסוק נמצא בתנ"ך שבספרייה (${esc(vref)}) — הניקוד והטעמים ממנו · ` : ""}ניקוד: ${vref ? "מהפסוק" : vsrc === "טקסט" && NIK.test(text) ? "מהטקסט" : vsrc === "נקדן" ? "הושלם בנקדן המקומי" : "חסר בטקסט — הושלם לכל מילה מצורתה בתנ\"ך או מהמילון, ללא התאמה להקשר"} · טעמים: ${tm ? (tm.error ? "יש, אך " + (tm.error === "emet" ? "בטעמי אמ\"ת (תהלים, משלי, איוב) — המפה תומכת בטעמי כ\"א ספרים" : "לא ניתן לבנות מפה") : "יש — מפת הפסוק למטה") : "אין בטקסט"}</p></section>
        <div class="senses">${rows.map(x => `<div class="sense nthw"><div class="nthh">${x.r ? `<button class="chip pri" data-go="${esc(x.r.title)}">${esc(x.nk || x.raw)}</button>` : `<b class="nw">${esc(x.nk || x.raw)}</b>`}${x.ns && x.ns !== "טקסט" ? `<small class="note"> ניקוד: ${esc(x.ns)}</small>` : ""}</div>
          <div class="sbody">${x.an.root ? `<small class="note">שורש <a href="#" data-root="${esc(x.an.root)}">${esc(KK.refinal(x.an.root))}</a> · ${esc(String(x.an.binyan || "").split(" (")[0])}${x.an.ok ? "" : " (משוער)"}${x.taam.length ? " · טעם: " + esc(x.taam.join(", ")) : ""}</small><br>` : ""}${x.def ? esc(x.def) : x.r ? "" : '<span class="note"><i class=oi data-i=warn></i> לא זוהתה במילון</span>'}</div>
          ${x.tags.length ? `<div class="chips rules">${tagHtml(x.tags)}</div>` : ""}</div>`).join("")}</div>` +

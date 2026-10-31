@@ -328,3 +328,4 @@ table.glyph td:first-child{font-size:1.8em;line-height:1.6;text-align:center;fon
 .nth textarea{width:100%;box-sizing:border-box;font:inherit;font-size:1.15em}
 details.rootfix{margin:.5em 0}details.rootfix input{font:inherit;width:6em}
 @media (max-width:520px){.about dl.feat{grid-template-columns:1fr}}
+.tile .lib-ok{color:var(--color-primary)}.tile .lib-no{color:var(--color-error)}.tile.nolib{opacity:.6}
