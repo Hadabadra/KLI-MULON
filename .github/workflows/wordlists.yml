@@ -21,4 +21,4 @@ jobs:
         run: |
           git config user.name "Claude"; git config user.email "noreply@anthropic.com"
           git add data/*.js
-          if git diff --cached --quiet; then echo "אין שינוי"; else git commit -m "רשימות מילים: ${{ github.event.inputs.sources }} (עדכון אוטומטי)" && git push; fi
+          if git diff --cached --quiet; then echo "אין שינוי"; else git commit -m "רשימות מילים: ${{ github.event.inputs.sources }} (עדכון אוטומטי)" && git pull --rebase && git push; fi
