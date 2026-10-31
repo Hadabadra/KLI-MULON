@@ -1,0 +1,24 @@
+name: רשימות מילים (האקדמיה, מילוג, ויקימילון)
+
+# שואב שמות ערכים בלבד (tools/fetch_wordlists.py) ומעדכן את data/*.js. ידני מלשונית Actions.
+on:
+  workflow_dispatch:
+    inputs:
+      sources:
+        description: 'מקורות (academy milog wikt)'
+        default: 'academy'
+permissions:
+  contents: write
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: שאיבה
+        run: python3 tools/fetch_wordlists.py ${{ github.event.inputs.sources }} --rate 3
+      - name: שמירה
+        run: |
+          git config user.name "Claude"; git config user.email "noreply@anthropic.com"
+          git add data/*.js
+          if git diff --cached --quiet; then echo "אין שינוי"; else git commit -m "רשימות מילים: ${{ github.event.inputs.sources }} (עדכון אוטומטי)" && git push; fi
