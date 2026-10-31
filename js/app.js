@@ -129,7 +129,7 @@
       (isAcr ? "" : `<div id="libhits"></div>`) +
       (isAcr ? "" :       `<div class="row"><b>${an.ok ? (an.src === "rd" ? "שורש (מאומת מול ספר השרשים) · בניין משוער" : "שורש (נמצא במילון) · בניין משוער") : "שורש משוער, לא מאומת"}</b><div class="chips"><button class="chip pri" data-root="${esc(root)}">שורש: ${esc(KK.refinal(root))}</button>${(an.alts || []).map(x => `<button class="chip" data-root="${esc(x)}">או: ${esc(KK.refinal(x))}</button>`).join("")}<button class="chip" data-gram="הבניינים"><i class=oi data-i=book></i> ${esc(bin)} — בדקדוק</button>${IA("conjBtn", r, an)}</div>
        <span class="note">זיהוי השורש והבניין הוא הערכה אוטומטית ועלול לטעות.</span></div>`) +
-      chipRow("מאותו שורש", same.map(x => x.title)) + chipRow("מילים דומות", sim.map(x => x.title)) +
+      (same.length ? chipRow("מאותו שורש", same.map(x => x.title)).replace(/<\/div><\/div>$/, `<button class="chip pri" data-root="${esc(root)}">כל המילים מהשורש ←</button></div></div>`) : "") + chipRow("מילים דומות", sim.map(x => x.title)) +
       `<div class="pager">${nb.prev ? chip(nb.prev.title, "", "") .replace(">", ">→ ") : "<span></span>"}${nb.next ? chip(nb.next.title).replace(">", ">← ") : ""}</div>`;
     if (!isAcr) fillLibHits(r.title.replace(/[^\u05D0-\u05EA ]/g, ""), $("#libhits"));
     $("#out").scrollTop = 0; window.scrollTo(0, 0);
@@ -396,7 +396,7 @@
   function rootWords(root) { const r = KK.unfinal ? KK.unfinal(KK.norm(root)) : KK.norm(root);
     if (RIX) { const m = RIX.get(r); return m ? [...m.keys()].sort((a, b) => ((m.get(b).includes("d")) - (m.get(a).includes("d"))) || a.length - b.length) : []; }
     return D.byRoot(root).map(x => x.n); }
-  const RF = { q: "", letter: "", len: "", gz: "", src: "", shown: 0 };
+  const RF = { q: "", letter: "", len: "", gz: "", src: "", shown: 0, open: false };
   const GZF = { 'ל"ה': r => /ה$/.test(r), 'ע"ו/ע"י': r => /^.[וי].$/.test(r), 'פ"נ': r => /^נ/.test(r), 'פ"י': r => /^י/.test(r), 'ע"ע': r => r.length === 3 && r[1] === r[2], 'גרוניות': r => /[אהחע]/.test(r) };
   async function showRoots(q) {
     mode = "root"; tabs(); $("#out").classList.add("wide"); if (q !== undefined) { RF.q = KK.unfinal ? KK.unfinal(KK.norm(q)) : KK.norm(q); RF.shown = 0; }
@@ -407,14 +407,16 @@
     if (RF.len) list = list.filter(r => r.length === +RF.len); if (RF.gz) list = list.filter(GZF[RF.gz]);
     if (RF.src === "rd") list = list.filter(r => D.radak.has(r)); else if (RF.src === "ok") list = list.filter(r => RMETA.get(r).ok); else if (RF.src === "guess") list = list.filter(r => !RMETA.get(r).ok); else if (RF.src === "alt") list = list.filter(r => RMETA.get(r).alt);
     list.sort((a, b) => a.localeCompare(b, "he")); RF.shown = Math.max(RF.shown, 200); const part = list.slice(0, RF.shown);
-    $("#out").innerHTML = `<div class="allhead"><h2>${RF.q ? "שורשים המתחילים ב־" + esc(KK.refinal(RF.q)) : "כל השורשים"}</h2>${RF.q ? `<button class="chip" id="rall">כל השורשים ←</button>` : ""}</div>
-      <div class="fbar rf"><div class="az"><button class="chip ${RF.letter ? "" : "pri"}" data-rl="">הכל</button>${LETTERS.map(l => `<button class="chip ${l === RF.letter ? "pri" : ""}" data-rl="${l}">${l}</button>`).join("")}</div>
+    $("#out").innerHTML = `<div class="allhead"><h2>${RF.q ? "שורשים המתחילים ב־" + esc(KK.refinal(RF.q)) : "כל השורשים"}</h2><button class="ftoggle ${RF.open ? "" : "on"}" id="rftog">${RF.open ? "✕ סגירת הסינון" : "☰ סינון"}</button>${RF.q ? `<button class="chip" id="rall">כל השורשים ←</button>` : ""}</div>
+      ${RF.open ? "" : `<div class="fsum">${[RF.letter && "אות: " + RF.letter, RF.len && { 2: "בן שתיים", 3: "בן שלוש", 4: "מרובע" }[RF.len], RF.gz, RF.src && { rd: "רד\"ק", ok: "מאומת", guess: "משוער", alt: "במחלוקת" }[RF.src]].filter(Boolean).join(" · ") || "ללא סינון"}</div>`}
+      <div class="fbar rf${RF.open ? "" : " hid"}"><div class="az"><button class="chip ${RF.letter ? "" : "pri"}" data-rl="">הכל</button>${LETTERS.map(l => `<button class="chip ${l === RF.letter ? "pri" : ""}" data-rl="${l}">${l}</button>`).join("")}</div>
       <div class="chips">${sel("rflen", [["", "כל האורכים"], ["3", "שורש בן שלוש"], ["4", "שורש מרובע"], ["2", "שורש בן שתיים"]], RF.len)}${sel("rfgz", [["", "כל הגזרות"], ...Object.keys(GZF).map(k => [k, k])], RF.gz)}${sel("rfsrc", [["", "כל המקורות"], ["rd", "בספר השרשים לרד\"ק"], ["ok", "מאומת (רד\"ק או המילון)"], ["guess", "משוער בלבד"], ["alt", "במחלוקת / כמה אפשרויות"]], RF.src)}</div></div>
       <p class="note">${list.length.toLocaleString("he")} שורשים · זיהוי השורש אוטומטי; "משוער" — לא אומת. לחיצה פותחת את כל המילים מהשורש מכל המאגרים.</p>
       <div class="tiles">${part.map(r => { const m = RMETA.get(r); return `<button class="tile" data-root="${esc(r)}"><b>${esc(KK.refinal(r))}</b><small>${m.n} מילים${D.radak.has(r) ? " · רד\"ק" : m.ok ? "" : " · משוער"}${m.alt ? " · במחלוקת" : ""}</small></button>`; }).join("")}</div>` +
       (RF.shown < list.length ? `<p style="text-align:center"><button class="chip pri" id="rmore">הצג עוד (${(list.length - RF.shown).toLocaleString("he")})</button></p>` : "");
     $("#out").querySelectorAll("[data-rl]").forEach(b => b.onclick = () => { RF.letter = b.dataset.rl; RF.shown = 0; showRoots(); });
     for (const [id, k] of [["rflen", "len"], ["rfgz", "gz"], ["rfsrc", "src"]]) $("#" + id).onchange = e => { RF[k] = e.target.value; RF.shown = 0; showRoots(); };
+    $("#rftog").onclick = () => { RF.open = !RF.open; showRoots(); };
     if ($("#rmore")) $("#rmore").onclick = () => { RF.shown += 200; showRoots(); };
     if ($("#rall")) $("#rall").onclick = () => { $("#q").value = ""; showRoots(""); };
   }
@@ -424,9 +426,10 @@
     const m = RIX.get(root) || new Map(), meta = RMETA.get(root), g = {};
     for (const [w, c] of m) { const k = c.includes("d") ? (D.analyze(w).binyan || "—").split(" (")[0] : "מילים ממאגרים נוספים"; (g[k] = g[k] || []).push([w, c]); }
     const order = Object.keys(g).sort((a, b) => (a === "מילים ממאגרים נוספים") - (b === "מילים ממאגרים נוספים"));
-    $("#out").innerHTML = `<div class="allhead"><h2>שורש: ${esc(KK.refinal(root))}</h2><button class="chip" id="rall">כל השורשים ←</button></div><p class="note">${m.size.toLocaleString("he")} מילים מכל המאגרים${D.radak.has(root) ? " · השורש בספר השרשים לרד\"ק" : meta && meta.ok ? "" : " · שורש משוער"}. השיוך לשורש אוטומטי ועלול לטעות. <button class="chip" data-libopen="radak">ספר השרשים לרד"ק</button></p>` +
+    $("#out").innerHTML = `<div class="allhead"><h2>שורש: ${esc(KK.refinal(root))}</h2><button class="chip" id="rexp">⬇ ייצוא</button><button class="chip" id="rall">כל השורשים ←</button></div><p class="note">${m.size.toLocaleString("he")} מילים מכל המאגרים${D.radak.has(root) ? " · השורש בספר השרשים לרד\"ק" : meta && meta.ok ? "" : " · שורש משוער"}. השיוך לשורש אוטומטי ועלול לטעות. <button class="chip" data-libopen="radak">ספר השרשים לרד"ק</button></p>` +
       (m.size ? order.map(b => `<div class="row"><b>${esc(b)}</b><div class="chips">${g[b].map(([w, c]) => `<button class="chip" data-go="${esc(KK.refinal(w))}" title="${esc([...c].map(x => SRCN[x]).join(", "))}">${esc(KK.refinal(w))}</button>`).join("")}</div></div>`).join("") : `<p class="hint">לא נמצאו מילים לשורש הזה.</p>`);
     $("#rall").onclick = () => { $("#q").value = ""; showRoots(""); };
+    $("#rexp").onclick = () => dlText([`שורש ${KK.refinal(root)} — ${m.size} מילים`, "", ...order.map(b => `${b}: ${g[b].map(([w]) => KK.refinal(w)).join(", ")}`)].join("\n"), `שורש ${KK.refinal(root)}.txt`, "דף השורש הורד כקובץ טקסט");
   }
   function showFav() {
     mode = "fav"; tabs();
@@ -484,7 +487,7 @@
   /* 2.2.0: "מילים" — כל המילים מכל המאגרים, עם סינון לפי אות, מקור, הופעה בתנ"ך ומקור ההגדרה */
   let ALLW = null; const AF = { src: "", tnk: "", def: "" };
   function allWords() {
-    if (ALLW) return ALLW; const m = new Map(), add = (w, c) => { w = KK.norm(w); if (!w || /[ "'״׳\-]/.test(w) || w.length < 2) return; const o = m.get(w) || ""; if (!o.includes(c)) m.set(w, o + c); };
+    if (ALLW) return ALLW; const m = new Map(), add = (w, c) => { w = KK.norm(w); if (!w || /[ "'״׳\-]/.test(w) || w.length < 2 || (c !== "d" && /^(.)\1+$/.test(w))) return; const o = m.get(w) || ""; if (!o.includes(c)) m.set(w, o + c); };
     for (const k of D.keys) add(k, "d"); for (const [src, c] of [[window.KK_MILOG, "g"], [window.KK_WIKT, "w"]]) for (const w of String(src || "").split("|")) add(w, c);
     for (const w of Object.keys(window.KK_ACADEMY || {})) add(w, "a"); if (D.lex) for (const n of D.lex._tnk().keys()) add(n, "t");
     ALLW = [...m].sort((a, b) => a[0].localeCompare(b[0], "he")); return ALLW;
@@ -555,6 +558,7 @@
     m.querySelector("#rc").onclick = () => m.remove(); m.onclick = e => { if (e.target === m) m.remove(); };
     m.querySelector("#rs").onclick = async () => {
       const an0 = D.analyze(r.n), nr = m.querySelector("#rroot").value.trim(), nb = m.querySelector("#rbin").value.trim(), fx = [nr && nr !== KK.refinal(an0.root || "") ? `שורש: ${KK.refinal(an0.root || "")} ← ${nr}` : "", nb && nb !== String(an0.binyan || "").split(" (")[0] ? `בניין: ${String(an0.binyan || "").split(" (")[0]} ← ${nb}` : ""].filter(Boolean).join("; ");
+      if (fx) { ST.rootFix = { ...(ST.rootFix || {}), [r.n]: { r: KK.unfinal(KK.norm(nr || KK.refinal(an0.root || ""))), b: nb } }; save(); RIX = null; RIXP = null; }
       const note = [m.querySelector("#rn").value.trim(), fx ? "תיקון " + fx : ""].filter(Boolean).join(" · "), why = m.querySelector("#rr").value;
       const details = `ערך: ${r.title}\n${i < 0 ? "בקשה: " : "הגדרה מס' " + (i + 1) + ": "}${d}${nk ? " [" + nk + "]" : ""}${src ? "\nמקור ההגדרה: " + src : ""}\nסיבה: ${why}${note ? "\nהערה: " + note : ""}\nתוסף: לשון הקודש ${window.KK_VERSION || ""}`;
       const res = await call("feedback.report", { details, reportType: "content" });
@@ -805,14 +809,48 @@
     if ($("#taambtn")) $("#taambtn").onclick = () => showTaam(raw);
   }
 
-  /* 2.2.0: לשונית "ניתוח" — כותבים או מדביקים משפט/פסוק, ומקבלים לכל מילה שורש, בניין, פירוש, כללי הדקדוק, הניקוד והטעמים */
-  function showAnalyze(text) {
-    text = String(text || "").trim(); const box = `<section class="card nth"><textarea id="nthq" rows="3" placeholder="כתבו או הדביקו משפט, פסוק או קטע (מנוקד ומוטעם — לניתוח ניקוד וטעמים)…">${esc(text)}</textarea><div class="chips"><button class="chip pri" id="nthgo"><i class=oi data-i=search></i> נתח</button>${text ? `<button class="chip" id="nthclr">ניקוי</button>` : ""}</div></section>`;
-    if (!text) { mode = "nth"; tabs(); $("#out").innerHTML = `<h2>ניתוח משפט</h2><p class="note">לכל מילה: שורש ובניין (זיהוי אוטומטי, משוער), פירוש, והכללים שבה — אותיות השימוש, הבניין והגזרה; בטקסט מנוקד גם כללי הניקוד, ובפסוק מוטעם גם מפת הטעמים.</p>` + box; }
-    else { const ws = KK.norm(text).split(" ").filter(Boolean).slice(0, 40); selWords = ws; selCtx = { raw: text, words: ws }; showCombined(ws, text); mode = "nth"; tabs();
-      $("#out").insertAdjacentHTML("afterbegin", box); if (hasTaam(text)) { const r = KK.taamMap(text); if (!r.error) $("#out").insertAdjacentHTML("beforeend", `<p><button class="chip pri" id="nthtaam"><i class=oi data-i=music></i> מפת הפסוק לפי הטעמים</button></p>`); if ($("#nthtaam")) $("#nthtaam").onclick = () => showTaam(text); } }
-    $("#nthgo").onclick = () => showAnalyze($("#nthq").value); if ($("#nthclr")) $("#nthclr").onclick = () => showAnalyze("");
-    $("#nthq").onkeydown = e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) showAnalyze($("#nthq").value); };
+  /* 2.2.0: לשונית "ניתוח" — לכל מילה: ניקוד (מהטקסט, מהנקדן, או מהתנ"ך/המילון כשחסר), שורש, בניין, פירוש קצר, כללי הדקדוק, כללי הניקוד והטעם; ובפסוק מוטעם — מפת הטעמים. ייצוא לקובץ טקסט */
+  const NIK = /[\u05B0-\u05BC\u05C1\u05C2\u05C7]/, TAM = /[\u0591-\u05AF]/g;
+  const taamOf = w => [...new Set((String(w).match(TAM) || []).map(c => (KK.TA[c] || [])[1] || KK.TA_CONJ[c]).filter(Boolean))];
+  let NTH = null;
+  async function showAnalyze(text) {
+    text = String(text || "").trim(); mode = "nth"; tabs(); cur = null; $("#out").classList.add("wide");
+    const box = `<section class="card nth"><textarea id="nthq" rows="3" placeholder="כתבו או הדביקו משפט, פסוק או קטע. בלי ניקוד — הניקוד יושלם מהנקדן או מהתנ\"ך והמילון…">${esc(text)}</textarea><div class="chips"><button class="chip pri" id="nthgo"><i class=oi data-i=search></i> נתח</button>${text ? `<button class="chip" id="nthexp">⬇ ייצוא הניתוח</button><button class="chip" id="nthclr">ניקוי</button>` : ""}</div></section>`;
+    const wire = () => { $("#nthgo").onclick = () => showAnalyze($("#nthq").value); if ($("#nthclr")) $("#nthclr").onclick = () => showAnalyze(""); if ($("#nthexp")) $("#nthexp").onclick = exportAnalyze;
+      $("#nthq").onkeydown = e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) showAnalyze($("#nthq").value); }; };
+    if (!text) { NTH = null; $("#out").innerHTML = `<h2>ניתוח משפט</h2><p class="note">לכל מילה: הניקוד, השורש והבניין (זיהוי אוטומטי, משוער), פירוש קצר, וכללי הדקדוק, הניקוד והטעמים שבה. כשאין ניקוד בטקסט — הוא מושלם מהנקדן המקומי, ואם אינו מותקן — מצורת המילה בתנ"ך או מהמילון. טעמים אי אפשר להשלים: הם מנותחים כשהם בטקסט (העתקה מספר תנ"ך מוטעם באוצריא). Ctrl+Enter — ניתוח.</p>` + box; return wire(); }
+    $("#out").innerHTML = `<h2>ניתוח משפט</h2>` + box + `<p class="note"><span class="spin"></span>מנתח…</p>`; wire();
+    let voc = text, vsrc = "טקסט"; if (!NIK.test(text)) { const v = await KKNakdan.voc(text, ST.nakdan !== false); if (v !== text && NIK.test(v)) { voc = v; vsrc = "נקדן"; } }
+    const raws = voc.replace(/[\u05C3:]\s*$/, "").split(/\s+/).filter(w => w && !/^[|\u05C0]$/.test(w)).slice(0, 60);
+    const rows = raws.map((raw, k) => { const n = KK.norm(raw), parts = n.split(" ").filter(Boolean), t = parts[parts.length - 1] || n;
+      const r = D.find(t), an = D.analyze(t); let nk = NIK.test(raw) ? raw.replace(TAM, "") : "", ns = nk ? vsrc : "";
+      if (!nk) { const tf = D.lex && D.lex.tnkGet(t); if (tf && tf.v) { nk = tf.v; ns = "צורת המילה בתנ\"ך"; } else if (r && r.n === t && r.s[0] && r.s[0][0]) { nk = r.s[0][0]; ns = "המילון"; } }
+      const rk = r ? KK.rank(r, { raw: text, words: raws.map(KK.norm) }) : null, pool = rk ? (rk.confident ? rk.best : rk.items.filter(x => x.kind !== "acr")) : [], best = pool.find(x => !/התוסף|המכלול|ויקי/.test(r.s[x.i][2] || "")) || pool.find(x => !/התוסף/.test(r.s[x.i][2] || "")) || pool[0];
+      const tags = [...ruleTags(NIK.test(raw) ? raw : (nk || raw), an, t), ...(nk ? KK.nikudAnalyze(nk, k === raws.length - 1) : [])];
+      let def = best && r ? r.s[best.i][1] : ""; if ((!best || /התוסף|המכלול|ויקי/.test(r.s[best.i][2] || "")) && an.root) { const rr = D.get(an.root) || D.find(KK.refinal(an.root)); const sn = rr && rr.s.find(x => !/התוסף|המכלול|ויקי/.test(x[2] || "")); if (sn) def = `מן ${rr.title}: ${sn[1]}`; }
+      return { raw, n: t, r, an, nk, ns, def, tags, taam: taamOf(raw) }; });
+    NTH = { text, voc, vsrc, rows };
+    const sum = {}; for (const x of rows) for (const g of x.tags) sum[g.t] = (sum[g.t] || 0) + 1;
+    const tm = /[\u0591-\u05AF]/.test(text) ? KK.taamMap(text) : null;
+    const tnode = (nd, pe, r) => `<div class="tnode lv${Math.min(nd.end.lv, 4)}"><div class="thead"><span class="tw">${r.units.slice(nd.from, nd.to + 1).map(u => esc(u.text)).join(" ")}</span>${nd.end === pe ? "" : `<small>${esc(nd.end.name || "")}</small>`}</div>${nd.kids ? `<div class="tkids">${nd.kids.map(c => tnode(c, nd.end, r)).join("")}</div>` : ""}</div>`;
+    $("#out").innerHTML = `<h2>ניתוח משפט</h2>` + box +
+      `<section class="card"><h3>הכללים בטקסט</h3>${Object.keys(sum).length ? `<div class="chips">${tagHtml(Object.keys(sum).map(t => ({ ...rows.flatMap(x => x.tags).find(g => g.t === t), t: t + (sum[t] > 1 ? " ×" + sum[t] : "") })))}</div>` : `<p class="note">לא זוהו כללים.</p>`}
+       <p class="note">ניקוד: ${vsrc === "טקסט" && NIK.test(text) ? "מהטקסט" : vsrc === "נקדן" ? "הושלם בנקדן המקומי" : "חסר בטקסט — הושלם לכל מילה מצורתה בתנ\"ך או מהמילון, ללא התאמה להקשר"} · טעמים: ${tm ? (tm.error ? "יש, אך " + (tm.error === "emet" ? "בטעמי אמ\"ת (תהלים, משלי, איוב) — המפה תומכת בטעמי כ\"א ספרים" : "לא ניתן לבנות מפה") : "יש — מפת הפסוק למטה") : "אין בטקסט"}</p></section>
+       <div class="senses">${rows.map(x => `<div class="sense nthw"><div class="nthh">${x.r ? `<button class="chip pri" data-go="${esc(x.r.title)}">${esc(x.nk || x.raw)}</button>` : `<b class="nw">${esc(x.nk || x.raw)}</b>`}${x.ns && x.ns !== "טקסט" ? `<small class="note"> ניקוד: ${esc(x.ns)}</small>` : ""}</div>
+         <div class="sbody">${x.an.root ? `<small class="note">שורש <a href="#" data-root="${esc(x.an.root)}">${esc(KK.refinal(x.an.root))}</a> · ${esc(String(x.an.binyan || "").split(" (")[0])}${x.an.ok ? "" : " (משוער)"}${x.taam.length ? " · טעם: " + esc(x.taam.join(", ")) : ""}</small><br>` : ""}${x.def ? esc(x.def) : x.r ? "" : '<span class="note"><i class=oi data-i=warn></i> לא זוהתה במילון</span>'}</div>
+         ${x.tags.length ? `<div class="chips rules">${tagHtml(x.tags)}</div>` : ""}</div>`).join("")}</div>` +
+      (tm && !tm.error ? `<h3>מפת הפסוק לפי הטעמים</h3><div class="tmap">${tnode(tm.tree, null, tm)}</div>` : "");
+    wire();
+  }
+  function exportAnalyze() {
+    if (!NTH) return; const L = [`ניתוח: ${NTH.text}`, NTH.voc !== NTH.text ? `מנוקד: ${NTH.voc}` : "", ""];
+    for (const x of NTH.rows) L.push(`• ${x.nk || x.raw}${x.ns && x.ns !== "טקסט" ? " (ניקוד: " + x.ns + ")" : ""}`, x.an.root ? `  שורש ${KK.refinal(x.an.root)} · ${String(x.an.binyan || "").split(" (")[0]}${x.an.ok ? "" : " (משוער)"}` : "", x.def ? `  פירוש: ${x.def}` : "", x.taam.length ? `  טעם: ${x.taam.join(", ")}` : "", x.tags.length ? `  כללים: ${x.tags.map(g => g.t).join("; ")}` : "");
+    dlText(L.filter(s => s !== "").join("\n"), "ניתוח.txt", "הניתוח הורד כקובץ טקסט");
+  }
+  /* ייצוא קובץ טקסט — תמיד עם קישורי הורדה של התוסף */
+  function dlText(body, name, msg) {
+    const txt = body + `\n\n———\nמתוך התוסף "לשון הקודש" לאוצריא. הורדת התוסף: GitHub ${LINKS.gh} · חנות התוספים של אוצריא ${LINKS.store}`;
+    const el = document.createElement("a"); el.href = URL.createObjectURL(new Blob(["\ufeff" + txt], { type: "text/plain;charset=utf-8" })); el.download = name; document.body.appendChild(el); el.click(); el.remove(); call("ui.showMessage", { message: msg });
   }
   /* זיהוי אוטומטי: בחירה, תפריט הקשר, לחיצה על הודעה, פתיחה עם פרמטר */
   async function applySel(text) {
@@ -841,6 +879,7 @@
   }
   window.KKA = Object.assign(window.KKA || {}, { D, call, esc, plain, TNK, bookOf, copyText, LINKS, PARTICLES, save, getST: () => ST }); /* 2.0: חיבור ל-js/ideas-a.js */
   window.KKAPP = Object.assign(window.KKAPP || {}, { st: () => ST, D, save, call, esc, chip, showPractice }); /* 2.0: ממשק לקבצי ההרחבה (js/ideas-*.js) */
-  checkOnline(); fetch("manifest.json").then(r => r.json()).then(m => { if (m && m.version) window.KK_VERSION = m.version; }).catch(() => {}); /* 2.2.0: הגרסה תמיד מהמניפסט */
+  checkOnline(); { const an0 = D.analyze.bind(D); D.analyze = w => { const f = ST.rootFix && ST.rootFix[KK.norm(w)]; return f && f.r ? { root: f.r, binyan: f.b || "—", ok: true, src: "user", alts: [] } : an0(w); }; } /* 2.2.1: תיקוני שורש של המשתמש (מחלון הדיווח) חלים אצלו מיד */
+  fetch("manifest.json").then(r => r.json()).then(m => { if (m && m.version) window.KK_VERSION = m.version; }).catch(() => {}); /* 2.2.0: הגרסה תמיד מהמניפסט */
   load().then(() => { setTimeout(() => rootIndex(), 4000); if (!cur && mode === "word" && !$("#q").value) showAll(); syncLibrary(); fOpen = !!ST.fOpen; applyFs(); prTab(); $("#q").focus(); });
 })();
