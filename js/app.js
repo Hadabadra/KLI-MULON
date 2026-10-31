@@ -97,11 +97,11 @@
   function formRow(r) {
     const f = r.form || {}, t = f.t || D.firstRef(r.n), sp = D.splits(r.n), bs = f.bases || [];
     const parts = [];
-    if (t) parts.push(`<div class="row inl"><b>בתנ"ך</b><div class="chips"><button class="chip pri" data-psk="${esc(t.ref + "|" + r.n)}" title="פתיחת המופע הראשון"><i class=oi data-i=pin></i> ${esc(t.ref)}</button></div><span class="note">${t.v ? esc(t.v) + " · " : ""}${t.c} מופעים בצורה זו — כל צורות השורש בקונקורדנציה</span></div>`);
+    if (t) parts.push(`<div class="row inl"><b>בתנ"ך</b><div class="chips"><button class="chip pri" data-psk="${esc(t.ref + "|" + r.n)}" title="פתיחת המופע הראשון"><i class=oi data-i=pin></i> ${esc(t.ref)}</button></div><span class="note">${t.v ? esc(t.v) + " · " : ""}${t.c} מופעים בצורה זו</span><div class="vq note" data-vq="${esc(t.ref + "|" + r.n)}"></div><span class="note"> — הקונקורדנציה למילה; לכל צורות השורש — מדף השורש</span></div>`);
     else { /* 2.1.3: המילה בתנ"ך רק עם אות שימוש (אביונה ← הָאֲבִיּוֹנָה) — לא לכתוב "אינה בתנ"ך" */
       const L = D.lex, pf = []; if (L) for (const p of ["ה", "ו", "ב", "כ", "ל", "מ", "ש", "וה", "וב", "וכ", "ול", "ומ", "מה", "שה", "בה", "כה", "לה"]) { const x = L.tnkGet(p + r.n); if (x) pf.push({ p, x }); if (pf.length >= 4) break; }
-      if (pf.length) parts.push(`<div class="row inl"><b>בתנ"ך</b><div class="chips">${pf.map(({ p, x }) => `<button class="chip pri" data-psk="${esc(x.ref + "|" + p + r.n)}" title="פתיחת המופע הראשון"><i class=oi data-i=pin></i> ${esc(p + "' + " + KK.refinal(r.n))} · ${esc(x.ref)}</button>`).join("")}</div><span class="note">המילה נמצאת בתנ"ך עם אות שימוש${pf[0].x.v ? " (" + esc(pf[0].x.v) + ")" : ""} — כל צורות השורש בקונקורדנציה</span></div>`);
-      else parts.push(`<div class="row inl"><b>בתנ"ך</b><span class="note">הצורה הזו, גם עם אותיות שימוש, אינה בתנ"ך — צורות השורש בקונקורדנציה</span></div>`); }
+      if (pf.length) parts.push(`<div class="row inl"><b>בתנ"ך</b><div class="chips">${pf.map(({ p, x }) => `<button class="chip pri" data-psk="${esc(x.ref + "|" + p + r.n)}" title="פתיחת המופע הראשון"><i class=oi data-i=pin></i> ${esc(p + "' + " + KK.refinal(r.n))} · ${esc(x.ref)}</button>`).join("")}</div><span class="note">המילה נמצאת בתנ"ך עם אות שימוש${pf[0].x.v ? " (" + esc(pf[0].x.v) + ")" : ""} — הקונקורדנציה למילה; לכל צורות השורש — מדף השורש</span></div>`);
+      else parts.push(`<div class="row inl"><b>בתנ"ך</b><span class="note">הצורה הזו, גם עם אותיות שימוש, אינה בתנ"ך — קונקורדנציה לשורש — מדף השורש</span></div>`); }
     if (f.morph && f.morph.length) parts.push(`<div class="row inl"><b>ניתוח</b><span>${f.morph.map(esc).join("<br>")}</span></div>`);
     if (bs.length && bs[0].how !== "~") parts.push(chipRow("ערך הבסיס", bs.map(b => b.r.title).filter((x, i, a) => a.indexOf(x) === i)));
     if (sp.length) parts.push(`<div class="row inl"><b>אפשר גם</b><div class="chips">${sp.map(x => `<button class="chip" data-go="${esc(x.rest)}">${esc(x.p)} + ${esc(KK.refinal(x.rest))}</button>`).join("")}</div><span class="note">אות שימוש ומילה (לפי ההקשר)</span></div>`);
@@ -112,6 +112,7 @@
   function open(r, push = true) {
     if (!r) return; if (push && cur) stack.push(cur.n); cur = r; mode = "word"; tabs();
     ST.hist = [r.title, ...ST.hist.filter(x => x !== r.title)].slice(0, 60); saveNow();
+    const noRoot = r.n.includes(" ") ? "צירוף או שם של כמה מילים — אין לו שורש אחד; השורש של כל מילה בערך שלה" : (r.s || []).some(x => /ארמ/.test(x[2] || "")) && !(D.analyze(r.n).ok) ? "מילה ארמית — השורש אינו מאומת ולכן אינו מוצג" : "";
     const isAcr = /["'״׳]/.test(r.title), an = D.analyze(r.n), root = an.root, bin = an.binyan;
     const same = isAcr ? [] : rootWords(root).filter(x => x !== r.n).slice(0, 30).map(x => ({ title: KK.refinal(x) }));
     const sim = D.similar(r.n, 14).map(k => D.get(k)).filter(Boolean);
@@ -127,23 +128,24 @@
       Object.entries(links).map(([k, a]) => chipRow(k.replace("_", " "), a)).join("") +
       mhRow(isAcr ? [] : MH.find([r.n, ...(selCtx.words || [])], D)) +
       (isAcr ? "" : `<div id="libhits"></div>`) +
-      (isAcr ? "" :       `<div class="row"><b>${an.ok ? (an.src === "rd" ? "שורש (מאומת מול ספר השרשים) · בניין משוער" : "שורש (נמצא במילון) · בניין משוער") : "שורש משוער, לא מאומת"}</b><div class="chips"><button class="chip pri" data-root="${esc(root)}">שורש: ${esc(KK.refinal(root))}</button>${(an.alts || []).map(x => `<button class="chip" data-root="${esc(x)}">או: ${esc(KK.refinal(x))}</button>`).join("")}<button class="chip" data-gram="הבניינים"><i class=oi data-i=book></i> ${esc(bin)} — בדקדוק</button>${IA("conjBtn", r, an)}</div>
+      (isAcr ? "" : noRoot ? `<div class="row"><b>שורש</b><span class="note">${noRoot}</span></div>` :       `<div class="row"><b>${an.src === "user" ? "שורש (לפי התיקון שלך)" : an.ok ? (an.src === "rd" ? "שורש (מאומת מול ספר השרשים) · בניין משוער" : "שורש (נמצא במילון) · בניין משוער") : "שורש משוער, לא מאומת"}</b><div class="chips"><button class="chip pri" data-root="${esc(root)}">שורש: ${esc(KK.refinal(root))}</button>${(an.alts || []).map(x => `<button class="chip" data-root="${esc(x)}">או: ${esc(KK.refinal(x))}</button>`).join("")}<button class="chip" data-gram="הבניינים"><i class=oi data-i=book></i> ${esc(bin)} — בדקדוק</button>${IA("conjBtn", r, an)}</div>
        <span class="note">זיהוי השורש והבניין הוא הערכה אוטומטית ועלול לטעות.</span></div>`) +
       (same.length ? chipRow("מאותו שורש", same.map(x => x.title)).replace(/<\/div><\/div>$/, `<button class="chip pri" data-root="${esc(root)}">כל המילים מהשורש ←</button></div></div>`) : "") + chipRow("מילים דומות", sim.map(x => x.title)) +
       `<div class="pager">${nb.prev ? chip(nb.prev.title, "", "") .replace(">", ">→ ") : "<span></span>"}${nb.next ? chip(nb.next.title).replace(">", ">← ") : ""}</div>`;
     if (!isAcr) fillLibHits(r.title.replace(/[^\u05D0-\u05EA ]/g, ""), $("#libhits"));
+    document.querySelectorAll("[data-vq]").forEach(verseQuote);
     $("#out").scrollTop = 0; window.scrollTo(0, 0);
   }
   /* מילונים מתוך ספריית אוצריא (רד"ק, ספר הבחור): מאתרים את הספר ופותחים אותו על השורש/המילה */
   const LIB = { radak: ["ספר השרשים", /רד"?ק|רדק/], bachur: ["ספר הבחור", /^ספר הבחור/], tzachot: ["צחות", /צחות/] };
   async function openLib(which) { return openLibTerm(which, which === "radak" ? KK.refinal(D.analyze(cur.n).root) : cur.title.replace(/[^\u05D0-\u05EA ]/g, "")); }
   /* קונקורדנציה לתנ"ך: כל צורות השורש שבמילון, וכל המופעים שלהן בתנ"ך מתוך ספריית אוצריא */
-  async function showConc(r) {
+  async function showConc(r, whole) {
     mode = "conc"; tabs(); const an0 = D.analyze(r.n), an = r.form && r.form.root ? { ...an0, root: r.form.root, ok: true } : (D.firstRef(r.n) && D.firstRef(r.n).root ? { ...an0, root: D.firstRef(r.n).root, ok: true } : an0); $("#out").classList.add("wide");
     /* 2.1.0: כל צורות השורש שבתנ"ך (בכל הנטיות), ואחריהן צורות מהמילון; צורה עם אות שימוש שהצורה בלעדיה כבר ברשימה — מכוסה בחיפוש עם קידומות */
-    const all = [r.n, ...D.tnkByRoot(an.root), KK.refinal(an.root), ...D.byRoot(an.root).map(x => x.title)].map(x => KK.refinal(KK.norm(x).replace(/[^א-ת]/g, ""))).filter((x, i, a) => x && a.indexOf(x) === i);
+    const all = (!whole ? [r.n] : [r.n, ...D.tnkByRoot(an.root), KK.refinal(an.root), ...D.byRoot(an.root).map(x => x.title)]).map(x => KK.refinal(KK.norm(x).replace(/[^א-ת]/g, ""))).filter((x, i, a) => x && a.indexOf(x) === i);
     const fset = new Set(all), forms = all.filter((x, i) => i === 0 || ![1, 2].some(k => /^[והבכלמש]+$/.test(x.slice(0, k)) && fset.has(x.slice(k)))).slice(0, 220);
-    $("#out").innerHTML = `<div class="chead"><h2>קונקורדנציה: ${esc(r.title)}</h2><button class="chip" id="cback" title="חזרה לערך">חזרה לערך ←</button></div><p class="note">שורש ${esc(KK.refinal(an.root))}${an.ok ? "" : " (משוער)"} · ${forms.length} צורות · ${ST.concAll ? "מכל ספריית אוצריא" : "מתוך ספרי התנ\"ך בלבד"}, כולל קידומות. <a href="#" id="cscope">${ST.concAll ? "הגבל לתנ\"ך" : "חפש בכל הספרייה"}</a></p><div class="row"><div class="search mini"><input id="cq" placeholder="הוסיפו צורה לחיפוש…"></div></div><div id="cforms" class="chips"></div><div id="cchart"></div><div id="conc"><p class="note"><span class="spin"></span>אוסף מופעים…</p></div>`;
+    $("#out").innerHTML = `<div class="chead"><h2>קונקורדנציה: ${esc(r.title)}</h2><button class="chip" id="cback" title="חזרה לערך">חזרה לערך ←</button></div><p class="note">${whole ? "כל צורות השורש" : "המילה בלבד (עם אותיות שימוש)"} · שורש ${esc(KK.refinal(an.root))}${an.ok ? "" : " (משוער)"}${whole ? "" : ` · <button class="chip" data-rconc="${esc(an.root)}">קונקורדנציה לכל צורות השורש</button>`} · ${forms.length} צורות · ${ST.concAll ? "מכל ספריית אוצריא" : "מתוך ספרי התנ\"ך בלבד"}, כולל קידומות. <a href="#" id="cscope">${ST.concAll ? "הגבל לתנ\"ך" : "חפש בכל הספרייה"}</a></p><div class="row"><div class="search mini"><input id="cq" placeholder="הוסיפו צורה לחיפוש…"></div></div><div id="cforms" class="chips"></div><div id="cchart"></div><div id="conc"><p class="note"><span class="spin"></span>אוסף מופעים…</p></div>`;
     const card = (x, q) => `<a class="res" href="#" data-open='${esc(JSON.stringify({ id: x.id, bookId: x.bookId, type: x.type, index: x.index, q }))}'><b>${esc(plain(x.reference || x.book || ""))}</b><span>${hlForm(x.text, q)}</span></a>`;
     const out = [], box = () => $("#conc"); let pick = "";
     const draw = () => {
@@ -280,6 +282,11 @@
     $("#bkdl").onclick = () => { const h = `<!DOCTYPE html><html lang="he" dir="rtl"><head><meta charset="UTF-8"><title>${esc(b.title)}</title></head><body style="font-family:David,serif;max-width:50em;margin:2em auto;line-height:1.7"><h1>${esc(b.title)}</h1>${b.note ? `<p><i>${esc(b.note)}</i></p>` : ""}${secs.map(x => secHtml(x, "")).join("")}<hr><p>מתוך התוסף "לשון הקודש" לאוצריא. הורדת התוסף: <a href="${LINKS.gh}">GitHub</a> · <a href="${LINKS.store}">חנות התוספים של אוצריא</a></p></body></html>`;
       const el = document.createElement("a"); el.href = URL.createObjectURL(new Blob(["\ufeff" + h], { type: "text/html;charset=utf-8" })); el.download = b.title.replace(/[\\/:*?"<>|]/g, "") + ".html"; document.body.appendChild(el); el.click(); el.remove();
       copyText(`${LINKS.gh}\n${LINKS.store}`); call("ui.showMessage", { message: "הספר הורד; קישורי ההורדה של התוסף הועתקו" }); };
+    { const rb = document.createElement("button"); rb.className = "chip"; rb.id = "bkrep"; rb.title = "סמנו קטע בספר ולחצו כדי לדווח עליו"; rb.textContent = "דיווח על קטע"; const tb = $("#bktxt"); if (tb) tb.after(rb);
+      rb.onclick = async () => { const q = String(window.getSelection() || "").trim(); if (!q) return call("ui.showMessage", { message: "סמנו תחילה בספר את הקטע שצריך תיקון, ואז לחצו שוב." });
+        const note = prompt("מה צריך לתקן בקטע? (אפשר לציין מקור)", ""); if (note === null) return;
+        const res = await call("feedback.report", { details: `ספר הדקדוק (${b.title}) — קטע לתיקון:\n«${q.slice(0, 600)}»\nהערה: ${note}\nתוסף: לשון הקודש ${window.KK_VERSION || ""}`, reportType: "content" });
+        call("ui.showMessage", { message: res && res.success && res.data === "sent" ? "הדיווח נשלח. תודה!" : res && res.success && res.data === "queued" ? "הדיווח יישלח כשיהיה חיבור." : "הדיווח לא נשלח." }); }; }
     $("#bktxt").onclick = () => { const clean = t => t.replace(/\[\[([^|\]]+)\|([^\]]*)\]\]/g, (m, a, b2) => a === "חיפוש" ? b2 : a === "פסוק" ? "(" + b2.split("|")[0] + ")" : (b2 ? a + ": " + b2 : a)).replace(/\[\[([^\]]+)\]\]/g, "$1").replace(/\*\*([^*]+)\*\*/g, "$1").replace(/^:קצר:\s*/, "בקצרה: ").replace(/^:מקור:\s*/, "מקור: ").replace(/^:דוגמה:\s*/, "דוגמה מן המקרא: ");
       const txt = [b.title, b.note || "", ...secs.flatMap(x => ["", "=".repeat(Math.max(1, 4 - x.lv)) + " " + clean(x.title), ...x.lines.filter(l => !/^!ציור:/.test(l.trim())).map(l => clean(l.trim()).replace(/^\|\s*|\s*\|$/g, "").replace(/\s*\|\s*/g, " | "))]), "", "———", `מתוך התוסף "לשון הקודש" לאוצריא. הורדת התוסף: GitHub ${LINKS.gh} · חנות התוספים של אוצריא ${LINKS.store}`].join("\n").replace(/\n{3,}/g, "\n\n");
       const el = document.createElement("a"); el.href = URL.createObjectURL(new Blob(["\ufeff" + txt], { type: "text/plain;charset=utf-8" })); el.download = b.title.replace(/[\\/:*?"<>|]/g, "") + ".txt"; document.body.appendChild(el); el.click(); el.remove(); call("ui.showMessage", { message: "הספר הורד כקובץ טקסט" }); };
@@ -431,7 +438,7 @@
     const m = RIX.get(root) || new Map(), meta = RMETA.get(root), g = {};
     for (const [w, c] of m) { const k = c.includes("d") ? (D.analyze(w).binyan || "—").split(" (")[0] : "מילים ממאגרים נוספים"; (g[k] = g[k] || []).push([w, c]); }
     const order = Object.keys(g).sort((a, b) => (a === "מילים ממאגרים נוספים") - (b === "מילים ממאגרים נוספים"));
-    $("#out").innerHTML = `<div class="allhead"><h2>שורש: ${esc(KK.refinal(root))}</h2><button class="chip" id="rexp">⬇ ייצוא</button><button class="chip" id="rall">כל השורשים ←</button></div><p class="note">${m.size.toLocaleString("he")} מילים מכל המאגרים${D.radak.has(root) ? " · השורש בספר השרשים לרד\"ק" : meta && meta.ok ? "" : " · שורש משוער"}. השיוך לשורש אוטומטי ועלול לטעות. <button class="chip" data-libopen="radak">ספר השרשים לרד"ק</button></p>` +
+    $("#out").innerHTML = `<div class="allhead"><h2>שורש: ${esc(KK.refinal(root))}</h2><button class="chip pri" data-rconc="${esc(root)}"><i class=oi data-i=lib></i> קונקורדנציה לשורש</button><button class="chip" id="rexp">⬇ ייצוא</button><button class="chip" id="rall">כל השורשים ←</button></div><p class="note">${m.size.toLocaleString("he")} מילים מכל המאגרים${D.radak.has(root) ? " · השורש בספר השרשים לרד\"ק" : meta && meta.ok ? "" : " · שורש משוער"}. השיוך לשורש אוטומטי ועלול לטעות. <button class="chip" data-libopen="radak">ספר השרשים לרד"ק</button></p>` +
       (m.size ? order.map(b => `<div class="row"><b>${esc(b)}</b><div class="chips">${g[b].map(([w, c]) => `<button class="chip" data-go="${esc(KK.refinal(w))}" title="${esc([...c].map(x => SRCN[x]).join(", "))}">${esc(KK.refinal(w))}</button>`).join("")}</div></div>`).join("") : `<p class="hint">לא נמצאו מילים לשורש הזה.</p>`);
     $("#rall").onclick = () => { $("#q").value = ""; showRoots(""); };
     $("#rexp").onclick = () => dlText([`שורש ${KK.refinal(root)} — ${m.size} מילים`, "", ...order.map(b => `${b}: ${g[b].map(([w]) => KK.refinal(w)).join(", ")}`)].join("\n"), `שורש ${KK.refinal(root)}.txt`, "דף השורש הורד כקובץ טקסט");
@@ -567,7 +574,7 @@
     m.querySelector("#rc").onclick = () => m.remove(); m.onclick = e => { if (e.target === m) m.remove(); };
     m.querySelector("#rs").onclick = async () => {
       const an0 = D.analyze(r.n), nr = m.querySelector("#rroot").value.trim(), nb = m.querySelector("#rbin").value.trim(), fx = [nr && nr !== KK.refinal(an0.root || "") ? `שורש: ${KK.refinal(an0.root || "")} ← ${nr}` : "", nb && nb !== String(an0.binyan || "").split(" (")[0] ? `בניין: ${String(an0.binyan || "").split(" (")[0]} ← ${nb}` : ""].filter(Boolean).join("; ");
-      if (fx) { ST.rootFix = { ...(ST.rootFix || {}), [r.n]: { r: KK.unfinal(KK.norm(nr || KK.refinal(an0.root || ""))), b: nb } }; save(); RIX = null; RIXP = null; }
+      if (fx) { ST.rootFix = { ...(ST.rootFix || {}), [r.n]: { r: KK.unfinal(KK.norm(nr || KK.refinal(an0.root || ""))), b: nb } }; save(); RIX = null; RIXP = null; if (mode === "word" && cur && cur.n === r.n) setTimeout(() => open(cur, false), 1200); }
       const note = [m.querySelector("#rn").value.trim(), fx ? "תיקון " + fx : ""].filter(Boolean).join(" · "), why = m.querySelector("#rr").value;
       const details = `ערך: ${r.title}\n${i < 0 ? "בקשה: " : "הגדרה מס' " + (i + 1) + ": "}${d}${nk ? " [" + nk + "]" : ""}${src ? "\nמקור ההגדרה: " + src : ""}\nסיבה: ${why}${note ? "\nהערה: " + note : ""}\nתוסף: לשון הקודש ${window.KK_VERSION || ""}`;
       const res = await call("feedback.report", { details, reportType: "content" });
@@ -667,7 +674,7 @@
 
   document.addEventListener("click", e => {
     if (!e.target.closest(".search")) { sugList = []; renderSug(); }
-    const t = e.target.closest("[data-go],[data-root],[data-i],[data-mhg],[data-rep],[data-copy],[data-like],[data-open],[data-unfav],[data-comb],[data-lib],[data-book],[data-delbook],[data-delgram],[data-libopen],[data-gram],[data-ext],[data-ext2],[data-url],[data-m2],[data-srch],[data-lib2],[data-even],[data-lt],[data-cf],[data-gsec],[data-psk],[data-mhs],#genrep,#oconc,#ofirst,#libchk,#oeven,#favexp,#osearch,#orel,#ftog,[data-letter],#more,#back,#clrh,#modes button,#clr,#allback"); if (!t) return;
+    const t = e.target.closest("[data-go],[data-rconc],[data-root],[data-i],[data-mhg],[data-rep],[data-copy],[data-like],[data-open],[data-unfav],[data-comb],[data-lib],[data-book],[data-delbook],[data-delgram],[data-libopen],[data-gram],[data-ext],[data-ext2],[data-url],[data-m2],[data-srch],[data-lib2],[data-even],[data-lt],[data-cf],[data-gsec],[data-psk],[data-mhs],#genrep,#oconc,#ofirst,#libchk,#oeven,#favexp,#osearch,#orel,#ftog,[data-letter],#more,#back,#clrh,#modes button,#clr,#allback"); if (!t) return;
     if (t.dataset.mhg) openMh(t.dataset.mhg, t.dataset.mhn);
     else if (t.dataset.rep !== undefined) report(cur, +t.dataset.rep);
     else if (t.dataset.copy !== undefined) { const s = cur.s[+t.dataset.copy]; copyText(`${cur.title}: ${s[1]}`); }
@@ -705,6 +712,7 @@
     else if (t.dataset.letter) { showAll(t.dataset.letter); }
     else if (t.id === "more") { allShown += PAGE; showAll(null, true); }
     else if (t.dataset.go) { if (!t.closest(".selrow")) clearSel(); $("#sug").classList.add("hid"); lookup(t.dataset.go); }
+    else if (t.dataset.rconc) { const rt = KK.unfinal(KK.norm(t.dataset.rconc)); showConc({ n: rt, title: KK.refinal(rt), form: { root: rt }, s: [], l: [] }, true); }
     else if (t.dataset.root) showRoot(t.dataset.root);
     else if (t.dataset.i) { clearSel(); const r = sugList[+t.dataset.i]; picked = Date.now(); $("#q").value = r.title; sugList = []; renderSug(); open(r); }
     else if (t.id === "allback") { $("#q").value = ""; showAll(); }
@@ -735,6 +743,15 @@
   }
   /* 2.0: [[פסוק|בראשית א ג]] או [[פסוק|בראשית א ג|מילה]] — פתיחת הפסוק באוצריא. עם מילה: חיפוש המילה בספר ובחירת המופע שההפניה שלו היא הפסוק; בלי מילה — נפתח הספר וההפניה מועתקת */
   const refNorm = t => plain(t).replace(/^ספר /, "").replace(/[,:.()\-–]/g, " ").replace(/(^| )(פרק|פסוק)(?= )/g, " ").replace(/\s+/g, " ").trim();
+  async function verseQuote(el) {
+    try { const [ref, word] = el.dataset.vq.split("|"), r0 = refNorm(ref);
+      const bk = [...TNK].sort((a, b) => b.length - a.length).find(t => r0 === t || r0.startsWith(t + " ")); if (!bk) return;
+      const b = await findLibBook(bk) || (bk === "תהלים" ? await findLibBook("תהילים") : null); if (!b) return; const cv = r0.slice(bk.length).trim();
+      const hits = await runSearch(word, { books: [{ bookId: b.bookId, type: b.type }], limit: 5000, order: "catalogue" });
+      const h = hits.find(x => { const z = refNorm(x.reference || ""); return z === r0 || z.endsWith(" " + cv); }); if (!h || !el.isConnected) return;
+      const ws = String(h.text || "").replace(/<[^>]+>/g, "").split(/\s+/), i = ws.findIndex(x => KK.norm(x).replace(/[^א-ת]/g, "").endsWith(KK.refinal(word))), a = Math.max(0, i - 6), z = i < 0 ? 14 : i + 7;
+      el.innerHTML = `«${a ? "… " : ""}${hlForm(ws.slice(a, z).join(" "), word)}${z < ws.length ? " …" : ""}» (${esc(ref)})`; } catch (e) {}
+  }
   async function openVerse(spec) {
     const [ref, word] = String(spec || "").split("|").map(x => x.trim()), r0 = refNorm(ref);
     const bk = [...TNK].sort((a, b) => b.length - a.length).find(t => r0 === t || r0.startsWith(t + " ")) || (r0.startsWith("ישעיה ") ? "ישעיהו" : r0.startsWith("ירמיה ") ? "ירמיהו" : "");

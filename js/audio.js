@@ -12,6 +12,14 @@
   const toUrl = b => new Promise(ok => { const r = new FileReader(); r.onload = () => ok(r.result); r.readAsDataURL(b); });
   const fromUrl = u => fetch(u).then(r => r.blob());
   let player = null;
+  /* 2.4.4: באוצריא כתובת blob: לא תמיד מתנגנת — נופלים ל-data: URL, ובכישלון מוצגת הודעה */
+  async function playBlob(b) {
+    if (player) { try { player.pause(); } catch (e) {} }
+    const tryPlay = u => new Promise((ok, no) => { const a = new Audio(); a.onerror = () => no(a.error); a.src = u; a.play().then(() => ok(a), no); });
+    try { player = await tryPlay(URL.createObjectURL(b)); }
+    catch (e) { try { player = await tryPlay(await toUrl(b.type ? b : new Blob([b], { type: "audio/mpeg" }))); }
+      catch (e2) { const m = "לא ניתן להשמיע את הקובץ. נסו קובץ MP3 או WAV" + (b.type ? " (סוג הקובץ: " + b.type + ")" : ""); if (window.KKApi) KKApi("ui.showMessage", { message: m }); else alert(m); } }
+  }
   async function show(out, msg) {
     let have = new Set(); try { have = new Set(await keys()); } catch (e) { out.innerHTML = `<h2>השמעת הטעמים</h2><p class="hint">אחסון ההקלטות אינו זמין בסביבה זו.</p>`; return; }
     const cell = (t, s) => { const k = t + "|" + s; return have.has(k) ? `<button class="chip pri" data-aplay="${esc(k)}" title="השמעה">▶</button><button class="ib" data-adel="${esc(k)}" title="מחיקת ההקלטה" aria-label="מחיקת ההקלטה">✕</button>` : `<label class="chip" title="הוספת הקלטה (קובץ שמע)">＋<input type="file" accept="audio/*" data-aadd="${esc(k)}" hidden></label>`; };
@@ -20,7 +28,7 @@
       <div class="tblw"><table class="atbl"><thead><tr><th>טעם</th>${TRAD.map(s => `<th>${esc(s)}</th>`).join("")}</tr></thead><tbody>${TAAM.map(t => `<tr><th>${esc(t)}</th>${TRAD.map(s => `<td>${cell(t, s)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
     out.onclick = async e => {
       const p = e.target.closest("[data-aplay]"), d = e.target.closest("[data-adel]");
-      if (p) { const b = await get(p.dataset.aplay); if (!b) return; if (player) { player.pause(); URL.revokeObjectURL(player.src); } player = new Audio(URL.createObjectURL(b)); player.play().catch(() => {}); }
+      if (p) { const b = await get(p.dataset.aplay); if (!b) return; playBlob(b); }
       else if (d && confirm("למחוק את ההקלטה?")) { await del(d.dataset.adel); show(out); }
       else if (e.target.id === "aexp") {
         const all = {}; for (const k of await keys()) all[k] = await toUrl(await get(k));
@@ -30,7 +38,7 @@
     };
     out.onchange = async e => {
       const f = e.target.files && e.target.files[0]; if (!f) return;
-      if (e.target.dataset.aadd) { if (!/^audio\//.test(f.type)) return show(out, "הקובץ אינו קובץ שמע."); await put(e.target.dataset.aadd, f); return show(out, "ההקלטה נשמרה."); }
+      if (e.target.dataset.aadd) { if (f.type && !/^audio\//.test(f.type) && !/\.(mp3|wav|ogg|m4a|aac|opus|webm)$/i.test(f.name)) return show(out, "הקובץ אינו קובץ שמע."); await put(e.target.dataset.aadd, f); return show(out, "ההקלטה נשמרה."); }
       if (e.target.id === "aimp") {
         try { const j = JSON.parse(await f.text()); if (j.kind !== "kk-taamim-audio") throw 0; let n = 0;
           for (const [k, u] of Object.entries(j.rec || {})) { const [t, s] = k.split("|"); if (TAAM.includes(t) && TRAD.includes(s) && /^data:audio\//.test(u)) { await put(k, await fromUrl(u)); n++; } }
@@ -50,7 +58,7 @@
       bx.innerHTML = `<b><i class=oi data-i=vol></i> השמעה</b>` + (rec.length ? rec.map(([t, s]) => `<button class="chip" data-aplay="${esc(t + "|" + s)}">▶ ${esc(base(t))} · ${esc(s)}</button>`).join("")
         : `<span class="note">${ts.length ? "לטעמים שבסעיף זה" : "לסעיף זה"} אין עדיין הקלטות.</span><button class="chip" data-m2="audio">הוספת הקלטות</button>`);
     }
-    if (!root.__aplay) { root.__aplay = true; root.addEventListener("click", async e => { const p = e.target.closest(".ainl [data-aplay]"); if (!p) return; const b = await get(p.dataset.aplay); if (!b) return; if (player) { player.pause(); URL.revokeObjectURL(player.src); } player = new Audio(URL.createObjectURL(b)); player.play().catch(() => {}); }); }
+    if (!root.__aplay) { root.__aplay = true; root.addEventListener("click", async e => { const p = e.target.closest(".ainl [data-aplay]"); if (!p) return; const b = await get(p.dataset.aplay); if (!b) return; playBlob(b); }); }
   }
   g.KKAudio = { show, inline, TAAM, TRAD };
 })(window);
