@@ -330,3 +330,9 @@ details.rootfix{margin:.5em 0}details.rootfix input{font:inherit;width:6em}
 @media (max-width:520px){.about dl.feat{grid-template-columns:1fr}}
 .tile .lib-ok{color:var(--color-primary)}.tile .lib-no{color:var(--color-error)}.tile.nolib{opacity:.6}
 .nthh-list{display:flex;flex-direction:column;gap:.3em}.nthh-list .res{text-align:start;font:inherit;cursor:pointer;background:none;border:none;padding:.35em .2em;color:inherit;border-bottom:1px solid var(--color-outline-variant)}
+
+/* 2.4.5: עמוד כניסה, משוב לניתוח */
+.welc .wsl{min-height:4.5em}.welc .wsl.in{animation:wslin .6s ease}.welc .wsl b{font-size:1.15em;color:var(--color-primary)}
+@keyframes wslin{from{opacity:0;transform:translateX(-1em)}to{opacity:1;transform:none}}
+.wdots{display:flex;gap:.4em;justify-content:center}.wdot{width:.6em;height:.6em;border-radius:50%;border:0;background:var(--color-outline-variant);cursor:pointer;padding:0}.wdot.on{background:var(--color-primary)}
+.nfb{display:inline-flex;gap:.15em;margin-inline-end:.3em}.nfb .ib{opacity:.45}.nfb .ib.on{opacity:1}.vtext{font-size:1.2em;line-height:1.9}
