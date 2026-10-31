@@ -1,6 +1,6 @@
 # מצב הפרויקט — לשון הקודש (id: milon-klei-kodesh) — לשיחה הבאה
 
-**עדכני: 31.10.2026, גרסה 2.4.2** — שוחררה ב-GitHub ופורסמה בחנות. אין Issues פתוחים. סקירה מהירה:
+**עדכני: 31.10.2026, גרסה 2.4.3** — שוחררה ב-GitHub ופורסמה בחנות. אין Issues פתוחים. סקירה מהירה:
 
 - ריפו: https://github.com/Hadabadra/KLI-MULON (`main`). דחיפה עם שינוי `version` ב-manifest מריצה `release.yml` (Release + .otzplugin) ו-`store.yml` (פרסום לחנות; בונה גם את `data/changelog.js` עם הגרסה).
 - החנות דוחה צבעי hex מחוץ ל-`:root` (תגית "מראה תואם") — רק `var(--color-*)`.
@@ -9,7 +9,8 @@
 - זיהוי שורש (js/core.js `analyze`): שכבות rd (רד"ק + `SUPP` + `IRREG`) ← dict ← tnk (`tnkRoots`: ≥3 צורות, בלי אא/ו פותחת) ; מרובעים — רשימה `QR`; התפעל בשיכול.
 - תיקוני שורש של משתמש: `ST.rootFix` (חל אצלו); לאחד מדי פעם ל-`IRREG`/`SUPP`.
 - "מקור ראשון בספרייה": `PERIODS` ב-js/app.js — שמות הקטגוריות לא אומתו באוצריא.
-- רשימות מילים חיצוניות: `.github/workflows/wordlists.yml` (ידני, sources=academy/milog/wikt) — האתרים חסומים מסשן Claude אך נגישים מ-Actions.
+- רשימות מילים חיצוניות: `.github/workflows/wordlists.yml` (ידני, sources=academy/milog/wikt; הפעלה: `gh api -X POST repos/Hadabadra/KLI-MULON/actions/workflows/wordlists.yml/dispatches -f ref=main -f 'inputs[sources]=milog wikt'`). terms.hebrew-academy.org.il, milog ו-wikimedia נגישים מ-Actions; **hebrew-academy.org.il (האתר הראשי) חוסם גם את Actions** (Cloudflare 403; robots.txt חוסם ClaudeBot) — לא לנסות לעקוף.
+- **פתוח — מילים חדשות של האקדמיה (מזנבת):** דפי "המילים החדשות" לפי שנה מציגים את הרשימה כתמונה (למשל wp-content/uploads/2025/02/TASHPAV.jpg לתשפ"ו) ו-PDF. ממתינים לתמונות מהמשתמשת; אחר כך: `tools/academy-new.txt` + מקור `academy-new` (פירוט ב-docs/ROADMAP.md). ב-2.4.3 נוספו קישורים לשני הדפים ב"ספרי דקדוק ← באתרים" (`WEBGRAM`).
 - דיווחים: מהמייל ← Issues (סקריפט Apps Script); מתועדים ב-docs/REPORTS.md. תכנון: docs/ROADMAP.md.
 
 ---
