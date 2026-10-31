@@ -14,6 +14,7 @@
     ['אא"ב', "אם אתה אומר בשלום (נניח שמה שאתה אומר ... מתקבל על הדעת, אבל ...)", "אי אמרת בשלמא — אם תאמר: מובן הדבר (אם אתה אומר כך — ניחא, אבל ...)"],
     ["בשלמא", "בשלום", "ניחא, מובן הדבר (בלשון הגמרא: \"בשלמא ... אלא ...\")"],
     ["בשלמא", "בשלום (נניח ש... אפשרי, אבל ... )", "ניחא — נניח ש... מובן, אבל ..."],
+    ["קול", "נוהג להקל", "בלשון הגמרא (מן \"קל\", ולא מן קוֹל השמיעה): מֵקֵל, נוהג להקל", ""],
     ["עליה", "אוניית מעפילים", "עלייה ממקום נמוך לגבוה; גם: עליית הגג, עלייה לרגל, עלייה לתורה", "עֲלִיָּה"]
   ];
   const fixed = (t, x) => { const f = FIX_DEF.find(([w, d]) => t === w && x[1] === d); return f ? [f[3] !== undefined ? f[3] : x[0], f[2], f[3] !== undefined ? "תיקון התוסף" : x[2]] : x; };
@@ -123,7 +124,7 @@
       if (t && bs0.length > 1) { const end = t.v.slice(-2), f = b => !(end === "\u05D5\u05B9" && /גוף ראשון רבים$/.test(b.m)) && !(/\u05D5\u05BC$/.test(t.v) && /גוף שלישי זכר יחיד$/.test(b.m)); if (bs0.some(f)) bs0 = bs0.filter(f); }
       const bs = bs0, an = this.analyze(w), root = (t && t.root) || (bs[0] && !bs[0].how ? this.analyze(bs[0].r.n).root : an.root);
       const morph = (pre ? hs.map(a => ({ ...a, m: `${pre}' + ${a.m}` })) : t && bs.length && hs ? hs.filter(a => bs.some(b => b.m === a.m) || a.lemma === "=") : hs || []).map(a => a.m).filter((x, i, a) => x && a.indexOf(x) === i);
-      const desc = [core ? core[1] : "", morph.length ? morph.join(" / ") : "",
+      const desc = [core ? core[1] : "", morph.length ? (morph.length > 1 ? "ניתוחים אפשריים (לפי הכתב בלי ניקוד): " + morph.join(" / או: ") : morph[0]) : "",
         bs.length ? (bs[0].how === "~" ? `קרוב במאגר: "${bs[0].r.title}" (ייתכן שאינו אותו עניין)` : (bs[0].how && w === bs[0].how.replace(" + ", "") + bs[0].r.n ? `${bs[0].how.replace(" + ", "' + ")}"${bs[0].r.title}"` : (bs[0].how ? `${bs[0].how.replace(" + ", "' + ")}` : "") + `נטייה של "${bs.map(b => b.r.title).filter((x, i, a) => a.indexOf(x) === i).join("\" / \"")}"`)) : "",
         t ? `בתנ"ך ${t.c} פעמים; ראשון: ${t.ref}` : ""].filter(Boolean).join(" · ") || "מילה שאינה במאגר הפירושים";
       const s = [[t ? t.v : (core ? core[0] : ""), desc, core ? "מילות היסוד (התוסף)" : "צורת המילה (התוסף)"]];
@@ -281,6 +282,10 @@
   const L = "[\u05D0-\u05EA]";
   const TEMPL = [
     [new RegExp(`^(${L})(${L})(${L})ונ$`), m => [m[1], m[2], m[3]], "שם (משקל קִטָּלוֹן)", -0.6],
+    /* 2.2.0 (דיווחים): מספר סודר קְטִילִית (חמישית→חמש) ושם משקל מִקְטֶלֶת (מטבעת→טבע) */
+    [new RegExp(`^(${L})(${L})י(${L})ית$`), m => [m[1], m[2], m[3]], "שם (מספר סודר, משקל קְטִילִית)", -0.7],
+    [new RegExp(`^(${L})(${L})י(${L})י$`), m => [m[1], m[2], m[3]], "שם (מספר סודר, משקל קְטִילִי)", -0.2],
+    [new RegExp(`^מ(${L})(${L})(${L})ת$`), m => [m[1], m[2], m[3]], "שם (משקל מִקְטֶלֶת)", -0.3],
     /* 1.8.0: משקלים שזוהו לא נכון (פלוגתא→פלג, מריבה→ריב, למדנות→למד) */
     [new RegExp(`^(${L})(${L})ו(${L})ת[אה]$`), m => [m[1], m[2], m[3]], "שם ארמי (משקל פְּלוּגְתָּא)", -0.7],
     [new RegExp(`^(${L})(${L})(${L})נות$`), m => [m[1], m[2], m[3]], "שם (משקל קַטְלָנוּת)", -0.8],
@@ -500,6 +505,6 @@
     });
     return out;
   }
-  g.KK = { Lex, CORE, hsText, nikudAnalyze, taamMap, norm, Dict, skeleton, rank, kindOf, refinal, MhIndex, MH_ID, MH_LABEL };
+  g.KK = { Lex, CORE, hsText, nikudAnalyze, taamMap, norm, Dict, skeleton, rank, kindOf, refinal, unfinal, MhIndex, MH_ID, MH_LABEL };
   if (typeof module !== "undefined") module.exports = g.KK;
 })(typeof window !== "undefined" ? window : globalThis);

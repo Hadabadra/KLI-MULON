@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "id": "milon-klei-kodesh",
   "name": "לשון הקודש",
-  "version": "2.1.4",
+  "version": "2.2.0",
   "stability": "beta",
   "author": "מילון כליקודש",
-  "description": "מילון לשון הקודש וקונקורדנציה לתנ\"ך: זיהוי מילה מסומנת וביטויים, שורשים ובניינים, רד\"ק וספר הבחור מהספרייה",
+  "description": "פירוש וניתוח לשון הקודש: מילון, שורשים מכל המאגרים, ניתוח משפט, כללי הדקדוק, ניקוד וטעמים, וקונקורדנציה לתנ\"ך",
   "entrypoint": "index.html",
   "minAppVersion": "0.9.98",
   "sdkVersion": "1.x",
@@ -47,7 +47,7 @@
       "contextMenuItems": [
         {
           "id": "kk-lookup",
-          "label": "פתח בקונקורדנציה",
+          "label": "פירוש וניתוח לשון הקודש",
           "icon": "book_open_24_regular",
           "openPlugin": true,
           "contexts": [
@@ -64,7 +64,7 @@
       "toolbarItems": [
         {
           "id": "kk-toolbar",
-          "title": "קונקורדנציה",
+          "title": "פירוש וניתוח לשון הקודש",
           "icon": "book_open_24_regular",
           "openPlugin": true
         }
@@ -72,7 +72,7 @@
       "shortcuts": [
         {
           "id": "kk-key",
-          "label": "פתח בקונקורדנציה",
+          "label": "פירוש וניתוח לשון הקודש",
           "key": "ctrl+alt+m",
           "contextMenuItemId": "kk-lookup"
         }
