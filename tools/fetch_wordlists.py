@@ -190,28 +190,27 @@ def do_even(f, a):
 
 
 def do_academy_probe(f, a):
-    """בדיקה בלבד: מדפיס ביומן מה יש באתר האקדמיה (WordPress REST) כדי לאתר את "המילים החדשות"."""
-    base = "https://hebrew-academy.org.il/wp-json/wp/v2/"
-    q = urllib.parse.quote
-    for path in [f"search?search={q('מזנבת')}&per_page=20", f"search?search={q('מילים חדשות')}&per_page=30",
-                 "categories?per_page=100", "categories?per_page=100&page=2", f"tags?search={q('מילים')}&per_page=100",
-                 "types", f"search?search={q('מזנבת')}&per_page=20&type=term"]:
-        try:
-            d = json.loads(f.get(base + path))
-            print(f"== {path}", file=sys.stderr)
-            for x in (d.values() if isinstance(d, dict) else d):
-                if isinstance(x, dict):
-                    print("  ", x.get("id"), x.get("slug") or x.get("subtype"), x.get("name") or x.get("title"), x.get("count", ""), x.get("link") or x.get("url") or x.get("rest_base"), file=sys.stderr)
-        except Exception as e:
-            print(f"== {path}: {e}", file=sys.stderr)
-    for u in ["https://hebrew-academy.org.il/sitemap_index.xml", "https://hebrew-academy.org.il/wp-sitemap.xml"]:
-        try:
-            print(f"== {u}", file=sys.stderr)
-            for l in sitemap_locs(f, u)[:0] or []: pass
-            d = f.get(u).decode("utf-8", "replace")
-            print("  " + "\n  ".join(re.findall(r"<loc>([^<]+)</loc>", d)), file=sys.stderr)
-        except Exception as e:
-            print(f"  {e}", file=sys.stderr)
+    """בדיקה בלבד: איזו גישה לאתר האקדמיה עובדת מ-Actions."""
+    uas = {"ours": UA, "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"}
+    urls = ["https://hebrew-academy.org.il/", "https://hebrew-academy.org.il/robots.txt", "https://hebrew-academy.org.il/sitemap_index.xml",
+            "https://hebrew-academy.org.il/wp-json/wp/v2/categories?per_page=100", "https://hebrew-academy.org.il/?s=" + urllib.parse.quote("מזנבת"),
+            "https://hebrew-academy.org.il/topic/hahlatot/", "https://terms.hebrew-academy.org.il/?Filter.SearchString=" + urllib.parse.quote("מזנבת")]
+    for n, ua in uas.items():
+        for u in urls:
+            try:
+                req = urllib.request.Request(u, headers={"User-Agent": ua, "Accept": "text/html,application/json,*/*", "Accept-Language": "he"})
+                with urllib.request.urlopen(req, timeout=60) as r:
+                    d = r.read().decode("utf-8", "replace")
+                print(f"== {n} {u}: OK {len(d)}", file=sys.stderr)
+                links = sorted(set(re.findall(r'href="(https?://[^"#]*hebrew-academy[^"#]*)"', d)))
+                print("  " + "\n  ".join(urllib.parse.unquote(x) for x in links[:400]), file=sys.stderr)
+                if "robots" in u or "sitemap" in u or "wp-json" in u:
+                    print(d[:6000], file=sys.stderr)
+                for m in re.finditer("מזנבת", d):
+                    print("  CTX:", re.sub(r"\s+", " ", d[max(0, m.start()-400):m.end()+200]), file=sys.stderr)
+            except Exception as e:
+                print(f"== {n} {u}: {e}", file=sys.stderr)
+            time.sleep(0.5)
 
 SOURCES = {"academy-probe": do_academy_probe, "wikt": do_wikt, "academy": do_academy, "milog": do_milog, "even": do_even}
 
