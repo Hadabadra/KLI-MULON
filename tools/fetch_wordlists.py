@@ -188,7 +188,32 @@ def do_even(f, a):
     write_js("even.js", "KK_EVEN", dict(sorted(out.items())),
              f"שמות ערכי אבן שושן ונתיביהם (ממפת האתר בלבד, ללא תוכן) — לקישור {base}<נתיב>. {time.strftime('%Y-%m-%d')}, tools/fetch_wordlists.py")
 
-SOURCES = {"wikt": do_wikt, "academy": do_academy, "milog": do_milog, "even": do_even}
+
+def do_academy_probe(f, a):
+    """בדיקה בלבד: מדפיס ביומן מה יש באתר האקדמיה (WordPress REST) כדי לאתר את "המילים החדשות"."""
+    base = "https://hebrew-academy.org.il/wp-json/wp/v2/"
+    q = urllib.parse.quote
+    for path in [f"search?search={q('מזנבת')}&per_page=20", f"search?search={q('מילים חדשות')}&per_page=30",
+                 "categories?per_page=100", "categories?per_page=100&page=2", f"tags?search={q('מילים')}&per_page=100",
+                 "types", f"search?search={q('מזנבת')}&per_page=20&type=term"]:
+        try:
+            d = json.loads(f.get(base + path))
+            print(f"== {path}", file=sys.stderr)
+            for x in (d.values() if isinstance(d, dict) else d):
+                if isinstance(x, dict):
+                    print("  ", x.get("id"), x.get("slug") or x.get("subtype"), x.get("name") or x.get("title"), x.get("count", ""), x.get("link") or x.get("url") or x.get("rest_base"), file=sys.stderr)
+        except Exception as e:
+            print(f"== {path}: {e}", file=sys.stderr)
+    for u in ["https://hebrew-academy.org.il/sitemap_index.xml", "https://hebrew-academy.org.il/wp-sitemap.xml"]:
+        try:
+            print(f"== {u}", file=sys.stderr)
+            for l in sitemap_locs(f, u)[:0] or []: pass
+            d = f.get(u).decode("utf-8", "replace")
+            print("  " + "\n  ".join(re.findall(r"<loc>([^<]+)</loc>", d)), file=sys.stderr)
+        except Exception as e:
+            print(f"  {e}", file=sys.stderr)
+
+SOURCES = {"academy-probe": do_academy_probe, "wikt": do_wikt, "academy": do_academy, "milog": do_milog, "even": do_even}
 
 def main():
     ap = argparse.ArgumentParser(description="רשימות שמות ערכים ממילונים חיצוניים (ראו בראש הקובץ)")
