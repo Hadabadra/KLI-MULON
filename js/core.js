@@ -240,6 +240,11 @@
         const arr = [...tier.values()].sort((a, b) => a.cost - b.cost);
         return { root: arr[0].root, binyan: arr[0].binyan, ok: true, src: rd.size ? "rd" : "dict", alts: arr.slice(1, 3).filter(x => x.cost - arr[0].cost < 1.5).map(x => x.root) };
       }
+      /* 2.4.1: שורשי צורות התנ"ך (data/forms.js) כשכבת אימות שלישית — טבע, ועוד שורשים שאינם ברשימת רד"ק */
+      if (this.lex) { if (!this.tnkRoots) { const cnt = new Map(); for (const x of this.lex._tnk().values()) if (x.root) { const r = unfinal(x.root); cnt.set(r, (cnt.get(r) || 0) + 1); }
+          /* רק שורש שיש לו לפחות 3 צורות בתנ"ך; לא ששתי אותיותיו הראשונות שוות (אאר) ולא בפתיחת ו' (ואר מ"אואר") — אלה שגיאות בנתוני הצורות */
+          this.tnkRoots = new Set([...cnt].filter(([r, c]) => c >= 3 && r[0] !== r[1] && r[0] !== "ו").map(([r]) => r)); }
+        const hit = cands.find(c => this.tnkRoots.has(c[0]) && c[2] <= 3); if (hit) return { root: hit[0], binyan: hit[1], ok: true, src: "tnk", alts: [] }; }
       const f = cands[0];
       return f ? { root: f[0], binyan: f[1], ok: false } : { root: w.slice(0, 3), binyan: "—", ok: false };
     }
