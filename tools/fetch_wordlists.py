@@ -188,31 +188,7 @@ def do_even(f, a):
     write_js("even.js", "KK_EVEN", dict(sorted(out.items())),
              f"שמות ערכי אבן שושן ונתיביהם (ממפת האתר בלבד, ללא תוכן) — לקישור {base}<נתיב>. {time.strftime('%Y-%m-%d')}, tools/fetch_wordlists.py")
 
-
-def do_academy_probe(f, a):
-    """בדיקה בלבד: איזו גישה לאתר האקדמיה עובדת מ-Actions."""
-    uas = {"ours": UA, "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"}
-    urls = ["https://hebrew-academy.org.il/", "https://hebrew-academy.org.il/robots.txt", "https://hebrew-academy.org.il/sitemap_index.xml",
-            "https://hebrew-academy.org.il/wp-json/wp/v2/categories?per_page=100", "https://hebrew-academy.org.il/?s=" + urllib.parse.quote("מזנבת"),
-            "https://hebrew-academy.org.il/topic/hahlatot/", "https://terms.hebrew-academy.org.il/?Filter.SearchString=" + urllib.parse.quote("מזנבת")]
-    for n, ua in uas.items():
-        for u in urls:
-            try:
-                req = urllib.request.Request(u, headers={"User-Agent": ua, "Accept": "text/html,application/json,*/*", "Accept-Language": "he"})
-                with urllib.request.urlopen(req, timeout=60) as r:
-                    d = r.read().decode("utf-8", "replace")
-                print(f"== {n} {u}: OK {len(d)}", file=sys.stderr)
-                links = sorted(set(re.findall(r'href="(https?://[^"#]*hebrew-academy[^"#]*)"', d)))
-                print("  " + "\n  ".join(urllib.parse.unquote(x) for x in links[:400]), file=sys.stderr)
-                if "robots" in u or "sitemap" in u or "wp-json" in u:
-                    print(d[:6000], file=sys.stderr)
-                for m in re.finditer("מזנבת", d):
-                    print("  CTX:", re.sub(r"\s+", " ", d[max(0, m.start()-400):m.end()+200]), file=sys.stderr)
-            except Exception as e:
-                print(f"== {n} {u}: {e}", file=sys.stderr)
-            time.sleep(0.5)
-
-SOURCES = {"academy-probe": do_academy_probe, "wikt": do_wikt, "academy": do_academy, "milog": do_milog, "even": do_even}
+SOURCES = {"wikt": do_wikt, "academy": do_academy, "milog": do_milog, "even": do_even}
 
 def main():
     ap = argparse.ArgumentParser(description="רשימות שמות ערכים ממילונים חיצוניים (ראו בראש הקובץ)")
