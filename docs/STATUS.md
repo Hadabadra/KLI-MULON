@@ -1,6 +1,6 @@
 # מצב הפרויקט — לשון הקודש (id: milon-klei-kodesh) — לשיחה הבאה
 
-**עדכני: 31.10.2026, גרסה 2.4.1** — שוחררה ב-GitHub ופורסמה בחנות. אין Issues פתוחים. סקירה מהירה:
+**עדכני: 31.10.2026, גרסה 2.4.2** — שוחררה ב-GitHub ופורסמה בחנות. אין Issues פתוחים. סקירה מהירה:
 
 - ריפו: https://github.com/Hadabadra/KLI-MULON (`main`). דחיפה עם שינוי `version` ב-manifest מריצה `release.yml` (Release + .otzplugin) ו-`store.yml` (פרסום לחנות; בונה גם את `data/changelog.js` עם הגרסה).
 - החנות דוחה צבעי hex מחוץ ל-`:root` (תגית "מראה תואם") — רק `var(--color-*)`.
@@ -9,6 +9,7 @@
 - זיהוי שורש (js/core.js `analyze`): שכבות rd (רד"ק + `SUPP` + `IRREG`) ← dict ← tnk (`tnkRoots`: ≥3 צורות, בלי אא/ו פותחת) ; מרובעים — רשימה `QR`; התפעל בשיכול.
 - תיקוני שורש של משתמש: `ST.rootFix` (חל אצלו); לאחד מדי פעם ל-`IRREG`/`SUPP`.
 - "מקור ראשון בספרייה": `PERIODS` ב-js/app.js — שמות הקטגוריות לא אומתו באוצריא.
+- רשימות מילים חיצוניות: `.github/workflows/wordlists.yml` (ידני, sources=academy/milog/wikt) — האתרים חסומים מסשן Claude אך נגישים מ-Actions.
 - דיווחים: מהמייל ← Issues (סקריפט Apps Script); מתועדים ב-docs/REPORTS.md. תכנון: docs/ROADMAP.md.
 
 ---

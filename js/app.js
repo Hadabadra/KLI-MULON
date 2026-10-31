@@ -383,14 +383,14 @@
       for (const [src, c] of [[window.KK_MILOG, "g"], [window.KK_WIKT, "w"]]) for (const w of String(src || "").split("|")) { const n = KK.norm(w); if (ok(n)) jobs.push([n, c]); }
       for (const w of Object.keys(window.KK_ACADEMY || {})) { const n = KK.norm(w); if (ok(n)) jobs.push([n, "a"]); }
       const put = (r, w, c, a) => { if (!r || r.length < 2 || r.length > 4) return; let m = idx.get(r); if (!m) idx.set(r, m = new Map()); const o = m.get(w) || ""; if (!o.includes(c)) m.set(w, o + c);
-        let x = meta.get(r); if (!x) meta.set(r, x = { ok: 0, alt: 0, n: 0 }); if (!o) x.n++; if (!a || a.ok) x.ok = 1; if (a && a.alts && a.alts.length) x.alt = 1; };
+        let x = meta.get(r); if (!x) meta.set(r, x = { ok: 0, alt: 0, n: 0 }); if (!o) x.n++; if (!a || a.ok) x.ok = 1; /* 2.4.2: שורש שלא אושר באף מילה — נשמר, מסומן "משוער", ומוצג רק בסינון "משוער" */ if (a && a.alts && a.alts.length) x.alt = 1; };
       let i = 0; const step = () => { const end = Math.min(jobs.length, i + 3000);
         for (; i < end; i++) { const [w, c, tr] = jobs[i]; const a = D.analyze(w);
           /* 2.4.1: רק שורש מזוהה נכנס לאינדקס (משוער — לא: יצר "שורשים" כמו אאט מ"אאטמט"); במילים ממילוג וויקימילון — רק שורש מאומת מול רד"ק/הרשימה, כי ערכי מילון תלת־אותיים לועזיים (אוהיו, מאזדה) יצרו שורשים מדומים */
           if (a.ok && (a.src !== "dict" || c === "d" || c === "t" || c === "a")) put(a.root, KK.unfinal(w), c, a); else if (a.root && a.root[0] !== a.root[1]) pend.push([a.root, KK.unfinal(w), c]); const tu = tr && KK.unfinal(tr); if (tu && tu !== a.root && (D.radak.has(tu) || (D.tnkRoots && D.tnkRoots.has(tu)))) put(tu, KK.unfinal(w), c, { ok: 1 }); }
         rixPct = Math.round(100 * i / jobs.length); const pe = $("#rixp"); if (pe) pe.textContent = `בונה את אינדקס השורשים… ${rixPct}%`;
         if (i < jobs.length) setTimeout(step, 0); else { /* מילה ששורשה המשוער כבר אושר במילה אחרת — נכנסת לשורש (משגל, תשגל ← שגל); שורש משוער שאין לו אף אישור (אאט) — לא */
-          const conf = new Set(idx.keys()); for (const [r, w, c] of pend) if (conf.has(r)) put(r, w, c, null); RIX = idx; RMETA = meta; res(idx); } };
+          const conf = new Set(idx.keys()); for (const [r, w, c] of pend) if (conf.has(r)) put(r, w, c, null); else { put(r, w, c, { ok: 0 }); meta.get(r).guess = 1; } RIX = idx; RMETA = meta; res(idx); } };
       setTimeout(step, 0);
     });
     return RIXP;
@@ -400,6 +400,8 @@
     if (RIX) { const m = RIX.get(r); return m ? [...m.keys()].sort((a, b) => ((m.get(b).includes("d")) - (m.get(a).includes("d"))) || a.length - b.length) : []; }
     return D.byRoot(root).map(x => x.n); }
   const RF = { q: "", letter: "", len: "", gz: "", src: "", shown: 0, open: false };
+  /* 2.4.2: "שורש בן שתיים" — הגרעין הדו־עיצורי של השורשים החלשים (שיטת מנחם ודונש: קם מן קם, שב מן שב), כפי שמובא אצל המדקדקים הראשונים */
+  const core2 = r => /^.[וי].$/.test(r) ? r[0] + r[2] : /ה$/.test(r) && r[0] !== "ה" ? r.slice(0, 2) : /^נ/.test(r) ? r.slice(1) : /^י/.test(r) ? r.slice(1) : r[1] === r[2] ? r.slice(0, 2) : "";
   const GZF = { 'ל"ה': r => /ה$/.test(r), 'ע"ו/ע"י': r => /^.[וי].$/.test(r), 'פ"נ': r => /^נ/.test(r), 'פ"י': r => /^י/.test(r), 'ע"ע': r => r.length === 3 && r[1] === r[2], 'גרוניות': r => /[אהחע]/.test(r) };
   async function showRoots(q) {
     mode = "root"; tabs(); $("#out").classList.add("wide"); if (q !== undefined) { RF.q = KK.unfinal ? KK.unfinal(KK.norm(q)) : KK.norm(q); RF.shown = 0; }
@@ -407,15 +409,15 @@
     const sel = (id, opts, v) => `<select id="${id}">${opts.map(([k, t]) => `<option value="${k}"${k === v ? " selected" : ""}>${t}</option>`).join("")}</select>`;
     let list = [...RMETA.keys()].filter(r => r.length >= 2 && r.length <= 4);
     if (RF.q) list = list.filter(r => r.startsWith(RF.q)); if (RF.letter) list = list.filter(r => r[0] === RF.letter);
-    if (RF.len) list = list.filter(r => r.length === +RF.len); if (RF.gz) list = list.filter(GZF[RF.gz]);
-    if (RF.src === "rd") list = list.filter(r => D.radak.has(r)); else if (RF.src === "dict") list = list.filter(r => !D.radak.has(r)); else if (RF.src === "alt") list = list.filter(r => RMETA.get(r).alt);
+    if (RF.len === "2") list = list.filter(r => r.length === 3 && !!core2(r)); else if (RF.len) list = list.filter(r => r.length === +RF.len); if (RF.gz) list = list.filter(GZF[RF.gz]);
+    if (RF.src !== "guess") list = list.filter(r => !RMETA.get(r).guess); if (RF.src === "rd") list = list.filter(r => D.radak.has(r)); else if (RF.src === "dict") list = list.filter(r => !D.radak.has(r)); else if (RF.src === "guess") list = list.filter(r => RMETA.get(r).guess); else if (RF.src === "alt") list = list.filter(r => RMETA.get(r).alt);
     list.sort((a, b) => a.localeCompare(b, "he")); RF.shown = Math.max(RF.shown, 200); const part = list.slice(0, RF.shown);
     $("#out").innerHTML = `<div class="allhead"><h2>${RF.q ? "שורשים המתחילים ב־" + esc(KK.refinal(RF.q)) : "כל השורשים"}</h2><button class="ftoggle ${RF.open ? "" : "on"}" id="rftog">${RF.open ? "✕ סגירת הסינון" : "☰ סינון"}</button>${RF.q ? `<button class="chip" id="rall">כל השורשים ←</button>` : ""}</div>
-      ${RF.open ? "" : `<div class="fsum">${[RF.letter && "אות: " + RF.letter, RF.len && { 2: "בן שתיים", 3: "בן שלוש", 4: "מרובע" }[RF.len], RF.gz, RF.src && { rd: "רד\"ק", dict: "מן המילון", alt: "במחלוקת" }[RF.src]].filter(Boolean).join(" · ") || "ללא סינון"}</div>`}
+      ${RF.open ? "" : `<div class="fsum">${[RF.letter && "אות: " + RF.letter, RF.len && { 2: "בן שתיים", 3: "בן שלוש", 4: "מרובע" }[RF.len], RF.gz, RF.src && { rd: "רד\"ק", dict: "מן המילון", alt: "במחלוקת", guess: "משוער" }[RF.src]].filter(Boolean).join(" · ") || "ללא סינון"}</div>`}
       <div class="fbar rf${RF.open ? "" : " hid"}"><div class="az"><button class="chip ${RF.letter ? "" : "pri"}" data-rl="">הכל</button>${LETTERS.map(l => `<button class="chip ${l === RF.letter ? "pri" : ""}" data-rl="${l}">${l}</button>`).join("")}</div>
-      <div class="chips">${sel("rflen", [["", "כל האורכים"], ["3", "שורש בן שלוש"], ["4", "שורש מרובע"], ["2", "שורש בן שתיים"]], RF.len)}${sel("rfgz", [["", "כל הגזרות"], ...Object.keys(GZF).map(k => [k, k])], RF.gz)}${sel("rfsrc", [["", "כל המקורות"], ["rd", "בספר השרשים לרד\"ק"], ["dict", "מזוהה מן המילון בלבד"], ["alt", "במחלוקת / כמה אפשרויות"]], RF.src)}</div></div>
-      <p class="note">${list.length.toLocaleString("he")} שורשים · נכללים רק שורשים שאומתו (ספר השרשים לרד"ק, המילון או צורות התנ"ך); השיוך של כל מילה לשורש אוטומטי. לחיצה פותחת את כל המילים מהשורש מכל המאגרים.</p>
-      <div class="tiles">${part.map(r => { const m = RMETA.get(r); return `<button class="tile" data-root="${esc(r)}"><b>${esc(KK.refinal(r))}</b><small>${m.n} מילים${D.radak.has(r) ? " · רד\"ק" : m.ok ? "" : " · משוער"}${m.alt ? " · במחלוקת" : ""}</small></button>`; }).join("")}</div>` +
+      <div class="chips">${sel("rflen", [["", "כל האורכים"], ["3", "שורש בן שלוש"], ["4", "שורש מרובע"], ["2", "שורש בן שתיים (גרעין דו־עיצורי)"]], RF.len)}${sel("rfgz", [["", "כל הגזרות"], ...Object.keys(GZF).map(k => [k, k])], RF.gz)}${sel("rfsrc", [["", "כל המקורות"], ["rd", "בספר השרשים לרד\"ק"], ["dict", "מזוהה מן המילון בלבד"], ["alt", "במחלוקת / כמה אפשרויות"], ["guess", "משוער — לא אומת (מילים לועזיות וחדשות)"]], RF.src)}</div></div>
+      <p class="note">${list.length.toLocaleString("he")} שורשים · ${RF.src === "guess" ? "שורשים משוערים — זוהו לפי משקל בלבד ולא אומתו; רובם מילים לועזיות או חדשות שאין להן שורש עברי" : RF.len === "2" ? "השורשים החלשים לפי הגרעין הדו־עיצורי שלהם (כשיטת מנחם ודונש); בשורש ע\"ו ול\"ה הגרעין הוא שתי האותיות היציבות" : "רק שורשים שאומתו (ספר השרשים לרד\"ק, המילון או צורות התנ\"ך); השורשים המשוערים — בסינון \"משוער\""}; השיוך של כל מילה לשורש אוטומטי. לחיצה פותחת את כל המילים מהשורש מכל המאגרים.</p>
+      <div class="tiles">${part.map(r => { const m = RMETA.get(r); return `<button class="tile" data-root="${esc(r)}"><b>${esc(KK.refinal(r))}</b><small>${RF.len === "2" ? "גרעין " + esc(KK.refinal(core2(r))) + " · " : ""}${m.n} מילים${D.radak.has(r) ? " · רד\"ק" : m.guess ? " · משוער" : ""}${m.alt ? " · במחלוקת" : ""}</small></button>`; }).join("")}</div>` +
       (RF.shown < list.length ? `<p style="text-align:center"><button class="chip pri" id="rmore">הצג עוד (${(list.length - RF.shown).toLocaleString("he")})</button></p>` : "");
     $("#out").querySelectorAll("[data-rl]").forEach(b => b.onclick = () => { RF.letter = b.dataset.rl; RF.shown = 0; showRoots(); });
     for (const [id, k] of [["rflen", "len"], ["rfgz", "gz"], ["rfsrc", "src"]]) $("#" + id).onchange = e => { RF[k] = e.target.value; RF.shown = 0; showRoots(); };
