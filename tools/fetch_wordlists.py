@@ -39,6 +39,7 @@
   python tools/fetch_wordlists.py even --raw even-urls.txt
 דורש Python 3.8+ בלבד (ספרייה סטנדרטית). מכבד HTTPS_PROXY מהסביבה.
 """
+import urllib.parse
 import argparse, gzip, json, os, re, sys, time, urllib.error, urllib.parse, urllib.request
 import xml.etree.ElementTree as ET
 
@@ -188,7 +189,39 @@ def do_even(f, a):
     write_js("even.js", "KK_EVEN", dict(sorted(out.items())),
              f"שמות ערכי אבן שושן ונתיביהם (ממפת האתר בלבד, ללא תוכן) — לקישור {base}<נתיב>. {time.strftime('%Y-%m-%d')}, tools/fetch_wordlists.py")
 
-SOURCES = {"wikt": do_wikt, "academy": do_academy, "milog": do_milog, "even": do_even}
+LOAZ_LANGS = ["יוונית", "לטינית", "ערבית", "פרסית", "אנגלית", "צרפתית", "גרמנית", "רוסית", "יידיש", "איטלקית", "ספרדית", "טורקית", "פולנית", "הולנדית", "אכדית", "סנסקריט", "פורטוגזית", "יפנית", "סינית", "הונגרית", "רומנית", "לדינו", "אמהרית", "מצרית"]
+LOAZ_HINT = re.compile("מקור|שאול|שאולות|מוצא|גיזרון|לועז|נשאל")
+def do_loaz(f, a):
+    """2.5.3: מילים לועזיות שנכנסו לעברית — לפי קטגוריות המקור בוויקימילון (API). ארמית אינה נחשבת לועזית."""
+    api = "https://he.wiktionary.org/w/api.php?format=json&formatversion=2&action=query&"
+    cats, cont = [], ""
+    while True:
+        j = json.loads(f.get(api + "list=allcategories&aclimit=500&acmin=3" + cont))
+        cats += [c["category"] for c in j["query"]["allcategories"]]
+        if "continue" not in j: break
+        cont = "&accontinue=" + urllib.parse.quote(j["continue"]["accontinue"])
+    pick = [(c, l) for c in cats for l in LOAZ_LANGS if l in c and LOAZ_HINT.search(c) and "ארמית" not in c]
+    print(f"  loaz: {len(cats):,} קטגוריות, {len(pick)} קטגוריות מקור לועזי", file=sys.stderr)
+    with open(os.path.join(ROOT, "docs", "loaz-categories.txt"), "w", encoding="utf-8") as fh:
+        fh.write("# קטגוריות ויקימילון שנבחרו כמקור לועזי (נוצר ע\"י tools/fetch_wordlists.py loaz)\n" + "\n".join(f"{c}\t{l}" for c, l in pick) + "\n")
+    out = {}
+    for c, lang in pick:
+        cont = ""
+        while True:
+            j = json.loads(f.get(api + "list=categorymembers&cmnamespace=0&cmlimit=500&cmtitle=" + urllib.parse.quote("קטגוריה:" + c) + cont))
+            for m in j["query"]["categorymembers"]:
+                t = m["title"].strip()
+                if " " in t or not WIKT_OK.fullmatch(t) or len(strip(t)) < 2: continue
+                ls = out.setdefault(t, [])
+                if lang not in ls: ls.append(lang)
+            if "continue" not in j: break
+            cont = "&cmcontinue=" + urllib.parse.quote(j["continue"]["cmcontinue"])
+    print(f"  loaz: {len(out):,} מילים", file=sys.stderr)
+    if not out: raise RuntimeError("לא נמצאו מילים — לבדוק את docs/loaz-categories.txt")
+    write_js("loaz.js", "KK_LOAZ", {k: ",".join(v) for k, v in sorted(out.items())},
+             "מילים לועזיות שנכנסו לעברית ושפת המקור, לפי קטגוריות המקור בוויקימילון (CC BY-SA). נוצר ע\"י tools/fetch_wordlists.py loaz")
+
+SOURCES = {"loaz": do_loaz, "wikt": do_wikt, "academy": do_academy, "milog": do_milog, "even": do_even}
 
 def main():
     ap = argparse.ArgumentParser(description="רשימות שמות ערכים ממילונים חיצוניים (ראו בראש הקובץ)")

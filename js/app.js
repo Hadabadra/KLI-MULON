@@ -7,7 +7,7 @@
   const call = async (m, p) => { try { return O ? await O.call(m, p || {}) : { success: false }; } catch (e) { return { success: false }; } };
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const deb = (f, t) => { let h; return (...a) => { clearTimeout(h); h = setTimeout(() => f(...a), t); }; };
-  let EXPL = false; /* 2.5.1: כניסה מפורשת למילה (תפריט הקשר, סרגל, קיצור, הודעה, פרמטר) — רק אז מדלגים על עמוד הכניסה. בחירה פסיבית בספר בזמן פתיחה מתפריט הכלים אינה מבטלת אותו */
+  let EXPLT = 0, OPENT = 0; /* 2.5.1: כניסה מפורשת למילה (תפריט הקשר, סרגל, קיצור, הודעה, פרמטר) — רק אז מדלגים על עמוד הכניסה. בחירה פסיבית בספר בזמן פתיחה מתפריט הכלים אינה מבטלת אותו */
   let LOADED = false; /* 2.4.5: לא שומרים לפני הטעינה — שמירה מוקדמת דרסה הגדרות (הודעה קצרה) והיסטוריה */
   const saveNow = async () => { if (!LOADED) return; const { nthHist, ...rest } = ST; rest._ts = Date.now(); try { localStorage.setItem("kk-settings", JSON.stringify(rest)); } catch (e) {} /* 2.4.6: גיבוי מקומי — ההגדרות נשמרות גם אם storage של אוצריא לא החזיר אותן */ const r = await call("storage.set", { key: "settings", value: rest }); call("storage.set", { key: "nthHist", value: nthHist || [] }); if (r && r.success === false) call("ui.showMessage", { message: "שמירת ההגדרות נכשלה" }); };
   const save = deb(saveNow, 400);
@@ -134,8 +134,8 @@
       `<div class="pager"><span>${stack.length ? `<button class="chip" id="back">→ חזרה</button>` : ""}</span><button class="chip" id="allback" title="חזרה לרשימת כל המילים">כל המילים ←</button></div>
        <div class="hero"><h2>${esc(r.title)}</h2>${window.KKB ? KKB.hero(r) : ""}</div>` + formRow(r) +
       (selWords.length > 1 ? `<div class="row selrow"><b>מילים בבחירה</b><div class="chips"><button class="chip" data-comb="1"><i class=oi data-i=clip></i> דף משולב</button>${selWords.map(t => chip(t, "", t === r.title ? "pri" : "")).join("")}</div></div>` : "") +
-      `<div class="row"><div class="chips"><button class="chip pri" id="osearch">${IC.search} חפש באוצריא</button><button class="chip" id="orel"><i class=oi data-i=book></i> פסוקים ומפרשים קשורים</button><button class="chip" id="oconc"><i class=oi data-i=lib></i> קונקורדנציה לתנ"ך</button><button class="chip" id="ofirst" title="חיפוש המילה בספרייה לפי סדר התקופות">מקור ראשון בספרייה (משוער)</button></div></div><div id="rel"></div><div id="first"></div>` +
-      (isAcr ? "" : `<div class="row"><b>במילוני הספרייה</b><div class="chips">${an.ok ? `<button class="chip" data-lib="radak">ספר השרשים לרד"ק — שורש ${esc(KK.refinal(root))}</button>` : ""}<button class="chip" data-lib="bachur">ספר הבחור</button><button class="chip" data-lib="karmel" title="הכרמל למלבי&quot;ם — הערך בספר שבספרייה">הכרמל (מלבי"ם)</button>${online ? `<button class="chip" id="omilog" data-ext="milog">מילוג ↗</button><button class="chip" data-url="${esc(LOAZ_URL)}" title="האקדמיה ללשון — איך אומרים בעברית: מילים לועזיות וחלופותיהן העבריות">לועזית ↗</button><button class="chip" data-ext="wiktionary">${wkHas(cur.title.replace(/[^\u05D0-\u05EA ]/g, "")) ? "ויקימילון — הערך ↗" : "ויקימילון (חיפוש) ↗"}</button><button class="chip" data-ext="wikisource">ויקיטקסט ↗</button><button class="chip" data-ext="academy">האקדמיה ללשון ↗</button>` : ""}</div>${online ? `<span class="note">קישורים חיצוניים בלבד, נפתחים בדפדפן ומוסתרים רק כשאוצריא מוגדרת "ללא גישה לאינטרנט". התוכן שם אינו מסונן.</span>` : ""}</div>`) +
+      `<div class="row"><div class="chips"><button class="chip pri" id="osearch">${IC.search} חפש באוצריא</button><button class="chip" id="orel"><i class=oi data-i=book></i> פסוקים ומפרשים קשורים</button><button class="chip" id="oconc"><i class=oi data-i=lib></i> קונקורדנציה לתנ"ך</button><button class="chip" data-syn="${esc(r.title)}" title="נרדפים במאגר, והמילה בהכרמל ובספרי הנרדפות שבספרייה">נרדפות</button><button class="chip" id="ofirst" title="חיפוש המילה בספרייה לפי סדר התקופות">מקור ראשון בספרייה (משוער)</button></div></div><div id="rel"></div><div id="first"></div>` +
+      (isAcr ? "" : `<div class="row"><b>במילוני הספרייה</b><div class="chips">${an.ok ? `<button class="chip" data-lib="radak">ספר השרשים לרד"ק — שורש ${esc(KK.refinal(root))}</button>` : ""}<button class="chip" data-lib="bachur">ספר הבחור</button><button class="chip" data-lib="karmel" title="הכרמל למלבי&quot;ם — הערך בספר שבספרייה">הכרמל (מלבי"ם)</button>${online ? `<button class="chip" id="omilog" data-ext="milog">מילוג ↗</button><button class="chip" data-ext="wiktionary">${wkHas(cur.title.replace(/[^\u05D0-\u05EA ]/g, "")) ? "ויקימילון — הערך ↗" : "ויקימילון (חיפוש) ↗"}</button><button class="chip" data-ext="wikisource">ויקיטקסט ↗</button><button class="chip" data-ext="academy">האקדמיה ללשון ↗</button>` : ""}</div>${online ? `<span class="note">קישורים חיצוניים בלבד, נפתחים בדפדפן ומוסתרים רק כשאוצריא מוגדרת "ללא גישה לאינטרנט". התוכן שם אינו מסונן.</span>` : ""}</div>`) +
       mhDefRow(r) + sensesHtml(r) + (isAcr ? "" : pleneRow(r.title)) +
       Object.entries(links).map(([k, a]) => chipRow(k.replace("_", " "), a)).join("") +
       mhRow(isAcr ? [] : MH.find([r.n, ...(selCtx.words || [])], D)) +
@@ -576,6 +576,20 @@
     $("#out").innerHTML = `<h2>מילים נרדפות${w ? ": " + esc(e ? e.title : v) : ""}</h2>` + (w ? (syn.length ? chipRow("נרדפים במאגר", syn) : `<p class="note">לא נמצאו נרדפים במאגר למילה זו.</p>`) : `<p class="hint">הקלידו מילה בשורת החיפוש, או פתחו מילה ובחרו בלשונית זו.</p>`) +
       `<section class="card"><h3>בספרי הנרדפות שבספרייה</h3>${SYNB.map(([k, t, d]) => `<div class="opt"><span>${esc(t)}<small>${esc(d)}</small></span><span class="chips">${w ? `<button class="chip pri" data-libw="${k}" data-w="${esc(e ? e.title.replace(/[^\u05D0-\u05EA ]/g, "") : w)}">חפש "${esc(e ? e.title : v)}"</button>` : ""}<button class="chip" data-libopen="${k}">פתיחת הספר</button></span></div>`).join("")}<p class="note">הספרים נפתחים מספריית אוצריא; ספר שלא נמצא — אינו בספרייה שלך. ההסבר על נרדפות — בכללי הדקדוק, חלק י.</p></section>`;
   }
+  /* 2.5.3: לשונית "לועזיות" — מילים לועזיות שנכנסו לעברית ושפת המקור (data/loaz.js, מקטגוריות המקור בוויקימילון; tools/fetch_wordlists.py loaz) */
+  let LZ = { lang: "", shown: 300 };
+  function showLoaz(more) {
+    mode = "loaz"; tabs(); const all = Object.entries(window.KK_LOAZ || {}), q = KK.norm($("#q").value || "");
+    if (!more) LZ.shown = 300; const langs = [...new Set(all.flatMap(([, l]) => l.split(",")))].sort((a, b) => a.localeCompare(b, "he"));
+    let list = all.filter(([w, l]) => (!LZ.lang || l.split(",").includes(LZ.lang)) && (!q || KK.norm(w).startsWith(q)));
+    const part = list.slice(0, LZ.shown);
+    $("#out").innerHTML = `<h2>מילים לועזיות בעברית</h2><p class="note">מילים שנכנסו לעברית משפות אחרות, ושפת המקור שלהן (לפי ויקימילון). הקלידו בשורת החיפוש לסינון; לחיצה על מילה פותחת אותה במילון.${online ? "" : " קישורים לאתרים מוצגים רק במצב מקוון."}</p>` +
+      (all.length ? `<div class="chips"><select id="lzlang"><option value="">כל השפות</option>${langs.map(l => `<option${l === LZ.lang ? " selected" : ""}>${esc(l)}</option>`).join("")}</select><span class="note">${list.length.toLocaleString("he")} מילים</span>${online ? `<button class="chip" data-url="${esc(LOAZ_URL)}">חלופות עבריות — האקדמיה ללשון ↗</button>` : ""}</div>
+       <div class="lzl">${part.map(([w, l]) => `<span class="lzw">${chip(w)}<small>${esc(l.replace(/,/g, ", "))}</small>${online ? `<button class="chip" data-url="${esc("https://he.wiktionary.org/wiki/" + encodeURIComponent(w))}" title="הערך בוויקימילון">↗</button>` : ""}</span>`).join("")}</div>${list.length > part.length ? `<p><button class="chip pri" id="lzmore">עוד…</button></p>` : ""}`
+      : `<p class="hint">הרשימה עדיין לא נטענה לגרסה זו.${online ? ` בינתיים: <button class="chip" data-url="${esc(LOAZ_URL)}">האקדמיה ללשון — איך אומרים בעברית ↗</button>` : ""}</p>`);
+    const sel = $("#lzlang"); if (sel) sel.onchange = e => { LZ.lang = e.target.value; showLoaz(); };
+    const mb = $("#lzmore"); if (mb) mb.onclick = () => { LZ.shown += 300; showLoaz(true); };
+  }
   function showAbout() {
     const feat = FEAT;
     mode = "about"; tabs(); const n = x => Number(x || 0).toLocaleString("he");
@@ -705,12 +719,13 @@
     if (!KK.norm(v)) { sugList = []; renderSug(); if (mode === "root" && RF.q) showRoots(""); return; }
     if (mode === "root") { sugList = []; renderSug(); return showRoots(v); }
     if (mode === "syn") { sugList = []; renderSug(); return showSyn(v); }
+    if (mode === "loaz") { sugList = []; renderSug(); return showLoaz(); }
     sugList = moreSug(v, D.suggest(v, 12)); sugIdx = -1; renderSug();
   }, 60);
 
   document.addEventListener("click", e => {
     if (!e.target.closest(".search")) { sugList = []; renderSug(); }
-    const t = e.target.closest("[data-go],[data-rconc],[data-root],[data-i],[data-mhg],[data-rep],[data-copy],[data-like],[data-open],[data-unfav],[data-comb],[data-lib],[data-book],[data-delbook],[data-delgram],[data-libopen],[data-libw],[data-gram],[data-ext],[data-ext2],[data-url],[data-m2],[data-srch],[data-lib2],[data-even],[data-lt],[data-cf],[data-gsec],[data-psk],[data-mhs],#genrep,#oconc,#ofirst,#libchk,#oeven,#favexp,#osearch,#orel,#ftog,[data-letter],#more,#back,#clrh,#modes button,#clr,#allback"); if (!t) return;
+    const t = e.target.closest("[data-go],[data-rconc],[data-root],[data-i],[data-mhg],[data-rep],[data-copy],[data-like],[data-open],[data-unfav],[data-comb],[data-lib],[data-book],[data-delbook],[data-delgram],[data-libopen],[data-libw],[data-syn],[data-gram],[data-ext],[data-ext2],[data-url],[data-m2],[data-srch],[data-lib2],[data-even],[data-lt],[data-cf],[data-gsec],[data-psk],[data-mhs],#genrep,#oconc,#ofirst,#libchk,#oeven,#favexp,#osearch,#orel,#ftog,[data-letter],#more,#back,#clrh,#modes button,#clr,#allback"); if (!t) return;
     if (t.dataset.mhg) openMh(t.dataset.mhg, t.dataset.mhn);
     else if (t.dataset.rep !== undefined) report(cur, +t.dataset.rep);
     else if (t.dataset.copy !== undefined) { const s = cur.s[+t.dataset.copy]; copyText(`${cur.title}: ${s[1]}`); }
@@ -757,7 +772,7 @@
     else if (t.dataset.comb) showCombined(selWords, selCtx.raw);
     else if (t.id === "clrh") { ST.hist = []; save(); showHist(); }
     else if (t.id === "clr") { if (mode === "root") showRoots(""); $("#q").value = ""; sugList = []; renderSug(); $("#clr").classList.add("hid"); $("#q").focus(); }
-    else if (t.closest("#modes")) { mode = t.dataset.m; tabs(); if (mode === "word" || mode === "all") { mode = "word"; showAll(); } else if (mode === "nth") showAnalyze(""); else if (mode === "about") showAbout(); else if (mode === "hist") showHist(); else if (mode === "fav") showFav(); else if (mode === "set") showSet(); else if (mode === "books") showBooks(); else if (mode === "rules") readBook(1); else if (mode === "pr") showPractice(); else if (mode === "syn") showSyn(cur ? cur.title : $("#q").value); else if (mode === "root") showRoots(KK.norm($("#q").value)); }
+    else if (t.dataset.syn) { $("#q").value = t.dataset.syn; showSyn(t.dataset.syn); } else if (t.closest("#modes")) { mode = t.dataset.m; tabs(); if (mode === "word" || mode === "all") { mode = "word"; showAll(); } else if (mode === "nth") showAnalyze(""); else if (mode === "about") showAbout(); else if (mode === "hist") showHist(); else if (mode === "fav") showFav(); else if (mode === "set") showSet(); else if (mode === "books") showBooks(); else if (mode === "rules") readBook(1); else if (mode === "pr") showPractice(); else if (mode === "loaz") showLoaz(); else if (mode === "syn") showSyn(cur ? cur.title : $("#q").value); else if (mode === "root") showRoots(KK.norm($("#q").value)); }
   });
   $("#q").addEventListener("input", onType);
   $("#q").addEventListener("keydown", e => {
@@ -973,7 +988,7 @@
   }
   /* זיהוי אוטומטי: בחירה, תפריט הקשר, לחיצה על הודעה, פתיחה עם פרמטר */
   async function applySel(text) {
-    if (EXPL) { const w = $("#welc"); if (w) w.remove(); } /* 2.5.0: כניסה מבחירת מילה — בלי עמוד הכניסה */
+    if (Date.now() - EXPLT < 3000) { const w = $("#welc"); if (w) w.remove(); } /* 2.5.0: כניסה מבחירת מילה — בלי עמוד הכניסה */
     text = await KKNakdan.voc(text, ST.nakdan);
     const rs = D.resolve(text, ST.maxWords), list = rs.phrase ? [rs.phrase] : [...rs.phrases, ...rs.words.filter(w => !rs.phrases.some(p => p.n.split(" ").includes(w.n)))];
     if (!list.length) { const hh = MH.find(KK.norm(text).split(" "), D); if (hh.length) { $("#q").value = KK.norm(text); showMhOnly(text, hh); } return; }
@@ -983,24 +998,28 @@
     let t = d && (d.text || d.selectedText || d.sourceSelectedText || d.renderedSelectedText || (d.selection && (d.selection.text || d.selection.selectedText))); const g = await call("reader.getSelection"); let raw = t; if (g.success && g.data) { t = g.data.text || g.data.renderedSelectedText || g.data.sourceSelectedText || t; raw = g.data.sourceSelectedText || g.data.renderedSelectedText || t; }
     const n = KK.norm(t); if (n && n.split(" ").length <= ST.maxWords) { const r = D.find(n); if (!(cur && r && cur.n === r.n)) applySel(raw); }
   }, 300);
-  function go(word, words, raw) { if (!word) return; EXPL = true; { const w = $("#welc"); if (w) w.remove(); } if (Array.isArray(words) && words.length > 1) { selWords = words; selCtx = { raw: raw || "", words }; $("#q").value = word; return showCombined(words, raw); } selWords = Array.isArray(words) ? words : []; selCtx = { raw: raw || "", words: selWords.length ? selWords : [word] }; $("#q").value = word; lookup(word); }
+  function go(word, words, raw) { if (!word) return; EXPLT = Date.now(); { const w = $("#welc"); if (w) w.remove(); } if (Array.isArray(words) && words.length > 1) { selWords = words; selCtx = { raw: raw || "", words }; $("#q").value = word; return showCombined(words, raw); } selWords = Array.isArray(words) ? words : []; selCtx = { raw: raw || "", words: selWords.length ? selWords : [word] }; $("#q").value = word; lookup(word); }
   if (O) {
     O.on("plugin.boot", p => { if (p && p.theme) theme(p.theme); else call("app.getTheme").then(r => r && r.success && theme(r.data)); const prm = p && (p.param || p.params); if (prm && prm.word) go(prm.word, prm.words, prm.raw); });
     O.on("theme.changed", theme);
     O.on("reader.selection_changed", fromSel);
-    O.on("reader.context_menu_item_clicked", d => { EXPL = true; const t = (d && (d.selectedText || (d.selection && d.selection.text))) || ""; if (t) applySel(t); });
-    O.on("reader.toolbar_item_clicked", async () => { EXPL = true; const g = await call("reader.getSelection"); const t = g.success && g.data && (g.data.sourceSelectedText || g.data.text); if (t) applySel(t); else $("#q").focus(); });
-    O.on("app.command", async d => { EXPL = true; if (d && d.command === "lookup") { const g = await call("reader.getSelection"); const t = g.success && g.data && (g.data.sourceSelectedText || g.data.text); if (t) applySel(t); } });
+    O.on("reader.context_menu_item_clicked", d => { EXPLT = Date.now(); const t = (d && (d.selectedText || (d.selection && d.selection.text))) || ""; if (t) applySel(t); });
+    O.on("reader.toolbar_item_clicked", async () => { EXPLT = Date.now(); const g = await call("reader.getSelection"); const t = g.success && g.data && (g.data.sourceSelectedText || g.data.text); if (t) applySel(t); else $("#q").focus(); });
+    O.on("app.command", async d => { EXPLT = Date.now(); if (d && d.command === "lookup") { const g = await call("reader.getSelection"); const t = g.success && g.data && (g.data.sourceSelectedText || g.data.text); if (t) applySel(t); } });
     /* 1.8.0: תיבת סימון בחלון החיפוש של אוצריא (כמו בעינים למקרא) — חיפוש במילון ובספר הדקדוק */
     O.on("search.requested", d => { const q = String((d && d.request && d.request.query) || (d && d.query) || "").trim(); if (q) searchAll(q); });
     O.on("library.providerBook.openRequested", d => { const id = d && (d.id || (d.book && d.book.id)); if (id) readBook(id); });
     O.on("ui.messageClicked", d => d && d.payload && go(d.payload.word, d.payload.words, d.payload.raw));
-    O.on("plugin.page_opened", p => { const prm = p && (p.param || p.params); if (prm && prm.word) go(prm.word, prm.words, prm.raw); });
+    O.on("plugin.page_opened", p => { const prm = p && (p.param || p.params); if (prm && prm.word) go(prm.word, prm.words, prm.raw); else onOpen(); });
   }
+  /* 2.5.3: התוסף נשאר טעון (keepAlive) — סגירה ופתיחה מחדש של הלשונית אינן טוענות את הדף, ולכן עמוד הכניסה מוצג גם בכל פתיחה חוזרת
+     (אירוע plugin.page_opened בלי פרמטר, או חזרת הדף לתצוגה), אלא אם באותו רגע הייתה כניסה מפורשת למילה */
+  function onOpen() { const t = Date.now(); if (!LOADED || t - OPENT < 1500) return; OPENT = t; setTimeout(() => { if (EXPLT < t - 1500 && !$("#welc")) welcome(); }, 700); }
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") onOpen(); });
   window.KKA = Object.assign(window.KKA || {}, { D, call, esc, plain, TNK, bookOf, copyText, LINKS, PARTICLES, save, getST: () => ST }); /* 2.0: חיבור ל-js/ideas-a.js */
   window.KKAPP = Object.assign(window.KKAPP || {}, { st: () => ST, D, save, call, esc, chip, showPractice }); /* 2.0: ממשק לקבצי ההרחבה (js/ideas-*.js) */
   checkOnline(); { const an0 = D.analyze.bind(D); D.analyze = w => { const f = ST.rootFix && ST.rootFix[KK.norm(w)]; return f && f.r ? { root: f.r, binyan: f.b || "—", ok: true, src: "user", alts: [] } : an0(w); }; } /* 2.2.1: תיקוני שורש של המשתמש (מחלון הדיווח) חלים אצלו מיד */
   fetch("manifest.json").then(r => r.json()).then(m => { if (m && m.version) window.KK_VERSION = m.version; }).catch(() => {}); /* 2.2.0: הגרסה תמיד מהמניפסט */
   if (window.AchatPromo) AchatPromo.init({ call, plugin: "לשון הקודש", links: LINKS, isOnline: async () => { await checkOnline(); return online; } }); /* 2.5.0: המלצה על "אחת שאלתי" */
-  load().then(() => { setTimeout(() => rootIndex(), 4000); if (!cur && mode === "word" && !$("#q").value) { showAll(); setTimeout(() => { if (!EXPL) welcome(); }, 700); if (window.AchatPromo) setTimeout(() => { if (!cur && !selWords.length) AchatPromo.maybeShow(); }, 4000); } syncLibrary(); fOpen = !!ST.fOpen; applyFs(); prTab(); $("#q").focus(); });
+  load().then(() => { setTimeout(() => rootIndex(), 4000); if (!cur && mode === "word" && !$("#q").value) { showAll(); setTimeout(() => { if (!EXPLT) welcome(); }, 700); if (window.AchatPromo) setTimeout(() => { if (!cur && !selWords.length) AchatPromo.maybeShow(); }, 4000); } syncLibrary(); fOpen = !!ST.fOpen; applyFs(); prTab(); $("#q").focus(); });
 })();

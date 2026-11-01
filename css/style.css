@@ -349,3 +349,4 @@ details.rootfix{margin:.5em 0}details.rootfix input{font:inherit;width:6em}
 .wfeat div{background:var(--color-surface-container-low);border:.0625em solid var(--color-outline-variant);border-radius:var(--radius-lg);padding:.6em .9em;animation:kkIn .35s ease both}
 .wfeat p{margin:.2em 0 0;font-size:.88em;color:var(--color-on-surface-variant)}
 .wtip{max-width:40em}
+.lzl{display:grid;grid-template-columns:repeat(auto-fill,minmax(13em,1fr));gap:.35em .8em;margin-top:.6em}.lzw{display:flex;align-items:center;gap:.4em}.lzw small{color:var(--color-on-surface-variant);font-size:.8em}

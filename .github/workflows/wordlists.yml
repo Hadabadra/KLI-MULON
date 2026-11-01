@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       sources:
-        description: 'מקורות (academy milog wikt)'
+        description: 'מקורות (academy milog wikt loaz)'
         default: 'academy'
 permissions:
   contents: write
@@ -20,5 +20,5 @@ jobs:
       - name: שמירה
         run: |
           git config user.name "Claude"; git config user.email "noreply@anthropic.com"
-          git add data/*.js
+          git add data/*.js; git add docs/loaz-categories.txt 2>/dev/null || true
           if git diff --cached --quiet; then echo "אין שינוי"; else git commit -m "רשימות מילים: ${{ github.event.inputs.sources }} (עדכון אוטומטי)" && git pull --rebase && git push; fi
