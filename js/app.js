@@ -620,6 +620,10 @@
     try { return h.replace(new RegExp("([\u05D0-\u05EA]" + N + "){0,3}" + L.map(fin).join(N) + N, "g"), m => `<mark>${m}</mark>`); } catch (e) { return h; } };
   /* 2.4.0: מקור ראשון בספרייה לפי סדר התקופות (כמו באבן שושן) — חיפוש בכל תקופה לפי סדרה; משוער: תלוי בחלוקת הקטגוריות של הספרייה ובכתיב */
   const PERIODS = [["תנ\"ך", ["/תנך"]], ["משנה ותוספתא", ["/משנה", "/תוספתא"]], ["תלמוד", ["/תלמוד בבלי", "/תלמוד ירושלמי"]], ["מדרש", ["/מדרש"]], ["ראשונים", ["/ראשונים"]], ["אחרונים", ["/אחרונים"]]];
+  /* 2.5.0: ציטוט עם מילות הקשר לפני ואחרי המילה (מקור ראשון בספרייה) */
+  const ctxQuote = (t, f, k = 7) => { const ws = plain(t).replace(/\s+/g, " ").trim().split(" "); if (!ws[0]) return ""; const want = KK.norm(f).replace(/[^\u05D0-\u05EA]/g, "");
+    let i = ws.findIndex(w => { const n = KK.norm(w).replace(/[^\u05D0-\u05EA]/g, ""); return n === want || (n.endsWith(want) && n.length - want.length <= 3); }); if (i < 0) i = 0;
+    const a = Math.max(0, i - k), b = Math.min(ws.length, i + k + 1); return (a ? "… " : "") + hlForm(ws.slice(a, b).join(" "), f) + (b < ws.length ? " …" : ""); };
   const catOf = x => String(x.categoryPath || x.category || x.path || "");
   async function firstSource(r) {
     const box = $("#first"); if (!box) return; const q = r.title.replace(/[^\u05D0-\u05EA ]/g, "").trim() || r.n;
@@ -628,7 +632,7 @@
       let hits = name.startsWith("תנ") ? (await runSearch(q, { ...((await tanakhBooks()) ? { books: await tanakhBooks() } : { categories: cats }), limit: 6, order: "catalogue" })).filter(isTanakh) : await runSearch(q, { categories: cats, limit: 6, order: "catalogue" });
       if (!name.startsWith("תנ")) hits = hits.filter(x => !isTanakh(x) && (!catOf(x) || cats.some(c => catOf(x).includes(c.slice(1)))));
       if (hits.length) { const x = hits[0], unv = !name.startsWith("תנ") && !catOf(x);
-        box.innerHTML = `<div class="row"><b>מקור ראשון (משוער)</b><span>${esc(name)}: <a href="#" data-open='${esc(JSON.stringify({ id: x.id, bookId: x.bookId, type: x.type, index: x.index, q: r.n }))}'>${esc(plain(x.reference || x.book || ""))}</a></span><span class="note">${unv ? "התקופה לא אומתה מול קטגוריית הספר · " : ""}לפי החיפוש בספריית אוצריא בכתיב זה; ייתכן מקור קדום יותר בכתיב אחר.</span></div>`; return; }
+        box.innerHTML = `<div class="row"><b>מקור ראשון (משוער)</b><span>${esc(name)}: <a href="#" data-open='${esc(JSON.stringify({ id: x.id, bookId: x.bookId, type: x.type, index: x.index, q: r.n }))}'>${esc(plain(x.reference || x.book || ""))}</a></span>${x.text ? `<div class="vq">${ctxQuote(x.text, q)}</div>` : ""}<span class="note">${unv ? "התקופה לא אומתה מול קטגוריית הספר · " : ""}לפי החיפוש בספריית אוצריא בכתיב זה; ייתכן מקור קדום יותר בכתיב אחר.</span></div>`; return; }
     }
     box.innerHTML = `<p class="note">המילה לא נמצאה בספריית אוצריא בכתיב זה.</p>`;
   }

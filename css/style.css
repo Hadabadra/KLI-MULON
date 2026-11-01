@@ -339,3 +339,4 @@ details.rootfix{margin:.5em 0}details.rootfix input{font:inherit;width:6em}
 /* 2.4.6: עמוד כניסה נפרד וחלון דיווח */
 .wpage{position:fixed;inset:0;z-index:50;background:var(--color-surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.2em;padding:1.5em;text-align:center}
 .wpage .wsl{max-width:32em}.wpage .wgo{display:flex;flex-direction:column;align-items:center;gap:.6em}.wpage .card{max-width:34em;width:100%;text-align:start}.wpage textarea{width:100%;box-sizing:border-box}
+#first .vq{font-family:var(--font-main);font-size:1.05em;margin:.25em 0;line-height:1.7}#first .vq mark{background:var(--color-primary-subtle);color:inherit;border-radius:var(--radius-sm)}
