@@ -551,15 +551,17 @@
     call("ui.showMessage", { message: r && r.success !== false ? "תודה! המשוב נשלח" : "השליחה נכשלה" });
   }
   /* 2.2.0: אודות מסודר — מה התוסף עושה, נתונים, מקורות, ותכנון ויומן שינויים בתיבות סגורות */
-  function showAbout() {
-    mode = "about"; tabs(); const n = x => Number(x || 0).toLocaleString("he");
-    const feat = [["מילים", "כל המילים מכל המאגרים, עם סינון לפי אות, מקור המילה, הופעה בתנ\"ך ומקור ההגדרה; חיפוש מציג את הערך המבוקש"],
+  const FEAT = [["מילים", "כל המילים מכל המאגרים, עם סינון לפי אות, מקור המילה, הופעה בתנ\"ך ומקור ההגדרה; חיפוש מציג את הערך המבוקש"],
       ["פירוש מילה מסומנת", "סימון מילה או ביטוי בספר מציג פירוש, שורש ובניין; גם מהתפריט בלחיצה ימנית ומהסרגל העליון של הקורא"],
       ["שורשים", "כל השורשים, עם סינון לפי אות, אורך (שתיים, שלוש, מרובע), גזרה ומקור; לכל שורש — כל המילים ממנו מכל המאגרים"],
       ["ניתוח", "כתיבה או הדבקה של משפט או פסוק: שורש, בניין ופירוש לכל מילה, הכללים שבה, הניקוד ומפת הטעמים"],
       ["קונקורדנציה לתנ\"ך", "כל צורות השורש בתנ\"ך ומופעיהן, מתוך ספריית אוצריא"],
       ["כללי הדקדוק וספרי דקדוק", "ספר דקדוק מובנה עם מפתח מונחים, ספר השרשים לרד\"ק וספר הבחור מהספרייה, וייבוא ספרים"],
       ["מועדפים, היסטוריה ודיווח", "שמירת הגדרות, ייצוא, ודיווח על טעות בהגדרה או בשורש ישירות למפתח"]];
+  function showAbout() {
+    const feat = FEAT;
+    mode = "about"; tabs(); const n = x => Number(x || 0).toLocaleString("he");
+
     $("#out").innerHTML = `<div class="about"><div class="hero"><h2>לשון הקודש</h2><p class="note">פירוש וניתוח לשון הקודש · גרסה ${esc(window.KK_VERSION || "")}</p></div>
      <section class="card"><h3>מה התוסף עושה</h3><dl class="feat">${feat.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join("")}</dl></section>
      <section class="card"><h3>במספרים</h3><p>${n(D.keys.length)} ערכים עם פירוש · ${n(D.lex && D.lex._hs().size)} צורות עבריות בכל הנטיות · ${n(D.lex && D.lex._tnk().size)} צורות בתנ"ך · ${n(allWords().length)} מילים בסך הכל${RMETA ? " · " + n(RMETA.size) + " שורשים" : ""}</p></section>
@@ -934,9 +936,11 @@
     ["שורשים", "כל המילים מסודרות לפי שורשיהן, עם סינון לפי אורך, גזרה ומקור."],
     ["ניתוח משפט", "הדביקו פסוק או משפט: לכל מילה — ניקוד, שורש, פירוש, וכללי הדקדוק והטעמים שבה."],
     ["כללי הדקדוק", "ספר דקדוק מורחב ללשון הקודש — מן האותיות והניקוד ועד הטעמים — עם דוגמה מן התנ\"ך לכל כלל."]];
+  /* 2.5.0: מספרים — משותף לאודות ולעמוד הכניסה */
+  const stats = () => { const n = x => Number(x || 0).toLocaleString("he"); return [[n(D.keys.length), "ערכים עם פירוש"], [n(allWords().length), "מילים בסך הכל"], [n(D.lex && D.lex._hs().size), "צורות בכל הנטיות"], [n(D.lex && D.lex._tnk().size), "צורות בתנ\"ך"]].concat(RMETA ? [[n(RMETA.size), "שורשים"]] : []); };
   function welcome() {
     if (ST.noWelcome || $("#welc")) return; const box = document.createElement("section"); box.className = "welc wpage"; box.id = "welc"; /* 2.4.6: עמוד כניסה נפרד (לא מעל התוצאות) */
-    box.innerHTML = `<div class="chead"><h2>ברוכים הבאים ל"לשון הקודש"</h2></div><div class="wsl"></div><div class="wdots">${WSL.map((_, i) => `<button class="wdot" data-ws="${i}" aria-label="${esc(WSL[i][0])}"></button>`).join("")}</div><div class="wgo"><button class="chip pri" id="welgo">כניסה ←</button><label class="note"><input type="checkbox" id="welno"> לא להציג שוב</label></div>`;
+    box.innerHTML = `<div class="chead"><h2>ברוכים הבאים ל"לשון הקודש"</h2></div><div class="wsl"></div><div class="wdots">${WSL.map((_, i) => `<button class="wdot" data-ws="${i}" aria-label="${esc(WSL[i][0])}"></button>`).join("")}</div><div class="wstat">${stats().map(([a, b]) => `<span><b>${a}</b>${esc(b)}</span>`).join("")}</div><div class="wfeat">${FEAT.map(([a, b]) => `<div><b>${esc(a)}</b><p>${esc(b)}</p></div>`).join("")}</div><p class="note wtip">טיפ: סמנו מילה בכל ספר באוצריא — הפירוש קופץ מעצמו. אפשר גם Ctrl+Alt+M או הכפתור בסרגל הקורא.</p><div class="wgo"><button class="chip pri" id="welgo">כניסה ←</button><label class="note"><input type="checkbox" id="welno"> לא להציג שוב</label></div>`;
     document.body.appendChild(box); let k = 0;
     const show = i => { k = (i + WSL.length) % WSL.length; const el = box.querySelector(".wsl"); el.classList.remove("in"); void el.offsetWidth; el.innerHTML = `<b>${esc(WSL[k][0])}</b><p>${esc(WSL[k][1])}</p>`; el.classList.add("in"); box.querySelectorAll(".wdot").forEach((d, j) => d.classList.toggle("on", j === k)); };
     show(0); const t = setInterval(() => { if (!document.body.contains(box)) return clearInterval(t); show(k + 1); }, 4500);
@@ -950,6 +954,7 @@
   }
   /* זיהוי אוטומטי: בחירה, תפריט הקשר, לחיצה על הודעה, פתיחה עם פרמטר */
   async function applySel(text) {
+    { const w = $("#welc"); if (w) w.remove(); } /* 2.5.0: כניסה מבחירת מילה — בלי עמוד הכניסה */
     text = await KKNakdan.voc(text, ST.nakdan);
     const rs = D.resolve(text, ST.maxWords), list = rs.phrase ? [rs.phrase] : [...rs.phrases, ...rs.words.filter(w => !rs.phrases.some(p => p.n.split(" ").includes(w.n)))];
     if (!list.length) { const hh = MH.find(KK.norm(text).split(" "), D); if (hh.length) { $("#q").value = KK.norm(text); showMhOnly(text, hh); } return; }
@@ -959,7 +964,7 @@
     let t = d && (d.text || d.selectedText); const g = await call("reader.getSelection"); let raw = t; if (g.success && g.data) { t = g.data.text || t; raw = g.data.sourceSelectedText || g.data.renderedSelectedText || t; }
     const n = KK.norm(t); if (n && n.split(" ").length <= ST.maxWords) { const r = D.find(n); if (!(cur && r && cur.n === r.n)) applySel(raw); }
   }, 300);
-  function go(word, words, raw) { if (!word) return; if (Array.isArray(words) && words.length > 1) { selWords = words; selCtx = { raw: raw || "", words }; $("#q").value = word; return showCombined(words, raw); } selWords = Array.isArray(words) ? words : []; selCtx = { raw: raw || "", words: selWords.length ? selWords : [word] }; $("#q").value = word; lookup(word); }
+  function go(word, words, raw) { if (!word) return; { const w = $("#welc"); if (w) w.remove(); } if (Array.isArray(words) && words.length > 1) { selWords = words; selCtx = { raw: raw || "", words }; $("#q").value = word; return showCombined(words, raw); } selWords = Array.isArray(words) ? words : []; selCtx = { raw: raw || "", words: selWords.length ? selWords : [word] }; $("#q").value = word; lookup(word); }
   if (O) {
     O.on("plugin.boot", p => { if (p && p.theme) theme(p.theme); else call("app.getTheme").then(r => r && r.success && theme(r.data)); const prm = p && (p.param || p.params); if (prm && prm.word) go(prm.word, prm.words, prm.raw); });
     O.on("theme.changed", theme);
@@ -978,5 +983,5 @@
   checkOnline(); { const an0 = D.analyze.bind(D); D.analyze = w => { const f = ST.rootFix && ST.rootFix[KK.norm(w)]; return f && f.r ? { root: f.r, binyan: f.b || "—", ok: true, src: "user", alts: [] } : an0(w); }; } /* 2.2.1: תיקוני שורש של המשתמש (מחלון הדיווח) חלים אצלו מיד */
   fetch("manifest.json").then(r => r.json()).then(m => { if (m && m.version) window.KK_VERSION = m.version; }).catch(() => {}); /* 2.2.0: הגרסה תמיד מהמניפסט */
   if (window.AchatPromo) AchatPromo.init({ call, plugin: "לשון הקודש", links: LINKS, isOnline: async () => { await checkOnline(); return online; } }); /* 2.5.0: המלצה על "אחת שאלתי" */
-  load().then(() => { setTimeout(() => rootIndex(), 4000); if (!cur && mode === "word" && !$("#q").value) { showAll(); welcome(); if (window.AchatPromo) setTimeout(() => { if (!cur && !selWords.length) AchatPromo.maybeShow(); }, 4000); } syncLibrary(); fOpen = !!ST.fOpen; applyFs(); prTab(); $("#q").focus(); });
+  load().then(() => { setTimeout(() => rootIndex(), 4000); if (!cur && mode === "word" && !$("#q").value) { showAll(); setTimeout(() => { if (!cur && !selWords.length && !$("#q").value) welcome(); }, 700); if (window.AchatPromo) setTimeout(() => { if (!cur && !selWords.length) AchatPromo.maybeShow(); }, 4000); } syncLibrary(); fOpen = !!ST.fOpen; applyFs(); prTab(); $("#q").focus(); });
 })();

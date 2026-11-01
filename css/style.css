@@ -340,3 +340,12 @@ details.rootfix{margin:.5em 0}details.rootfix input{font:inherit;width:6em}
 .wpage{position:fixed;inset:0;z-index:50;background:var(--color-surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.2em;padding:1.5em;text-align:center}
 .wpage .wsl{max-width:32em}.wpage .wgo{display:flex;flex-direction:column;align-items:center;gap:.6em}.wpage .card{max-width:34em;width:100%;text-align:start}.wpage textarea{width:100%;box-sizing:border-box}
 #first .vq{font-family:var(--font-main);font-size:1.05em;margin:.25em 0;line-height:1.7}#first .vq mark{background:var(--color-primary-subtle);color:inherit;border-radius:var(--radius-sm)}
+/* 2.5.0: עמוד הכניסה — פיצ'רים ומספרים */
+.wpage{overflow-y:auto;justify-content:safe center}
+.wstat{display:flex;flex-wrap:wrap;justify-content:center;gap:.5em .9em;max-width:44em}
+.wstat span{display:grid;padding:.35em .9em;border-radius:var(--radius-lg);background:var(--color-primary-subtle);font-size:.85em;color:var(--color-on-surface-variant)}
+.wstat b{font-size:1.35em;color:var(--color-primary)}
+.wfeat{display:grid;grid-template-columns:repeat(auto-fit,minmax(14em,1fr));gap:.6em;max-width:48em;width:100%;text-align:start}
+.wfeat div{background:var(--color-surface-container-low);border:.0625em solid var(--color-outline-variant);border-radius:var(--radius-lg);padding:.6em .9em;animation:kkIn .35s ease both}
+.wfeat p{margin:.2em 0 0;font-size:.88em;color:var(--color-on-surface-variant)}
+.wtip{max-width:40em}
