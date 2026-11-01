@@ -88,7 +88,11 @@
     }).join("");
   }
 
-  const mhRow = hits => hits.length ? `<div class="row"><b>בעינים למקרא</b><div class="chips">${hits.map(h => `<button class="chip pri" data-mhg="${esc(h.g)}" data-mhn="${esc(h.name)}">${esc(KK.MH_LABEL[h.g] || h.g)}: ${esc(h.name)}${h.byRoot ? " (לפי השורש)" : ""} ↗</button>`).join("")}</div><span class="note">נפתח בכרטסת של התוסף "עינים למקרא" (צריך להיות מותקן).</span></div>` : "";
+  const mhDefRow = r => { /* 2.5.0: #32 — צורה בלי פירוש במאגר שהיא ערך בעינים למקרא (בעל חי, צמח, מקום, אדם): מציינים מה היא */
+    if (!r.virtual || (r.s || []).length > 1) return ""; const h = MH.find([r.n], D).filter(x => !x.byRoot && ["animal", "flora", "places", "people", "domem"].includes(x.g))[0]; if (!h) return "";
+    const what = { animal: "בעל חי", flora: "צמח", places: "שם מקום", people: "שם אדם", domem: "דומם (אבן, מתכת וכד')" }[h.g];
+    return `<div class="row"><b>מה זה</b><span>${what} — ראו ערך "${esc(h.name)}" בעינים למקרא</span><div class="chips"><button class="chip pri" data-mhg="${esc(h.g)}" data-mhn="${esc(h.name)}">לפרטים בעינים למקרא ↗</button></div></div>`; },
+  mhRow = hits => hits.length ? `<div class="row"><b>בעינים למקרא</b><div class="chips">${hits.map(h => `<button class="chip pri" data-mhg="${esc(h.g)}" data-mhn="${esc(h.name)}">${esc(KK.MH_LABEL[h.g] || h.g)}: ${esc(h.name)}${h.byRoot ? " (לפי השורש)" : ""} ↗</button>`).join("")}</div><span class="note">נפתח בכרטסת של התוסף "עינים למקרא" (צריך להיות מותקן).</span></div>` : "";
   async function openMh(g, name) {
     const r = await call("plugin.openOther", { pluginId: KK.MH_ID, param: { section: g, entry: name } });
     if (!r || !r.success) call("ui.showMessage", { message: "לא ניתן לפתוח את עינים למקרא. ודאו שהתוסף מותקן ומופעל." });
@@ -131,7 +135,7 @@
       (selWords.length > 1 ? `<div class="row selrow"><b>מילים בבחירה</b><div class="chips"><button class="chip" data-comb="1"><i class=oi data-i=clip></i> דף משולב</button>${selWords.map(t => chip(t, "", t === r.title ? "pri" : "")).join("")}</div></div>` : "") +
       `<div class="row"><div class="chips"><button class="chip pri" id="osearch">${IC.search} חפש באוצריא</button><button class="chip" id="orel"><i class=oi data-i=book></i> פסוקים ומפרשים קשורים</button><button class="chip" id="oconc"><i class=oi data-i=lib></i> קונקורדנציה לתנ"ך</button><button class="chip" id="ofirst" title="חיפוש המילה בספרייה לפי סדר התקופות">מקור ראשון בספרייה (משוער)</button></div></div><div id="rel"></div><div id="first"></div>` +
       (isAcr ? "" : `<div class="row"><b>במילוני הספרייה</b><div class="chips">${an.ok ? `<button class="chip" data-lib="radak">ספר השרשים לרד"ק — שורש ${esc(KK.refinal(root))}</button>` : ""}<button class="chip" data-lib="bachur">ספר הבחור</button>${online ? `<button class="chip" id="omilog" data-ext="milog">מילוג ↗</button><button class="chip" data-ext="wiktionary">${wkHas(cur.title.replace(/[^\u05D0-\u05EA ]/g, "")) ? "ויקימילון — הערך ↗" : "ויקימילון (חיפוש) ↗"}</button><button class="chip" data-ext="wikisource">ויקיטקסט ↗</button><button class="chip" data-ext="academy">האקדמיה ללשון ↗</button>` : ""}</div>${online ? `<span class="note">קישורים חיצוניים בלבד, נפתחים בדפדפן ומוסתרים רק כשאוצריא מוגדרת "ללא גישה לאינטרנט". התוכן שם אינו מסונן.</span>` : ""}</div>`) +
-      sensesHtml(r) + (isAcr ? "" : pleneRow(r.title)) +
+      mhDefRow(r) + sensesHtml(r) + (isAcr ? "" : pleneRow(r.title)) +
       Object.entries(links).map(([k, a]) => chipRow(k.replace("_", " "), a)).join("") +
       mhRow(isAcr ? [] : MH.find([r.n, ...(selCtx.words || [])], D)) +
       (isAcr ? "" : `<div id="libhits"></div>`) +
@@ -961,7 +965,7 @@
     selCtx = { raw: text, words: KK.norm(text).split(" ") }; selWords = rs.phrase ? [] : list.map(x => x.title); $("#q").value = list[0].title; if (rs.phrases.length && list.length > 1) return showCombined(selWords, text); open(list[0]);
   }
   const fromSel = deb(async d => {
-    let t = d && (d.text || d.selectedText); const g = await call("reader.getSelection"); let raw = t; if (g.success && g.data) { t = g.data.text || t; raw = g.data.sourceSelectedText || g.data.renderedSelectedText || t; }
+    let t = d && (d.text || d.selectedText || d.sourceSelectedText || d.renderedSelectedText || (d.selection && (d.selection.text || d.selection.selectedText))); const g = await call("reader.getSelection"); let raw = t; if (g.success && g.data) { t = g.data.text || g.data.renderedSelectedText || g.data.sourceSelectedText || t; raw = g.data.sourceSelectedText || g.data.renderedSelectedText || t; }
     const n = KK.norm(t); if (n && n.split(" ").length <= ST.maxWords) { const r = D.find(n); if (!(cur && r && cur.n === r.n)) applySel(raw); }
   }, 300);
   function go(word, words, raw) { if (!word) return; { const w = $("#welc"); if (w) w.remove(); } if (Array.isArray(words) && words.length > 1) { selWords = words; selCtx = { raw: raw || "", words }; $("#q").value = word; return showCombined(words, raw); } selWords = Array.isArray(words) ? words : []; selCtx = { raw: raw || "", words: selWords.length ? selWords : [word] }; $("#q").value = word; lookup(word); }

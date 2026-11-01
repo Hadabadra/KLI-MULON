@@ -27,10 +27,10 @@
     timer = setTimeout(async () => {
       await loadSettings();
       if (!S.auto || S.mode === "off") return;
-      let txt = (data && (data.text || data.selectedText)) || "";
+      let txt = (data && (data.text || data.selectedText || data.sourceSelectedText || data.renderedSelectedText || (data.selection && (data.selection.text || data.selection.selectedText)))) || ""; /* 2.5.0: #37 — גם בצורת הדף/מפרשים, כשהטקסט מגיע בשדה אחר */
       const g = await call("reader.getSelection");          // טקסט הבחירה המלא והסופי
       let rawTxt = txt;
-      if (g && g.success && g.data) { txt = g.data.text || txt; rawTxt = g.data.sourceSelectedText || g.data.renderedSelectedText || txt; }
+      if (g && g.success && g.data) { txt = g.data.text || g.data.renderedSelectedText || g.data.sourceSelectedText || txt; rawTxt = g.data.sourceSelectedText || g.data.renderedSelectedText || txt; }
       const t = KK.norm(txt);
       if (!t || t.split(" ").length > S.maxWords || t.length > 90) return;
       if (t === last && Date.now() - lastAt < 4000) return;
