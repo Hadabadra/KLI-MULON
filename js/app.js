@@ -578,8 +578,9 @@
   }
   /* 2.5.3: לשונית "לועזיות" — מילים לועזיות שנכנסו לעברית ושפת המקור (data/loaz.js, מקטגוריות המקור בוויקימילון; tools/fetch_wordlists.py loaz) */
   let LZ = { lang: "", shown: 300 };
+  const LZ_BLOCK = new Set("אורגזמה אינטרסקס ארוטיקה אנטיכריסטוס גיידאר דיסקו דיסקוטק הומו הומוארוטיקה הומופוב הומופוביה טרנסקסואל יוגה מריחואנה מסגד פאנסקסואליות פורנוגרפיה פורני רוקנ'רול סרוגייט".split(" ")); /* מילים שאינן ראויות לתוסף — מוסתרות */
   function showLoaz(more) {
-    mode = "loaz"; tabs(); const all = Object.entries(window.KK_LOAZ || {}), q = KK.norm($("#q").value || "");
+    mode = "loaz"; tabs(); const all = Object.entries(window.KK_LOAZ || {}).filter(([w]) => !LZ_BLOCK.has(w)), q = KK.norm($("#q").value || "");
     if (!more) LZ.shown = 300; const langs = [...new Set(all.flatMap(([, l]) => l.split(",")))].sort((a, b) => a.localeCompare(b, "he"));
     let list = all.filter(([w, l]) => (!LZ.lang || l.split(",").includes(LZ.lang)) && (!q || KK.norm(w).startsWith(q)));
     const part = list.slice(0, LZ.shown);
