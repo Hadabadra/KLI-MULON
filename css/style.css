@@ -336,3 +336,6 @@ details.rootfix{margin:.5em 0}details.rootfix input{font:inherit;width:6em}
 @keyframes wslin{from{opacity:0;transform:translateX(-1em)}to{opacity:1;transform:none}}
 .wdots{display:flex;gap:.4em;justify-content:center}.wdot{width:.6em;height:.6em;border-radius:50%;border:0;background:var(--color-outline-variant);cursor:pointer;padding:0}.wdot.on{background:var(--color-primary)}
 .nfb{display:inline-flex;gap:.15em;margin-inline-end:.3em}.nfb .ib{opacity:.45}.nfb .ib.on{opacity:1}.vtext{font-size:1.2em;line-height:1.9}
+/* 2.4.6: עמוד כניסה נפרד וחלון דיווח */
+.wpage{position:fixed;inset:0;z-index:50;background:var(--color-surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.2em;padding:1.5em;text-align:center}
+.wpage .wsl{max-width:32em}.wpage .wgo{display:flex;flex-direction:column;align-items:center;gap:.6em}.wpage .card{max-width:34em;width:100%;text-align:start}.wpage textarea{width:100%;box-sizing:border-box}

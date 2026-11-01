@@ -128,7 +128,7 @@
       const desc = [core ? core[1] : "", morph.length ? (morph.length > 1 ? "ניתוחים אפשריים (לפי הכתב בלי ניקוד): " + morph.join(" / או: ") : morph[0]) : "",
         bs.length ? (bs[0].how === "~" ? `קרוב במאגר: "${bs[0].r.title}" (ייתכן שאינו אותו עניין)` : (bs[0].how && w === bs[0].how.replace(" + ", "") + bs[0].r.n ? `${bs[0].how.replace(" + ", "' + ")}"${bs[0].r.title}"` : (bs[0].how ? `${bs[0].how.replace(" + ", "' + ")}` : "") + `נטייה של "${bs.map(b => b.r.title).filter((x, i, a) => a.indexOf(x) === i).join("\" / \"")}"`)) : "",
         t ? `בתנ"ך ${t.c} פעמים; ראשון: ${t.ref}` : ""].filter(Boolean).join(" · ") || "מילה שאינה במאגר הפירושים";
-      const s = [[t ? t.v : (core ? core[0] : ""), desc, core ? "מילות היסוד (התוסף)" : "צורת המילה (התוסף)"]];
+      const s = [[t ? t.v : (core ? core[0] : ""), desc, core ? "מילות היסוד (התוסף)" : (!t && !hs && L && L.o && L.o.academy && L.o.academy[w] != null) ? "האקדמיה ללשון (רשימת המונחים; ניתוח הצורה — התוסף)" : "צורת המילה (התוסף)"]]; /* 2.4.6 */
       if (real) s.push(...real.s);
       for (const b of bs) for (const x of b.r.s) s.push([x[0], x[1], `${x[2]} · בערך ${b.r.title}`]);
       const v = { title: real ? real.title : refinal(w), n: w, s, l: real ? real.l : [], virtual: !real, form: { t, morph, root, bases: bs, known: !!(t || hs || core || (L && L.known(w))) } };

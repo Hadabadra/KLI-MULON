@@ -8,13 +8,14 @@
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const deb = (f, t) => { let h; return (...a) => { clearTimeout(h); h = setTimeout(() => f(...a), t); }; };
   let LOADED = false; /* 2.4.5: לא שומרים לפני הטעינה — שמירה מוקדמת דרסה הגדרות (הודעה קצרה) והיסטוריה */
-  const saveNow = async () => { if (!LOADED) return; const { nthHist, ...rest } = ST; const r = await call("storage.set", { key: "settings", value: rest }); call("storage.set", { key: "nthHist", value: nthHist || [] }); if (r && r.success === false) call("ui.showMessage", { message: "שמירת ההגדרות נכשלה" }); };
+  const saveNow = async () => { if (!LOADED) return; const { nthHist, ...rest } = ST; rest._ts = Date.now(); try { localStorage.setItem("kk-settings", JSON.stringify(rest)); } catch (e) {} /* 2.4.6: גיבוי מקומי — ההגדרות נשמרות גם אם storage של אוצריא לא החזיר אותן */ const r = await call("storage.set", { key: "settings", value: rest }); call("storage.set", { key: "nthHist", value: nthHist || [] }); if (r && r.success === false) call("ui.showMessage", { message: "שמירת ההגדרות נכשלה" }); };
   const save = deb(saveNow, 400);
   document.addEventListener("visibilitychange", () => { if (document.hidden) saveNow(); }); window.addEventListener("pagehide", saveNow);
 
   async function load() {
-    const r = await call("storage.get", { key: "settings" });
-    if (r.success && r.data && typeof r.data === "object") ST = { ...ST, ...r.data, hist: Array.isArray(r.data.hist) ? r.data.hist : [], likes: Array.isArray(r.data.likes) ? r.data.likes : [] };
+    const r = await call("storage.get", { key: "settings" }); let sd = r.success ? r.data : null; if (typeof sd === "string") try { sd = JSON.parse(sd); } catch (e) { sd = null; }
+    try { const l = JSON.parse(localStorage.getItem("kk-settings") || "null"); if (l && typeof l === "object" && (!sd || typeof sd !== "object" || (l._ts || 0) > (sd._ts || 0))) sd = l; } catch (e) {}
+    r.data = sd; if (sd && typeof sd === "object") ST = { ...ST, ...r.data, hist: Array.isArray(r.data.hist) ? r.data.hist : [], likes: Array.isArray(r.data.likes) ? r.data.likes : [] };
     const h = await call("storage.get", { key: "nthHist" }); if (h.success && Array.isArray(h.data)) ST.nthHist = h.data;
     LOADED = true;
   }
@@ -96,6 +97,9 @@
     mode = "word"; tabs(); cur = null;
     $("#out").innerHTML = `<h2>${esc(KK.norm(text))}</h2><p class="hint">אין ערך במילון, אבל יש כרטסת בעינים למקרא.</p>` + mhRow(hits);
   }
+  /* 2.4.6: חלון הערה בתוך הדף (prompt/confirm חוסמים באוצריא) */
+  function askNote(q) { return new Promise(res => { const d = document.createElement("div"); d.className = "welc wpage"; d.innerHTML = `<div class="card"><h3>דיווח על קטע בספר הדקדוק</h3><p class="note">«${esc(q.slice(0, 200))}${q.length > 200 ? "…" : ""}»</p><textarea id="rnote" rows="4" placeholder="מה צריך לתקן? (אפשר לציין מקור)"></textarea><div class="chips"><button class="chip pri" id="rok">שליחה</button><button class="chip" id="rno">ביטול</button></div></div>`; document.body.appendChild(d); $("#rnote").focus();
+    $("#rok").onclick = () => { const v = $("#rnote").value.trim(); if (!v) return $("#rnote").focus(); d.remove(); res(v); }; $("#rno").onclick = () => { d.remove(); res(null); }; }); }
   /* 2.1.0: לכל מילה — המקום הראשון בתנ"ך, הפירוק הדקדוקי, ערך הבסיס, ופירוק לאות שימוש ("מעל" = מ + על; "בגד" = ב + גד) */
   function formRow(r) {
     const f = r.form || {}, t = f.t || D.firstRef(r.n), sp = D.splits(r.n), bs = f.bases || [];
@@ -285,9 +289,9 @@
     $("#bkdl").onclick = () => { const h = `<!DOCTYPE html><html lang="he" dir="rtl"><head><meta charset="UTF-8"><title>${esc(b.title)}</title></head><body style="font-family:David,serif;max-width:50em;margin:2em auto;line-height:1.7"><h1>${esc(b.title)}</h1>${b.note ? `<p><i>${esc(b.note)}</i></p>` : ""}${secs.map(x => secHtml(x, "")).join("")}<hr><p>מתוך התוסף "לשון הקודש" לאוצריא. הורדת התוסף: <a href="${LINKS.gh}">GitHub</a> · <a href="${LINKS.store}">חנות התוספים של אוצריא</a></p></body></html>`;
       const el = document.createElement("a"); el.href = URL.createObjectURL(new Blob(["\ufeff" + h], { type: "text/html;charset=utf-8" })); el.download = b.title.replace(/[\\/:*?"<>|]/g, "") + ".html"; document.body.appendChild(el); el.click(); el.remove();
       copyText(`${LINKS.gh}\n${LINKS.store}`); call("ui.showMessage", { message: "הספר הורד; קישורי ההורדה של התוסף הועתקו" }); };
-    { const rb = document.createElement("button"); rb.className = "chip"; rb.id = "bkrep"; rb.title = "סמנו קטע בספר ולחצו כדי לדווח עליו"; rb.textContent = "דיווח על קטע"; const tb = $("#bktxt"); if (tb) tb.after(rb);
+    { const rb = document.createElement("button"); rb.className = "chip"; rb.id = "bkrep"; rb.title = "סמנו קטע בספר ולחצו כדי לדווח עליו"; rb.textContent = "דיווח על קטע"; const tb = document.querySelector(".rbar .expm"); if (tb) tb.before(rb); else document.querySelector(".rbar").appendChild(rb); /* 2.4.6: היה בתוך תפריט הייצוא ולא נמצא */
       rb.onclick = async () => { const q = String(window.getSelection() || "").trim(); if (!q) return call("ui.showMessage", { message: "סמנו תחילה בספר את הקטע שצריך תיקון, ואז לחצו שוב." });
-        const note = prompt("מה צריך לתקן בקטע? (אפשר לציין מקור)", ""); if (note === null) return;
+        const note = await askNote(q); if (note === null) return; /* prompt() חוסם באוצריא */
         const res = await call("feedback.report", { details: `ספר הדקדוק (${b.title}) — קטע לתיקון:\n«${q.slice(0, 600)}»\nהערה: ${note}\nתוסף: לשון הקודש ${window.KK_VERSION || ""}`, reportType: "content" });
         call("ui.showMessage", { message: res && res.success && res.data === "sent" ? "הדיווח נשלח. תודה!" : res && res.success && res.data === "queued" ? "הדיווח יישלח כשיהיה חיבור." : "הדיווח לא נשלח." }); }; }
     $("#bktxt").onclick = () => { const clean = t => t.replace(/\[\[([^|\]]+)\|([^\]]*)\]\]/g, (m, a, b2) => a === "חיפוש" ? b2 : a === "פסוק" ? "(" + b2.split("|")[0] + ")" : (b2 ? a + ": " + b2 : a)).replace(/\[\[([^\]]+)\]\]/g, "$1").replace(/\*\*([^*]+)\*\*/g, "$1").replace(/^:קצר:\s*/, "בקצרה: ").replace(/^:מקור:\s*/, "מקור: ").replace(/^:דוגמה:\s*/, "דוגמה מן המקרא: ");
@@ -745,13 +749,13 @@
     copyText(`${LINKS.gh}\n${LINKS.store}`);
   }
   /* 2.0: [[פסוק|בראשית א ג]] או [[פסוק|בראשית א ג|מילה]] — פתיחת הפסוק באוצריא. עם מילה: חיפוש המילה בספר ובחירת המופע שההפניה שלו היא הפסוק; בלי מילה — נפתח הספר וההפניה מועתקת */
-  const refNorm = t => plain(t).replace(/^ספר /, "").replace(/[,:.()\-–]/g, " ").replace(/(^| )(פרק|פסוק)(?= )/g, " ").replace(/\s+/g, " ").trim();
+  const refNorm = t => plain(t).replace(/[׳״'"]/g, "").replace(/^ספר /, "").replace(/[,:.()\-–]/g, " ").replace(/(^| )(פרק|פסוק)(?= )/g, " ").replace(/\s+/g, " ").trim();
   async function verseQuote(el) {
     try { const [ref, word] = el.dataset.vq.split("|"), r0 = refNorm(ref);
       const bk = [...TNK].sort((a, b) => b.length - a.length).find(t => r0 === t || r0.startsWith(t + " ")); if (!bk) return;
       const b = await findLibBook(bk) || (bk === "תהלים" ? await findLibBook("תהילים") : null); if (!b) return; const cv = r0.slice(bk.length).trim();
-      const hits = await runSearch(word, { books: [{ bookId: b.bookId, type: b.type }], limit: 5000, order: "catalogue" });
-      const h = hits.find(x => { const z = refNorm(x.reference || ""); return z === r0 || z.endsWith(" " + cv); }); if (!h || !el.isConnected) return;
+      let hits = await runSearch(word, { books: [{ bookId: b.bookId, type: b.type }], limit: 5000, order: "catalogue" }); if (!hits || !hits.length) hits = await runSearch(word, { limit: 5000, order: "catalogue" }) || [];
+      const tail = z => z.split(" ").slice(-2).join(" "), h = hits.find(x => { const z = refNorm(x.reference || ""); return z === r0 || z.endsWith(" " + cv) || (z.includes(bk) && tail(z) === tail(r0)); }); if (!h || !el.isConnected) return;
       const ws = String(h.text || "").replace(/<[^>]+>/g, "").split(/\s+/), i = ws.findIndex(x => KK.norm(x).replace(/[^א-ת]/g, "").endsWith(KK.refinal(word))), a = Math.max(0, i - 6), z = i < 0 ? 14 : i + 7;
       el.innerHTML = `«${a ? "… " : ""}${hlForm(ws.slice(a, z).join(" "), word)}${z < ws.length ? " …" : ""}» (${esc(ref)})`; } catch (e) {}
   }
@@ -923,13 +927,13 @@
     ["ניתוח משפט", "הדביקו פסוק או משפט: לכל מילה — ניקוד, שורש, פירוש, וכללי הדקדוק והטעמים שבה."],
     ["כללי הדקדוק", "ספר דקדוק מורחב ללשון הקודש — מן האותיות והניקוד ועד הטעמים — עם דוגמה מן התנ\"ך לכל כלל."]];
   function welcome() {
-    if (ST.noWelcome || $("#welc")) return; const box = document.createElement("section"); box.className = "card welc"; box.id = "welc";
-    box.innerHTML = `<div class="chead"><h2>ברוכים הבאים ל"לשון הקודש"</h2><button class="ib" id="welx" title="לא להציג שוב" aria-label="סגירה">✕</button></div><div class="wsl"></div><div class="wdots">${WSL.map((_, i) => `<button class="wdot" data-ws="${i}" aria-label="${esc(WSL[i][0])}"></button>`).join("")}</div>`;
-    $("#out").prepend(box); let k = 0;
+    if (ST.noWelcome || $("#welc")) return; const box = document.createElement("section"); box.className = "welc wpage"; box.id = "welc"; /* 2.4.6: עמוד כניסה נפרד (לא מעל התוצאות) */
+    box.innerHTML = `<div class="chead"><h2>ברוכים הבאים ל"לשון הקודש"</h2></div><div class="wsl"></div><div class="wdots">${WSL.map((_, i) => `<button class="wdot" data-ws="${i}" aria-label="${esc(WSL[i][0])}"></button>`).join("")}</div><div class="wgo"><button class="chip pri" id="welgo">כניסה ←</button><label class="note"><input type="checkbox" id="welno"> לא להציג שוב</label></div>`;
+    document.body.appendChild(box); let k = 0;
     const show = i => { k = (i + WSL.length) % WSL.length; const el = box.querySelector(".wsl"); el.classList.remove("in"); void el.offsetWidth; el.innerHTML = `<b>${esc(WSL[k][0])}</b><p>${esc(WSL[k][1])}</p>`; el.classList.add("in"); box.querySelectorAll(".wdot").forEach((d, j) => d.classList.toggle("on", j === k)); };
     show(0); const t = setInterval(() => { if (!document.body.contains(box)) return clearInterval(t); show(k + 1); }, 4500);
     box.querySelectorAll("[data-ws]").forEach(d => d.onclick = () => show(+d.dataset.ws));
-    $("#welx").onclick = () => { ST.noWelcome = true; save(); box.remove(); };
+    $("#welgo").onclick = () => { if ($("#welno").checked) { ST.noWelcome = true; save(); } box.remove(); $("#q").focus(); };
   }
   /* ייצוא קובץ טקסט — תמיד עם קישורי הורדה של התוסף */
   function dlText(body, name, msg) {

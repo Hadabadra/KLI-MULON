@@ -7,7 +7,9 @@
   const call = async (m, p) => { try { return await O.call(m, p || {}); } catch (e) { return { success: false }; } };
   async function loadSettings() {
     const r = await call("storage.get", { key: "settings" });
-    if (r && r.success && r.data && typeof r.data === "object") S = { ...DEF, ...r.data };
+    let sd = r && r.success ? r.data : null; if (typeof sd === "string") try { sd = JSON.parse(sd); } catch (e) { sd = null; }
+    try { const l = JSON.parse(localStorage.getItem("kk-settings") || "null"); if (l && (!sd || typeof sd !== "object" || (l._ts || 0) > (sd._ts || 0))) sd = l; } catch (e) {}
+    if (sd && typeof sd === "object") S = { ...DEF, ...sd };
   }
   function short(r, ctx) {
     const rk = KK.rank(r, ctx); if (S.noAcr) { rk.items = rk.items.filter(x => x.kind !== "acr"); rk.best = (rk.best || []).filter(x => x.kind !== "acr"); if (!rk.items.length) return null; } const order = ["lex", "enc", "laaz", "acr"];
