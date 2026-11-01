@@ -487,6 +487,7 @@
       <div class="opt"><span id="nak-st">בודק חיבור…</span><span class="chips"><button class="chip" id="nak-copy"><i class=oi data-i=clip></i> העתקת קישור להורדה</button></span></div>
       <p class="note">הנקדן הוא תוסף אוצריא נפרד (באדיבות יוסף שלום בן שטרית) שאינו בחנות; מורידים אותו מהפורום: ${KKNakdan.FORUM}</p>
      </section>
+     <section class="card"><h3>המלצות</h3>${window.AchatPromo ? AchatPromo.settingsHtml() : ""}</section>
      <section class="card"><h3>קיצורים</h3><p class="note">Ctrl+Alt+M על מילה מסומנת פותח את המילון. אפשר לשנות במסך ההגדרות של אוצריא ← קיצורי מקשים. יש גם כפתור בסרגל הקורא.</p></section></div>`;
     const segOn = (id, f) => $("#" + id).onclick = e => { const b = e.target.closest("button"); if (!b) return; $("#" + id).querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); f(b.dataset.v); save(); };
     segOn("s-mode", v => ST.mode = v); segOn("s-tlen", v => ST.tLen = v); segOn("s-max", v => ST.maxWords = +v);
@@ -497,6 +498,7 @@
     $("#s-plene").onchange = e => { ST.plene = e.target.checked; save(); };
     $("#s-conc").onchange = e => { ST.concAll = e.target.checked; save(); };
     $("#s-pr").onchange = e => { ST.practice = e.target.checked; save(); prTab(); };
+    if (window.AchatPromo) AchatPromo.bind($("#out")); /* 2.5.0: מתג "הצג המלצות" (רכיב משותף shared/promo) */
     $("#nak-copy").onclick = () => { copyText(KKNakdan.FORUM); call("ui.showMessage", { message: "הקישור הועתק" }); };
     KKNakdan.scan(true).then(p => { const el = $("#nak-st"); if (el) el.textContent = p ? "🟢 הנקדן מחובר" : "⚪ הנקדן לא מחובר — המילון פועל כרגיל"; });
     $("#s-cmp").onchange = e => { ST.compact = e.target.checked; applyFs(); save(); };
@@ -563,9 +565,11 @@
      <section class="card"><h3>במספרים</h3><p>${n(D.keys.length)} ערכים עם פירוש · ${n(D.lex && D.lex._hs().size)} צורות עבריות בכל הנטיות · ${n(D.lex && D.lex._tnk().size)} צורות בתנ"ך · ${n(allWords().length)} מילים בסך הכל${RMETA ? " · " + n(RMETA.size) + " שורשים" : ""}</p></section>
      <section class="card"><h3>מקורות</h3><p>ההגדרות, הנרדפים וראשי התיבות — ממאגר המילון של פרויקט כליקודש (KleiKodeshProject); המקור של כל הגדרה מצוין בערך. רשימות מילים נוספות: מילוג, ויקימילון והאקדמיה ללשון (המילים בלבד). קישורי הכרטסות — לפי שמות הערכים של "עינים למקרא".</p>
      <p class="note"><b>שימו לב:</b> המאגר עדיין בסינון, וייתכנו בו ערכים לא מילוניים, הגדרות כפולות או חסרות. השורשים והבניינים הם זיהוי אוטומטי של התוסף ועלולים לטעות — אפשר לתקן דרך "דיווח" בכל ערך.</p></section>
+     ${window.AchatPromo ? AchatPromo.aboutHtml() : ""}
      <p class="chips"><button class="chip pri" id="genrep"><i class=oi data-i=mail></i> שליחת משוב או דיווח כללי</button><button class="chip" data-url="${esc(LINKS.gh)}">GitHub ↗</button><button class="chip" data-url="${esc(LINKS.store)}">חנות התוספים ↗</button></p>
      <details class="more"><summary>יומן שינויים</summary><div class="rmdoc">${window.KK_CHANGELOG || "<p>היומן אינו זמין.</p>"}</div></details>
      <details class="more"><summary>בתכנון</summary><div class="rmdoc">${window.KK_ROADMAP || "<p>המסמך אינו זמין.</p>"}</div></details></div>`;
+    if (window.AchatPromo) AchatPromo.bind($("#out"));
   }
 
   function report(r, i) {
@@ -969,5 +973,6 @@
   window.KKAPP = Object.assign(window.KKAPP || {}, { st: () => ST, D, save, call, esc, chip, showPractice }); /* 2.0: ממשק לקבצי ההרחבה (js/ideas-*.js) */
   checkOnline(); { const an0 = D.analyze.bind(D); D.analyze = w => { const f = ST.rootFix && ST.rootFix[KK.norm(w)]; return f && f.r ? { root: f.r, binyan: f.b || "—", ok: true, src: "user", alts: [] } : an0(w); }; } /* 2.2.1: תיקוני שורש של המשתמש (מחלון הדיווח) חלים אצלו מיד */
   fetch("manifest.json").then(r => r.json()).then(m => { if (m && m.version) window.KK_VERSION = m.version; }).catch(() => {}); /* 2.2.0: הגרסה תמיד מהמניפסט */
-  load().then(() => { setTimeout(() => rootIndex(), 4000); if (!cur && mode === "word" && !$("#q").value) { showAll(); welcome(); } syncLibrary(); fOpen = !!ST.fOpen; applyFs(); prTab(); $("#q").focus(); });
+  if (window.AchatPromo) AchatPromo.init({ call, plugin: "לשון הקודש", links: LINKS, isOnline: async () => { await checkOnline(); return online; } }); /* 2.5.0: המלצה על "אחת שאלתי" */
+  load().then(() => { setTimeout(() => rootIndex(), 4000); if (!cur && mode === "word" && !$("#q").value) { showAll(); welcome(); if (window.AchatPromo) setTimeout(() => { if (!cur && !selWords.length) AchatPromo.maybeShow(); }, 4000); } syncLibrary(); fOpen = !!ST.fOpen; applyFs(); prTab(); $("#q").focus(); });
 })();

@@ -1,0 +1,32 @@
+# רכיב משותף: המלצה על "אחת שאלתי" (גרסה 1.0.0)
+
+מקור יחיד: `Hadabadra/KLI-MULON` → `shared/promo/`. כל תוסף **מעתיק את שני הקבצים כמו שהם** (`achat-promo.js`, `achat-promo.css`) — לא עורכים אותם בתוך תוסף. שינוי נעשה כאן ומועתק מחדש לכל התוספים (כמו המפה המשותפת).
+
+## מה הרכיב עושה
+- **פופאפ קטן** בפינת המסך: טקסט ההמלצה, כפתורי "להורדה" ו"להסבר בפורום", "אל תציג שוב" ו-✕.
+- **תדירות:** לכל היותר פעם בשבוע; לא ביום הפתיחה הראשונה (יום אחד לפחות מהפתיחה הראשונה, ופתיחה שנייה לפחות).
+- **"אל תציג שוב"** ומתג **"הצג המלצות"** בהגדרות — נשמרים ב-storage של התוסף במפתח `achatPromo`.
+- **שורה קבועה ב"אודות"** — מוצגת תמיד, בלי פופאפ ובלי תלות במתג.
+- **ללא אינטרנט** (מצב "ללא גישה לאינטרנט" של אוצריא, `app.getConnectivity().isOfflineMode`): במקום הקישורים — כפתור "שמור הסבר לקובץ", ששומר `אחת שאלתי - הסבר והורדה.txt` עם הסבר, שני הקישורים, וקישורי ההורדה של התוסף עצמו (GitHub + חנות).
+
+## שילוב בתוסף
+1. העתיקו את `achat-promo.js` ו-`achat-promo.css` לתיקייה `shared/promo/` שבתוסף, וטענו:
+   ```html
+   <link rel="stylesheet" href="shared/promo/achat-promo.css">
+   <script src="shared/promo/achat-promo.js"></script>
+   ```
+2. אתחול (פעם אחת, אחרי שיש עטיפת `call` ל-SDK):
+   ```js
+   AchatPromo.init({ call, plugin: "שם התוסף", links: { gh: "https://github.com/…/releases/latest", store: "https://otzaria.org/plugins/…" } });
+   ```
+   אופציונלי: `isOnline: async () => bool` (אם לתוסף יש בדיקה משלו), `forumUrl`, `downloadUrl`.
+3. בפתיחה **מתפריט הכלים בלבד** (לא בפתיחה מבחירת מילה/הודעה): `AchatPromo.maybeShow()`.
+4. הגדרות: להוסיף `AchatPromo.settingsHtml()` לכרטיס, ואחרי הצבת ה-HTML — `AchatPromo.bind(container)`.
+5. אודות: להוסיף `AchatPromo.aboutHtml()`, ואחרי הצבה — `AchatPromo.bind(container)`.
+
+## דרישות
+- הרשאות: `plugin.storage.read`, `plugin.storage.write`, `app.open_url`, `app.info.read` (ל-`app.getConnectivity`).
+- אסימוני `:root`: `--color-primary`, `--color-on-primary`, `--color-primary-subtle`, `--color-surface`, `--color-surface-container-low`, `--color-surface-container-high`, `--color-on-surface`, `--color-on-surface-variant`, `--color-outline-variant`, `--color-shadow`, `--font-ui`, `--radius-lg`, `--radius-pill`. אין צבע קבוע מחוץ ל-`:root` (תגית "מראה תואם"), כל המידות ב-em.
+
+## פתוח
+- `forumUrl` מצביע כרגע לדף הפורום הכללי (`https://otzaria.org/forum`) — יש להחליף בקישור הישיר לפוסט ההסבר של יאיר כשיימסר, ב-`DEF.forumUrl` בקובץ ה-JS.

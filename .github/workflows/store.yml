@@ -32,7 +32,7 @@ jobs:
         run: |
           python3 tools/build_roadmap.py docs/ROADMAP.md data/roadmap.js && python3 tools/build_roadmap.py CHANGELOG.md data/changelog.js KK_CHANGELOG
           mkdir -p dist/plugin
-          cp -r manifest.json index.html background.html css js data icon dist/plugin/
+          cp -r manifest.json index.html background.html css js data icon shared dist/plugin/
           node -p "'לשון הקודש ' + require('./dist/plugin/manifest.json').version"
       - name: ולידציה, קיפול ופרסום
         timeout-minutes: 6
