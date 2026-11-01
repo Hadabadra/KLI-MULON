@@ -7,6 +7,7 @@
   const call = async (m, p) => { try { return O ? await O.call(m, p || {}) : { success: false }; } catch (e) { return { success: false }; } };
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const deb = (f, t) => { let h; return (...a) => { clearTimeout(h); h = setTimeout(() => f(...a), t); }; };
+  let EXPL = false; /* 2.5.1: כניסה מפורשת למילה (תפריט הקשר, סרגל, קיצור, הודעה, פרמטר) — רק אז מדלגים על עמוד הכניסה. בחירה פסיבית בספר בזמן פתיחה מתפריט הכלים אינה מבטלת אותו */
   let LOADED = false; /* 2.4.5: לא שומרים לפני הטעינה — שמירה מוקדמת דרסה הגדרות (הודעה קצרה) והיסטוריה */
   const saveNow = async () => { if (!LOADED) return; const { nthHist, ...rest } = ST; rest._ts = Date.now(); try { localStorage.setItem("kk-settings", JSON.stringify(rest)); } catch (e) {} /* 2.4.6: גיבוי מקומי — ההגדרות נשמרות גם אם storage של אוצריא לא החזיר אותן */ const r = await call("storage.set", { key: "settings", value: rest }); call("storage.set", { key: "nthHist", value: nthHist || [] }); if (r && r.success === false) call("ui.showMessage", { message: "שמירת ההגדרות נכשלה" }); };
   const save = deb(saveNow, 400);
@@ -477,6 +478,7 @@
       ${opt("מקסימום מילים בבחירה", "", seg("s-max", [[1, "1"], [2, "2"], [3, "3"], [4, "4"], [6, "6"], [8, "8"]], ST.maxWords))}
      </section>
      <section class="card"><h3>תצוגה</h3>
+      ${opt("עמוד הכניסה", "בפתיחה מתפריט הכלים (בכניסה מבחירת מילה — מדלגים עליו)", sw("s-welc", !ST.noWelcome))}
       ${opt("מצב קומפקטי", "סרגלים, כותרות ואריחים צפופים יותר — למסכים קטנים", sw("s-cmp", ST.compact))}
       ${opt("גודל גופן", "", seg("s-fs", [[90, "קטן"], [100, "רגיל"], [115, "גדול"], [130, "גדול מאוד"]], ST.fs || 100))}
       ${opt("חיפוש בספרי הדקדוק לפי שורש", "כבוי: רק הצורה המדויקת. פועל: גם צורות אחרות של השורש שבמילון (איטי יותר)", sw("s-groot", ST.gramRoot))}
@@ -496,6 +498,7 @@
     const segOn = (id, f) => $("#" + id).onclick = e => { const b = e.target.closest("button"); if (!b) return; $("#" + id).querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); f(b.dataset.v); save(); };
     segOn("s-mode", v => ST.mode = v); segOn("s-tlen", v => ST.tLen = v); segOn("s-max", v => ST.maxWords = +v);
     segOn("s-fs", v => { ST.fs = +v; applyFs(); }); segOn("s-side", v => ST.azSide = v === "1");
+    $("#s-welc").onchange = e => { ST.noWelcome = !e.target.checked; save(); };
     $("#s-auto").onchange = e => { ST.auto = e.target.checked; save(); };
     $("#s-nak").onchange = e => { ST.nakdan = e.target.checked; save(); };
     $("#s-groot").onchange = e => { ST.gramRoot = e.target.checked; save(); };
@@ -969,7 +972,7 @@
   }
   /* זיהוי אוטומטי: בחירה, תפריט הקשר, לחיצה על הודעה, פתיחה עם פרמטר */
   async function applySel(text) {
-    { const w = $("#welc"); if (w) w.remove(); } /* 2.5.0: כניסה מבחירת מילה — בלי עמוד הכניסה */
+    if (EXPL) { const w = $("#welc"); if (w) w.remove(); } /* 2.5.0: כניסה מבחירת מילה — בלי עמוד הכניסה */
     text = await KKNakdan.voc(text, ST.nakdan);
     const rs = D.resolve(text, ST.maxWords), list = rs.phrase ? [rs.phrase] : [...rs.phrases, ...rs.words.filter(w => !rs.phrases.some(p => p.n.split(" ").includes(w.n)))];
     if (!list.length) { const hh = MH.find(KK.norm(text).split(" "), D); if (hh.length) { $("#q").value = KK.norm(text); showMhOnly(text, hh); } return; }
@@ -979,14 +982,14 @@
     let t = d && (d.text || d.selectedText || d.sourceSelectedText || d.renderedSelectedText || (d.selection && (d.selection.text || d.selection.selectedText))); const g = await call("reader.getSelection"); let raw = t; if (g.success && g.data) { t = g.data.text || g.data.renderedSelectedText || g.data.sourceSelectedText || t; raw = g.data.sourceSelectedText || g.data.renderedSelectedText || t; }
     const n = KK.norm(t); if (n && n.split(" ").length <= ST.maxWords) { const r = D.find(n); if (!(cur && r && cur.n === r.n)) applySel(raw); }
   }, 300);
-  function go(word, words, raw) { if (!word) return; { const w = $("#welc"); if (w) w.remove(); } if (Array.isArray(words) && words.length > 1) { selWords = words; selCtx = { raw: raw || "", words }; $("#q").value = word; return showCombined(words, raw); } selWords = Array.isArray(words) ? words : []; selCtx = { raw: raw || "", words: selWords.length ? selWords : [word] }; $("#q").value = word; lookup(word); }
+  function go(word, words, raw) { if (!word) return; EXPL = true; { const w = $("#welc"); if (w) w.remove(); } if (Array.isArray(words) && words.length > 1) { selWords = words; selCtx = { raw: raw || "", words }; $("#q").value = word; return showCombined(words, raw); } selWords = Array.isArray(words) ? words : []; selCtx = { raw: raw || "", words: selWords.length ? selWords : [word] }; $("#q").value = word; lookup(word); }
   if (O) {
     O.on("plugin.boot", p => { if (p && p.theme) theme(p.theme); else call("app.getTheme").then(r => r && r.success && theme(r.data)); const prm = p && (p.param || p.params); if (prm && prm.word) go(prm.word, prm.words, prm.raw); });
     O.on("theme.changed", theme);
     O.on("reader.selection_changed", fromSel);
-    O.on("reader.context_menu_item_clicked", d => { const t = (d && (d.selectedText || (d.selection && d.selection.text))) || ""; if (t) applySel(t); });
-    O.on("reader.toolbar_item_clicked", async () => { const g = await call("reader.getSelection"); const t = g.success && g.data && (g.data.sourceSelectedText || g.data.text); if (t) applySel(t); else $("#q").focus(); });
-    O.on("app.command", async d => { if (d && d.command === "lookup") { const g = await call("reader.getSelection"); const t = g.success && g.data && (g.data.sourceSelectedText || g.data.text); if (t) applySel(t); } });
+    O.on("reader.context_menu_item_clicked", d => { EXPL = true; const t = (d && (d.selectedText || (d.selection && d.selection.text))) || ""; if (t) applySel(t); });
+    O.on("reader.toolbar_item_clicked", async () => { EXPL = true; const g = await call("reader.getSelection"); const t = g.success && g.data && (g.data.sourceSelectedText || g.data.text); if (t) applySel(t); else $("#q").focus(); });
+    O.on("app.command", async d => { EXPL = true; if (d && d.command === "lookup") { const g = await call("reader.getSelection"); const t = g.success && g.data && (g.data.sourceSelectedText || g.data.text); if (t) applySel(t); } });
     /* 1.8.0: תיבת סימון בחלון החיפוש של אוצריא (כמו בעינים למקרא) — חיפוש במילון ובספר הדקדוק */
     O.on("search.requested", d => { const q = String((d && d.request && d.request.query) || (d && d.query) || "").trim(); if (q) searchAll(q); });
     O.on("library.providerBook.openRequested", d => { const id = d && (d.id || (d.book && d.book.id)); if (id) readBook(id); });
@@ -998,5 +1001,5 @@
   checkOnline(); { const an0 = D.analyze.bind(D); D.analyze = w => { const f = ST.rootFix && ST.rootFix[KK.norm(w)]; return f && f.r ? { root: f.r, binyan: f.b || "—", ok: true, src: "user", alts: [] } : an0(w); }; } /* 2.2.1: תיקוני שורש של המשתמש (מחלון הדיווח) חלים אצלו מיד */
   fetch("manifest.json").then(r => r.json()).then(m => { if (m && m.version) window.KK_VERSION = m.version; }).catch(() => {}); /* 2.2.0: הגרסה תמיד מהמניפסט */
   if (window.AchatPromo) AchatPromo.init({ call, plugin: "לשון הקודש", links: LINKS, isOnline: async () => { await checkOnline(); return online; } }); /* 2.5.0: המלצה על "אחת שאלתי" */
-  load().then(() => { setTimeout(() => rootIndex(), 4000); if (!cur && mode === "word" && !$("#q").value) { showAll(); setTimeout(() => { if (!cur && !selWords.length && !$("#q").value) welcome(); }, 700); if (window.AchatPromo) setTimeout(() => { if (!cur && !selWords.length) AchatPromo.maybeShow(); }, 4000); } syncLibrary(); fOpen = !!ST.fOpen; applyFs(); prTab(); $("#q").focus(); });
+  load().then(() => { setTimeout(() => rootIndex(), 4000); if (!cur && mode === "word" && !$("#q").value) { showAll(); setTimeout(() => { if (!EXPL) welcome(); }, 700); if (window.AchatPromo) setTimeout(() => { if (!cur && !selWords.length) AchatPromo.maybeShow(); }, 4000); } syncLibrary(); fOpen = !!ST.fOpen; applyFs(); prTab(); $("#q").focus(); });
 })();
