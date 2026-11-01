@@ -194,9 +194,20 @@ LOAZ_HINT = re.compile("מקור|שאול|שאולות|מוצא|גיזרון|ל�
 def do_loaz(f, a):
     """2.5.3: מילים לועזיות שנכנסו לעברית — לפי קטגוריות המקור בוויקימילון (API). ארמית אינה נחשבת לועזית."""
     api = "https://he.wiktionary.org/w/api.php?format=json&formatversion=2&action=query&"
+    def jget(q):  # API של ויקימדיה: איטי ומנומס — בקשה כל 2 שניות, ובשגיאת 429 המתנה לפי Retry-After
+        for i in range(8):
+            time.sleep(2)
+            try:
+                req = urllib.request.Request(api + q + "&maxlag=5", headers={"User-Agent": UA + " (loanwords list for an Otzaria plugin; low rate)", "Accept-Encoding": "identity"})
+                with urllib.request.urlopen(req, timeout=60) as r:
+                    f.count += 1; return json.loads(r.read())
+            except urllib.error.HTTPError as e:
+                if e.code != 429 and e.code < 500: raise
+                w = int(e.headers.get("Retry-After") or 0) or 30 * (i + 1); print(f"  loaz: {e.code}, ממתין {w} שניות", file=sys.stderr); time.sleep(w)
+        raise RuntimeError("ויקימילון לא זמין כרגע (429)")
     cats, cont = [], ""
     while True:
-        j = json.loads(f.get(api + "list=allcategories&aclimit=500&acmin=3" + cont))
+        j = jget("list=allcategories&aclimit=500&acmin=3" + cont)
         cats += [c["category"] for c in j["query"]["allcategories"]]
         if "continue" not in j: break
         cont = "&accontinue=" + urllib.parse.quote(j["continue"]["accontinue"])
@@ -208,7 +219,7 @@ def do_loaz(f, a):
     for c, lang in pick:
         cont = ""
         while True:
-            j = json.loads(f.get(api + "list=categorymembers&cmnamespace=0&cmlimit=500&cmtitle=" + urllib.parse.quote("קטגוריה:" + c) + cont))
+            j = jget("list=categorymembers&cmnamespace=0&cmlimit=500&cmtitle=" + urllib.parse.quote("קטגוריה:" + c) + cont)
             for m in j["query"]["categorymembers"]:
                 t = m["title"].strip()
                 if " " in t or not WIKT_OK.fullmatch(t) or len(strip(t)) < 2: continue
