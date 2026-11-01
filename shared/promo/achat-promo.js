@@ -11,8 +11,8 @@
   var DEF = {
     title: "אחת שאלתי",
     text: "רוצים ללמוד בלי להתפזר? 'אחת שאלתי' – הופך את המחשב לאוצריא ו-Word בלבד.",
-    /* פוסט ההסבר של יאיר דניאל בפורום אוצריא. כשהקישור המדויק ידוע — לעדכן כאן בלבד (ובהעתקות). */
-    forumUrl: "https://otzaria.org/forum",
+    /* פוסט ההסבר והורדה של "אחת שאלתי" בפורום אוצריא (נושא 2777) */
+    forumUrl: "https://otzaria.org/forum/topic/2777/%D7%9C%D7%94%D7%95%D7%A8%D7%93%D7%94-%D7%90%D7%97%D7%AA-%D7%A9%D7%90%D7%9C%D7%AA%D7%99-%D7%AA%D7%95%D7%9B%D7%A0%D7%AA-%D7%97%D7%A1%D7%99%D7%9E%D7%94-%D7%A7%D7%99%D7%95%D7%A1%D7%A7-%D7%9C%D7%9E%D7%97%D7%A9%D7%91-%D7%9C%D7%9C%D7%99%D7%9E%D7%95%D7%93-%D7%91%D7%9C%D7%91%D7%93/41",
     downloadUrl: "https://github.com/achat-shaalti/achat-shaalti/releases"
   };
   var cfg = null, st = { show: true, first: 0, last: 0, opens: 0 }, loaded = false, online = null;

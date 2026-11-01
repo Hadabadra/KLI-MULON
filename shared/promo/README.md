@@ -28,5 +28,6 @@
 - הרשאות: `plugin.storage.read`, `plugin.storage.write`, `app.open_url`, `app.info.read` (ל-`app.getConnectivity`).
 - אסימוני `:root`: `--color-primary`, `--color-on-primary`, `--color-primary-subtle`, `--color-surface`, `--color-surface-container-low`, `--color-surface-container-high`, `--color-on-surface`, `--color-on-surface-variant`, `--color-outline-variant`, `--color-shadow`, `--font-ui`, `--radius-lg`, `--radius-pill`. אין צבע קבוע מחוץ ל-`:root` (תגית "מראה תואם"), כל המידות ב-em.
 
-## פתוח
-- `forumUrl` מצביע כרגע לדף הפורום הכללי (`https://otzaria.org/forum`) — יש להחליף בקישור הישיר לפוסט ההסבר של יאיר כשיימסר, ב-`DEF.forumUrl` בקובץ ה-JS.
+## קישורים
+- הסבר בפורום: נושא 2777 בפורום אוצריא ("להורדה אחת שאלתי - תוכנת חסימה (קיוסק) למחשב - ללימוד בלבד!") — `DEF.forumUrl`.
+- הורדה: https://github.com/achat-shaalti/achat-shaalti/releases — `DEF.downloadUrl`.
