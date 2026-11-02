@@ -350,3 +350,7 @@ details.rootfix{margin:.5em 0}details.rootfix input{font:inherit;width:6em}
 .wfeat p{margin:.2em 0 0;font-size:.88em;color:var(--color-on-surface-variant)}
 .wtip{max-width:40em}
 .lzl{display:grid;grid-template-columns:repeat(auto-fill,minmax(13em,1fr));gap:.35em .8em;margin-top:.6em}.lzw{display:flex;align-items:center;gap:.4em}.lzw small{color:var(--color-on-surface-variant);font-size:.8em}
+/* 2.6.0: אריחים וכרטיסים בסגנון עינים למקרא — בלי מסגרת, הבלטה בצל */
+.tile,.card{border-color:transparent!important;box-shadow:0 .08em .3em var(--color-shadow)}
+.tile:hover{box-shadow:0 .5em 1.2em var(--color-shadow)}
+.tile.wide{grid-column:1/-1}.tile .lzlang{color:var(--color-primary);max-height:none}

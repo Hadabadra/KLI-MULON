@@ -232,7 +232,42 @@ def do_loaz(f, a):
     write_js("loaz.js", "KK_LOAZ", {k: ",".join(v) for k, v in sorted(out.items())},
              "מילים לועזיות שנכנסו לעברית ושפת המקור, לפי קטגוריות המקור בוויקימילון (CC BY-SA). נוצר ע\"י tools/fetch_wordlists.py loaz")
 
-SOURCES = {"loaz": do_loaz, "wikt": do_wikt, "academy": do_academy, "milog": do_milog, "even": do_even}
+def do_loazdef(f, a):
+    """2.6.0: פירוש קצר לכל מילה לועזית — ההגדרה הראשונה בערך בוויקימילון (CC BY-SA), 50 ערכים בבקשה."""
+    src = open(os.path.join(ROOT, "data", "loaz.js"), encoding="utf-8").read()
+    words = list(json.loads(src[src.index("{"):src.rindex("}") + 1]).keys())
+    api = "https://he.wiktionary.org/w/api.php?format=json&formatversion=2&action=query&prop=revisions&rvprop=content&rvslots=main&redirects=1&titles="
+    def clean(t):
+        t = re.sub(r"<ref[^>]*/>|<ref.*?</ref>|<[^>]+>", "", t)
+        for _ in range(3): t = re.sub(r"\{\{[^{}]*\}\}", "", t)
+        t = re.sub(r"\[\[(?:[^\]|]*\|)?([^\]]*)\]\]", r"\1", t).replace("'" * 3, "").replace("'" * 2, "")
+        return re.sub(r"\s+", " ", t).strip(" :;,.")
+    out = {}
+    for i in range(0, len(words), 50):
+        q = api + urllib.parse.quote("|".join(words[i:i + 50]))
+        for k in range(8):
+            time.sleep(2)
+            try:
+                req = urllib.request.Request(q + "&maxlag=5", headers={"User-Agent": UA + " (loanword glosses for an Otzaria plugin; low rate)", "Accept-Encoding": "identity"})
+                with urllib.request.urlopen(req, timeout=60) as r:
+                    j = json.loads(r.read()); f.count += 1; break
+            except urllib.error.HTTPError as e:
+                if e.code != 429 and e.code < 500: raise
+                time.sleep(int(e.headers.get("Retry-After") or 0) or 30 * (k + 1))
+        else:
+            raise RuntimeError("ויקימילון לא זמין כרגע (429)")
+        for pg in j["query"].get("pages", []):
+            revs = pg.get("revisions") or []
+            if not revs: continue
+            for line in revs[0]["slots"]["main"]["content"].split("\n"):
+                if re.match(r"#[^:*#]", line):
+                    d = clean(line[1:])
+                    if len(d) >= 2: out[pg["title"]] = d[:220]; break
+    print(f"  loazdef: {len(out):,} פירושים מתוך {len(words):,}", file=sys.stderr)
+    write_js("loazdef.js", "KK_LOAZDEF", dict(sorted(out.items())), "פירוש קצר למילים הלועזיות — ההגדרה הראשונה בוויקימילון (CC BY-SA). נוצר ע\"י tools/fetch_wordlists.py loazdef")
+
+
+SOURCES = {"loazdef": do_loazdef, "loaz": do_loaz, "wikt": do_wikt, "academy": do_academy, "milog": do_milog, "even": do_even}
 
 def main():
     ap = argparse.ArgumentParser(description="רשימות שמות ערכים ממילונים חיצוניים (ראו בראש הקובץ)")
