@@ -127,7 +127,7 @@
     if (!r) return; if (push && cur) stack.push(cur.n); cur = r; mode = "word"; tabs();
     ST.hist = [r.title, ...ST.hist.filter(x => x !== r.title)].slice(0, 60); saveNow();
     const lzLang = lzOf(r), nmNo = !ST.nameRoot && isName(r.n), isAram = (r.s || []).some(x => /ארמ/.test(x[2] || "") || /^ארמית|\(ארמית\)|בארמית/.test(x[1] || ""));
-    const noRoot = lzLang && !ST.loazRoot ? "מילה לועזית (מ" + lzLang.replace(/,/g, " / ") + ") — אין לה שורש לפי כללי העברית" : nmNo ? "שם של אדם — אין שורש (ברירת מחדל)" : r.n.includes(" ") ? "צירוף או שם של כמה מילים — אין לו שורש אחד; השורש של כל מילה בערך שלה" : isAram && !ST.aramRoot ? "מילה ארמית — אין שורש (ברירת מחדל; אפשר להפעיל בהגדרות)" : "";
+    const noRoot = lzLang && !ST.loazRoot ? "מילה לועזית (מ" + lzLang.replace(/,/g, " / ") + ") — אין לה שורש לפי כללי העברית" : nmNo ? "שם של אדם — אין שורש (ברירת מחדל)" : r.n.includes(" ") ? "צירוף או שם של כמה מילים — אין לו שורש אחד; השורש של כל מילה בערך שלה" : isAram && !ST.aramRoot ? "מילה ארמית — אין שורש (ברירת מחדל; אפשר להפעיל בהגדרות)" : r.virtual && r.form && !r.form.t && !D.analyze(r.n).ok && !ST.loazRoot && KK.norm(r.title).length >= 6 ? "מילה לועזית או מונח חדש — השורש אינו מאומת ולכן אינו מוצג" : "";
     const isAcr = /["'״׳]/.test(r.title), an = D.analyze(r.n), root = an.root, bin = an.binyan;
     const same = isAcr ? [] : rootWords(root).filter(x => x !== r.n).slice(0, 30).map(x => ({ title: KK.refinal(x) }));
     const sim = D.similar(r.n, 14).map(k => D.get(k)).filter(Boolean);
