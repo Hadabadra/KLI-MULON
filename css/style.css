@@ -354,3 +354,11 @@ details.rootfix{margin:.5em 0}details.rootfix input{font:inherit;width:6em}
 .tile,.card{border-color:transparent!important;box-shadow:0 .08em .3em var(--color-shadow)}
 .tile:hover{box-shadow:0 .5em 1.2em var(--color-shadow)}
 .tile.wide{grid-column:1/-1}.tile .lzlang{color:var(--color-primary);max-height:none}
+/* 2.7.0 */
+.lzbadge{display:inline-block;margin:.2em 0 0;padding:.15em .8em;border-radius:var(--radius-pill);background:var(--color-primary-subtle);color:var(--color-primary);font-size:.85em}
+.synwrap{display:block}.synwrap.pvon{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1em;align-items:start}
+.tiles.one{grid-template-columns:1fr}.tiles.one .tile small{white-space:normal;text-align:start}
+.synpv{position:sticky;top:.5em;max-height:80vh;overflow:auto;padding:1em;border-radius:var(--radius-md,.8em);background:var(--color-surface);box-shadow:0 2px 10px rgba(0,0,0,.12)}
+.synpv:empty{display:none}.pvhead{display:flex;justify-content:space-between;align-items:center}.pvtxt{line-height:1.8}
+.welc.out{opacity:0;transition:opacity .4s}
+@media (max-width:700px){.synwrap.pvon{grid-template-columns:1fr}}

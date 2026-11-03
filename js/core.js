@@ -1,8 +1,8 @@
 /* ליבה משותפת: נירמול, חיפוש, שורשים, בניינים, דמיון. עובד בדף, ברקע וב-Node. */
 (function (g) {
   const NIKUD = /[\u0591-\u05C7]/g;
-  const norm = w => String(w || "").replace(NIKUD, "").replace(/[״“”]/g, '"').replace(/[׳‘’]/g, "'")
-    .replace(/[^\u05D0-\u05EA"' ]/g, "").trim();
+  const norm = w => String(w || "").replace(/[\u05BE\u2010-\u2015-]/g, " ").replace(NIKUD, "").replace(/[״“”]/g, '"').replace(/[׳‘’]/g, "'")
+    .replace(/[^\u05D0-\u05EA"' ]/g, "").replace(/\s+/g, " ").trim();
   const F2R = { ך: "כ", ם: "מ", ן: "נ", ף: "פ", ץ: "צ" }, R2F = { כ: "ך", מ: "ם", נ: "ן", פ: "ף", צ: "ץ" };
   const unfinal = s => s.replace(/[ךםןףץ]/g, c => F2R[c]);
   const refinal = s => s.length ? s.slice(0, -1) + (R2F[s.slice(-1)] || s.slice(-1)) : s;
@@ -164,9 +164,10 @@
       out.phrase = this.lex && !t.includes(" ") ? this.lookup(t) : this.find(t);
       /* ביטויים של כמה מילים בתוך הבחירה (צירופים קבועים, "אי אפשר" וכד'), הארוכים קודם (#3, 1.6.0) */
       const ws = t.split(" ").slice(0, max), used = new Set();
-      if (!out.phrase || ws.length < 2) for (let len = Math.min(5, ws.length - (out.phrase ? 1 : 0)); len >= 2; len--) for (let i = 0; i + len <= ws.length; i++) {
+      if (!out.phrase || ws.length < 2) for (let len = Math.min(8, ws.length - (out.phrase ? 1 : 0)); len >= 2; len--) for (let i = 0; i + len <= ws.length; i++) {
         if ([...Array(len).keys()].some(k => used.has(i + k))) continue;
         let span = ws.slice(i, i + len).join(" "), r = this.map.get(span);
+        if (!r && /^(ר'|ר|רב|רבי|ורבי|ור')( |$)/.test(span)) r = this.map.get(span.replace(/^ו?(ר'|ר|רב|רבי)( |$)/, "רבי$2")) || this.map.get(span.replace(/^ו?(ר'|ר|רב|רבי)( |$)/, "רב$2")); /* 2.7.0: ר' יהודה ← רבי יהודה */
         if (!r && /^[והבלמכש]/.test(span) && span.length > 3) r = this.map.get(span.slice(1));     // קידומת: "ובית המקדש"
         if (r) { out.phrases.push(r); for (let k = 0; k < len; k++) used.add(i + k); }
       }
