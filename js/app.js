@@ -19,7 +19,7 @@
     r.data = sd; if (sd && typeof sd === "object") ST = { ...ST, ...r.data, hist: Array.isArray(r.data.hist) ? r.data.hist : [], likes: Array.isArray(r.data.likes) ? r.data.likes : [] };
     if (!ST.welc26) { ST.noWelcome = false; ST.welc26 = 1; } /* 2.6.0: עמוד הכניסה פועל כברירת מחדל (גם למי שכיבה אותו קודם) */
     const h = await call("storage.get", { key: "nthHist" }); if (h.success && Array.isArray(h.data)) ST.nthHist = h.data;
-    LOADED = true;
+    LOADED = true; applyUserDefs();
   }
   // צבעי אוצריא -> אסימוני --color-* של העיצוב (1.1.1: ב-1.1.0 נכתבו שמות ישנים ולכן הצבעים לא הותאמו)
   const TOK = { primary: "primary", onPrimary: "on-primary", surface: "surface", onSurface: "on-surface", onSurfaceVariant: "on-surface-variant",
@@ -119,7 +119,7 @@
     if (bs.length && bs[0].how !== "~") parts.push(chipRow("ערך הבסיס", bs.map(b => b.r.title).filter((x, i, a) => a.indexOf(x) === i)));
     if (sp.length) parts.push(`<div class="row inl"><b>אפשר גם</b><div class="chips">${sp.map(x => `<button class="chip" data-go="${esc(x.rest)}">${esc(x.p)} + ${esc(KK.refinal(x.rest))}</button>`).join("")}</div><span class="note">אות שימוש ומילה (לפי ההקשר)</span></div>`);
     if (r.virtual && !f.known) parts.push(`<p class="note">המילה אינה במאגרי הצורות (תנ"ך, Hspell, מילוג, ויקימילון, האקדמיה). ייתכן שהיא בכתיב אחר — אפשר לחפש אותה באוצריא ובקונקורדנציה.</p>`);
-    parts.push(`<div class="row inl"><b>תיקון</b><div class="chips"><button class="chip" data-rep="-1"><i class=oi data-i=edit></i> הוספת פירוש או תיקון לערך</button></div><span class="note">גם לערך שאין לו פירוש במילון</span></div>`);
+    parts.push(`<div class="row inl"><b>תיקון</b><div class="chips"><button class="chip" data-rep="-1"><i class=oi data-i=edit></i> הוספת פירוש או תיקון לערך</button><button class="chip" data-addw="${esc(r.title)}">+ הוספת פירוש משלך (נשמר אצלך)</button></div><span class="note">גם לערך שאין לו פירוש במילון</span></div>`);
     return parts.join("");
   }
   try { window.KK_LOAZ = Object.assign(window.KK_LOAZ || {}, { "אבולוציה": "לטינית" }); } catch (e) {} /* 2.7.2: #47 */
@@ -139,7 +139,7 @@
        <div class="hero"><h2>${esc(r.title)}</h2>${lzLang ? `<p class="lzbadge">מילה לועזית · ${esc(lzLang.replace(/,/g, " / "))}</p>` : isAram ? `<p class="lzbadge">ארמית</p>` : ""}${window.KKB ? KKB.hero(r) : ""}</div>` + formRow(r) +
       (selWords.length > 1 ? `<div class="row selrow"><b>מילים בבחירה</b><div class="chips"><button class="chip" data-comb="1"><i class=oi data-i=clip></i> דף משולב</button>${selWords.map(t => chip(t, "", t === r.title ? "pri" : "")).join("")}</div></div>` : "") +
       `<div class="row"><div class="chips"><button class="chip pri" id="osearch">${IC.search} חפש באוצריא</button><button class="chip" id="orel"><i class=oi data-i=book></i> פסוקים ומפרשים קשורים</button><button class="chip" id="oconc"><i class=oi data-i=lib></i> קונקורדנציה לתנ"ך</button><button class="chip" data-syn="${esc(r.title)}" title="נרדפים במאגר, והמילה בהכרמל ובספרי הנרדפות שבספרייה">נרדפות</button><button class="chip" id="ofirst" title="חיפוש המילה בספרייה לפי סדר התקופות">מקור ראשון בספרייה (משוער)</button></div></div><div id="rel"></div><div id="first"></div>` +
-      (isAcr ? "" : `<div class="row"><b>במילוני הספרייה</b><div class="chips">${an.ok ? `<button class="chip" data-lib="radak">ספר השרשים לרד"ק — שורש ${esc(KK.refinal(root))}</button>` : ""}<button class="chip" data-lib="bachur">ספר הבחור</button><button class="chip" data-lib="karmel" title="הכרמל למלבי&quot;ם — הערך בספר שבספרייה">הכרמל (מלבי"ם)</button>${online ? `<button class="chip" id="omilog" data-ext="milog">מילוג ↗</button><button class="chip" data-ext="wiktionary">${wkHas(cur.title.replace(/[^\u05D0-\u05EA ]/g, "")) ? "ויקימילון — הערך ↗" : "ויקימילון (חיפוש) ↗"}</button><button class="chip" data-ext="wikisource">ויקיטקסט ↗</button><button class="chip" data-ext="academy">האקדמיה ללשון ↗</button>` : ""}</div>${online ? `<span class="note">קישורים חיצוניים בלבד, נפתחים בדפדפן ומוסתרים רק כשאוצריא מוגדרת "ללא גישה לאינטרנט". התוכן שם אינו מסונן.</span>` : ""}</div>`) +
+      (isAcr ? "" : `<div class="row"><b>במילוני הספרייה</b><div class="chips">${an.ok ? `<button class="chip" data-rdk="${esc(root)}">ספר השרשים לרד"ק — שורש ${esc(KK.refinal(root))}</button>` : ""}<button class="chip" data-lib="bachur">ספר הבחור</button><button class="chip" data-lib="karmel" title="הכרמל למלבי&quot;ם — הערך בספר שבספרייה">הכרמל (מלבי"ם)</button>${online ? `<button class="chip" id="omilog" data-ext="milog">מילוג ↗</button><button class="chip" data-ext="wiktionary">${wkHas(cur.title.replace(/[^\u05D0-\u05EA ]/g, "")) ? "ויקימילון — הערך ↗" : "ויקימילון (חיפוש) ↗"}</button><button class="chip" data-ext="wikisource">ויקיטקסט ↗</button><button class="chip" data-ext="academy">האקדמיה ללשון ↗</button>` : ""}</div>${online ? `<span class="note">קישורים חיצוניים בלבד, נפתחים בדפדפן ומוסתרים רק כשאוצריא מוגדרת "ללא גישה לאינטרנט". התוכן שם אינו מסונן.</span>` : ""}</div>`) +
       (lzLang ? `<div class="row"><b>שפת המקור</b><span>${esc(lzLang.replace(/,/g, ", "))}</span>${(window.KK_LOAZDEF || {})[r.title] && !(r.s || []).length ? `<p>${esc(KK_LOAZDEF[r.title])} <small class="note">(ויקימילון)</small></p>` : ""}</div>` : "") + mhDefRow(r) + sensesHtml(r) + (isAcr ? "" : pleneRow(r.title)) +
       Object.entries(links).map(([k, a]) => chipRow(k.replace("_", " "), a)).join("") +
       mhRow(isAcr ? [] : MH.find([r.n, ...(selCtx.words || [])], D)) +
@@ -148,7 +148,7 @@
        <span class="note">זיהוי השורש והבניין הוא הערכה אוטומטית ועלול לטעות.</span></div>`) +
       (same.length ? chipRow("מאותו שורש", same.map(x => x.title)).replace(/<\/div><\/div>$/, `<button class="chip pri" data-root="${esc(root)}">כל המילים מהשורש ←</button></div></div>`) : "") + chipRow("מילים דומות", sim.map(x => x.title)) +
       `<div class="pager">${nb.prev ? chip(nb.prev.title, "", "") .replace(">", ">→ ") : "<span></span>"}${nb.next ? chip(nb.next.title).replace(">", ">← ") : ""}</div>`;
-    if (!isAcr) fillLibHits(r.title.replace(/[^\u05D0-\u05EA ]/g, ""), $("#libhits"));
+    if (!isAcr) fillLibHits(r.title.replace(/[^\u05D0-\u05EA ]/g, ""), $("#libhits")); radakMark(); relMark(r);
     document.querySelectorAll("[data-vq]").forEach(verseQuote);
     $("#out").scrollTop = 0; window.scrollTo(0, 0);
   }
@@ -319,7 +319,33 @@
   }
   /* הצגת הספרים בספריית אוצריא (libraryBooks), כדי שיופיעו באיתור הספרים */
   function syncLibrary() { call("library.setProviderBooks", { provider: "klikodesh-dikduk", books: bookList().map(b => ({ id: b.id, title: b.title, categoryPath: "/דקדוק", author: b.builtin ? "לשון הקודש (תוסף)" : "", tags: ["דקדוק", "לשון הקודש", "ניקוד", "טעמים"] })) }); }
+  /* 2.8.0 (#49 #51): ספר השרשים לרד"ק — אינדקס כותרות הערכים מתוכן העניינים של הספר (library.getBookToc), וקישור כל שורש לערך שלו בדיוק.
+     שורש שאין לו ערך בספר — בלי קישור. הכלל חל על כל השורשים (לא תיקון של ערך בודד). אם האינדקס אינו זמין (גרסת אוצריא ישנה) — חוזרים לחיפוש בספר */
+  let RDK = null; const RDK_STOP = new Set(["שרש", "שורש", "אות", "ערכ", "הקדמה", "פתיחה", "שער", "חלק"]);
+  function radakToc() {
+    if (RDK) return RDK;
+    RDK = (async () => {
+      const [q, must] = LIB.radak, f = await call("library.findBooks", { query: q, limit: 10 });
+      const b = (f && f.success && Array.isArray(f.data) ? f.data : []).find(x => { const t = String(x.title || x.bookId); return t.includes(q) && must.test(t); });
+      if (!b) return null;
+      const r = await call("library.getBookToc", { bookId: b.bookId, type: b.type || "text" }), d = r && r.success ? r.data : null;
+      const list = Array.isArray(d) ? d : d && (d.toc || d.entries || d.items || d.children) || [], map = new Map();
+      const walk = a => { for (const e of a || []) { if (!e || typeof e !== "object") continue;
+        const t = String(e.text || e.title || e.heading || e.name || ""), i = [e.index, e.lineIndex, e.line].find(x => typeof x === "number");
+        const hs = t.replace(/<[^>]+>/g, "").replace(/[\u0591-\u05C7]/g, "").replace(/[^א-ת ]/g, " ").trim().split(/\s+/).filter(Boolean).map(x => KK.unfinal(x)).filter(x => !RDK_STOP.has(x));
+        if (i !== undefined) for (const k of [hs.join(""), hs[0], hs[hs.length - 1]]) if (k && k.length >= 2 && k.length <= 5 && !map.has(k)) map.set(k, i);
+        walk(e.children || e.items || e.subItems || e.entries); } };
+      walk(list); return { b, map: map.size > 20 ? map : null };
+    })().catch(() => null); return RDK;
+  }
+  const rdkKey = root => KK.unfinal(KK.norm(String(root || "")).replace(/[^א-ת]/g, ""));
+  /* מסמן כפתורי רד"ק בדף: שורש שאין לו ערך בספר — הכפתור מושבת */
+  async function radakMark() { const T = await radakToc(); if (!T || !T.map) return;
+    document.querySelectorAll("#out [data-rdk]").forEach(b => { if (!T.map.has(rdkKey(b.dataset.rdk))) { b.disabled = true; b.classList.add("zero"); b.title = "אין ערך לשורש זה בספר השרשים לרד\"ק"; } }); }
   async function openLibTerm(which, term) {
+    if (which === "radak" && term) { const T = await radakToc();
+      if (T && T.map) { const i = T.map.get(rdkKey(term)); if (i === undefined) return call("ui.showMessage", { message: `לשורש "${KK.refinal(rdkKey(term))}" אין ערך בספר השרשים לרד"ק.` });
+        const r = await call("reader.openBook", { bookId: T.b.bookId, type: T.b.type || "text", index: i }); if (r && r.success !== false) return; } }
     const [q, must] = LIB[which];
     const f = await call("library.findBooks", { query: q, limit: 10 });
     /* 1.7.0: רק ספר שמתאים בדיוק (קודם נלקח הספר הראשון ברשימה ונפתחו ספרים אחרים) */
@@ -387,12 +413,12 @@
     if (r) return open(r, push), true;
     const mhHits = MH.find(KK.norm(text).split(" "), D);
     mode = "word"; tabs(); cur = null; const w = KK.norm(text);
-    $("#out").innerHTML = `<div class="hero"><h2>${esc(w)}</h2></div><p class="hint">אין ערך במאגר. אפשר לחפש במקורות אחרים:</p>` + pleneRow(w) + linksRow(w, mhHits) + `<div id="libhits"></div>` + sugHtml(D.similar(w, 12).map(k => D.get(k)));
-    fillLibHits(w, $("#libhits"));
+    $("#out").innerHTML = `<div class="hero"><h2>${esc(w)}</h2></div><p class="hint">אין ערך במאגר. אפשר לחפש במקורות אחרים, או להוסיף ערך בעצמך:</p><p class="chips"><button class="chip pri" data-addw="${esc(w)}"><i class=oi data-i=edit></i> הוספת ערך למילה זו</button></p>` + pleneRow(w) + linksRow(w, mhHits) + `<div id="libhits"></div>` + sugHtml(D.similar(w, 12).map(k => D.get(k)));
+    fillLibHits(w, $("#libhits")); radakMark();
     return false;
   }
   /* 1.8.0: מילה שאינה במאגר — המילה בלבד עם קישורים (בלי הגדרה) */
-  const linksRow = (w, hits) => `<div class="row inl"><b>קישורים</b><div class="chips"><button class="chip pri" data-srch="${esc(w)}">${IC.search} חפש באוצריא</button><button class="chip" data-lib2="radak" data-w="${esc(w)}">ספר השרשים לרד"ק</button>${hits.map(h => `<button class="chip" data-mhg="${esc(h.g)}" data-mhn="${esc(h.name)}">עינים למקרא — ${esc(KK.MH_LABEL[h.g] || h.g)}: ${esc(h.name)}${h.byRoot ? " (לפי השורש)" : ""} ↗</button>`).join("")}${online ? `<button class="chip" data-even="${esc(w)}">מילוג ↗</button>${Object.keys(EXT).map(k => `<button class="chip" data-ext2="${k}" data-w="${esc(w)}">${EXTN[k]} ↗</button>`).join("")}` : ""}</div></div>`;
+  const linksRow = (w, hits) => `<div class="row inl"><b>קישורים</b><div class="chips"><button class="chip pri" data-srch="${esc(w)}">${IC.search} חפש באוצריא</button><button class="chip" data-rdk="${esc(D.analyze(w).root || w)}">ספר השרשים לרד"ק</button>${hits.map(h => `<button class="chip" data-mhg="${esc(h.g)}" data-mhn="${esc(h.name)}">עינים למקרא — ${esc(KK.MH_LABEL[h.g] || h.g)}: ${esc(h.name)}${h.byRoot ? " (לפי השורש)" : ""} ↗</button>`).join("")}${online ? `<button class="chip" data-even="${esc(w)}">מילוג ↗</button>${Object.keys(EXT).map(k => `<button class="chip" data-ext2="${k}" data-w="${esc(w)}">${EXTN[k]} ↗</button>`).join("")}` : ""}</div></div>`;
   const EXTN = { wiktionary: "ויקימילון", wikisource: "ויקיטקסט", academy: "האקדמיה ללשון" };
   const sugHtml = a => a.length ? `<div class="row"><b>אולי התכוונתם</b><div class="chips">${a.map(x => chip(x.title)).join("")}</div></div>` : "";
   /* 2.2.0: אינדקס שורשים מלא — כל המילים מכל המאגרים (המילון, צורות התנ"ך, מילוג, ויקימילון, האקדמיה), נבנה ברקע במנות */
@@ -449,15 +475,23 @@
     if ($("#rmore")) $("#rmore").onclick = () => { RF.shown += 200; showRoots(); };
     if ($("#rall")) $("#rall").onclick = () => { $("#q").value = ""; showRoots(""); };
   }
+  /* 2.8.0 (#53): המחלוקת בדף השורש — מילים מהשורש שיש להן שורש חלופי (ראשונים/מילונים חלוקים), ושורשים שהשורש הזה חלופה להם */
+  function rootAlts(root, m) { const g = new Map(), by = (k, w) => { const a = g.get(k) || g.set(k, []).get(k); if (a.length < 12 && !a.includes(w)) a.push(w); };
+    let n = 0; for (const w of m.keys()) { if (++n > 400) break; const an = D.analyze(w); for (const x of an.alts || []) if (x !== root) by(x, w); if (an.root && an.root !== root && (an.alts || []).includes(root)) by(an.root, w); }
+    if (!g.size) return "";
+    return `<div class="row"><b>במחלוקת — שורשים חלופיים</b>${[...g].map(([r2, ws]) => `<div class="chips"><button class="chip pri" data-root="${esc(r2)}">שורש ${esc(KK.refinal(r2))}</button>${ws.map(w => `<button class="chip" data-go="${esc(KK.refinal(w))}">${esc(KK.refinal(w))}</button>`).join("")}</div>`).join("")}<span class="note">יש מילים שהמילונים והמפרשים חלוקים בשורשן; לחיצה על שורש פותחת את דף השורש החלופי.</span></div>`; }
   async function showRoot(root) {
     mode = "root"; tabs(); root = KK.unfinal ? KK.unfinal(KK.norm(root)) : KK.norm(root);
     if (!RIX) { $("#out").innerHTML = `<h2>שורש: ${esc(KK.refinal(root))}</h2><p class="note" id="rixp"><span class="spin"></span>בונה את אינדקס השורשים… ${rixPct}%</p>`; await rootIndex(); if (mode !== "root") return; }
     const m = RIX.get(root) || new Map(), meta = RMETA.get(root), g = {};
     for (const [w, c] of m) { const k = c.includes("d") ? (D.analyze(w).binyan || "—").split(" (")[0] : "מילים ממאגרים נוספים"; (g[k] = g[k] || []).push([w, c]); }
     const order = Object.keys(g).sort((a, b) => (a === "מילים ממאגרים נוספים") - (b === "מילים ממאגרים נוספים"));
-    $("#out").innerHTML = `<div class="allhead"><h2>שורש: ${esc(KK.refinal(root))}</h2><button class="chip pri" data-rconc="${esc(root)}"><i class=oi data-i=lib></i> קונקורדנציה לשורש</button><button class="chip" id="rexp">⬇ ייצוא</button><button class="chip" id="rall">כל השורשים ←</button></div><p class="note">${m.size.toLocaleString("he")} מילים מכל המאגרים${D.radak.has(root) ? " · השורש בספר השרשים לרד\"ק" : meta && meta.ok ? "" : " · שורש משוער"}. השיוך לשורש אוטומטי ועלול לטעות. <button class="chip" data-libopen="radak">ספר השרשים לרד"ק</button></p>` +
+    $("#out").innerHTML = `<div class="allhead"><h2>שורש: ${esc(KK.refinal(root))}</h2><button class="chip pri" data-rconc="${esc(root)}"><i class=oi data-i=lib></i> קונקורדנציה לשורש</button><button class="chip" id="rexp">⬇ ייצוא</button><button class="chip" id="rall">כל השורשים ←</button></div><p class="note">${m.size.toLocaleString("he")} מילים מכל המאגרים${D.radak.has(root) ? " · השורש בספר השרשים לרד\"ק" : meta && meta.ok ? "" : " · שורש משוער"}. השיוך לשורש אוטומטי ועלול לטעות.</p>
+      <div class="row"><div class="chips"><button class="chip" data-rdk="${esc(root)}">ספר השרשים לרד"ק — שורש ${esc(KK.refinal(root))}</button><button class="chip" data-srch="${esc(KK.refinal(root))}">${IC.search} חפש באוצריא</button><button class="chip" id="rcopy"><i class=oi data-i=clip></i> העתקה</button><button class="chip" id="rrep"><i class=oi data-i=edit></i> דיווח / תיקון שורש</button><button class="chip" data-gram="הבניינים"><i class=oi data-i=book></i> הבניינים — בדקדוק</button></div></div>${rootAlts(root, m)}` +
       (m.size ? order.map(b => `<div class="row"><b>${esc(b)}</b><div class="chips">${g[b].map(([w, c]) => `<button class="chip" data-go="${esc(KK.refinal(w))}" title="${esc([...c].map(x => SRCN[x]).join(", "))}">${esc(KK.refinal(w))}</button>`).join("")}</div></div>`).join("") : `<p class="hint">לא נמצאו מילים לשורש הזה.</p>`);
     $("#rall").onclick = () => { $("#q").value = ""; showRoots(""); };
+    $("#rcopy").onclick = () => { copyText(`שורש ${KK.refinal(root)}: ${[...m.keys()].map(w => KK.refinal(w)).join(", ")}`); call("ui.showMessage", { message: "הועתק" }); };
+    $("#rrep").onclick = () => report({ title: "שורש " + KK.refinal(root), n: root, s: [] }, -1); radakMark();
     $("#rexp").onclick = () => dlText([`שורש ${KK.refinal(root)} — ${m.size} מילים`, "", ...order.map(b => `${b}: ${g[b].map(([w]) => KK.refinal(w)).join(", ")}`)].join("\n"), `שורש ${KK.refinal(root)}.txt`, "דף השורש הורד כקובץ טקסט");
   }
   function showFav() {
@@ -579,7 +613,8 @@
   document.addEventListener("click", e => { if (e.target.closest("#nmroot")) { ST.nameRoot = true; save(); if (cur) go(cur.title); } });
   const deEnt = s => { const t = document.createElement("textarea"); let v = s; for (let k = 0; k < 3 && /&(#x?[0-9a-f]+|[a-z]+);/i.test(v); k++) { t.innerHTML = v; v = t.value; } return v; }; let PV = [], synStack = [];
   document.addEventListener("click", e => { const b = e.target.closest("[data-pv]"); if (!b) return; const p = PV[+b.dataset.pv], box = $("#synpv"); if (!p || !box) return; $("#synwrap").classList.add("pvon");
-    box.innerHTML = `<div class="pvhead"><b>${esc(p.t)}</b><button class="chip" id="pvx" title="סגירה">✕</button></div>${p.ref ? `<p class="note">${esc(p.ref)}</p>` : ""}<div class="pvtxt">${esc(p.x).split(esc(p.w)).join(`<mark>${esc(p.w)}</mark>`)}</div><p class="chips"><button class="chip pri" data-libw="${p.k}" data-w="${esc(p.w)}">פתיחה בספר באוצריא</button></p>`; $("#pvx").onclick = () => { $("#synwrap").classList.remove("pvon"); box.innerHTML = ""; }; });
+    const e2 = D.get(KK.norm(p.w)), sn = e2 && (e2.s || []).slice(0, 2); /* 2.8.0 (#52): תצוגה בסגנון דף ערך מלא */
+    box.innerHTML = `<div class="pvhead"><span class="lzbadge">${esc(p.t)}</span><button class="chip" id="pvx" title="סגירה">✕</button></div><div class="hero"><h2>${esc(e2 ? e2.title : p.w)}</h2>${p.ref ? `<p class="note">${esc(p.ref)}</p>` : ""}</div>${sn && sn.length ? `<div class="senses">${sn.map(x => `<div class="sense"><div class="sbody">${esc(x[1])}</div></div>`).join("")}</div>` : ""}<h4>בספר</h4><div class="pvtxt">${esc(p.x).split(esc(p.w)).join(`<mark>${esc(p.w)}</mark>`)}</div><p class="chips"><button class="chip pri" data-libw="${p.k}" data-w="${esc(p.w)}">פתיחה בספר באוצריא</button>${e2 ? `<button class="chip" data-go="${esc(e2.title)}">הערך המלא ←</button>` : ""}</p>`; $("#pvx").onclick = () => { $("#synwrap").classList.remove("pvon"); box.innerHTML = ""; }; });
   async function synLib(w) { /* 2.6.0: המילה בתוך ספרי הנרדפות שבספרייה — מוצג בתוך הלשונית */
     const box = $("#synlib"); if (!box) return; let html = "";
     for (const [k, t] of SYNB) { const [q, must] = LIB[k]; const f = await call("library.findBooks", { query: q, limit: 10 }); const b = (f && f.success && Array.isArray(f.data) ? f.data : []).find(x => must.test(String(x.title || x.bookId)));
@@ -638,6 +673,56 @@
     if (window.AchatPromo) AchatPromo.bind($("#out"));
   }
 
+  /* 2.8.0 (#48 #51): הוספת ערך ידנית — נשמר אצל המשתמש מיד (ST.userDefs) ומוצג כהגדרה "הוספה שלך", ונשלח למפתחת (feedback.report) עם המקור וההסבר.
+     שפה "לועזי רש"י (צרפתית עתיקה)" — נכנסת גם לרשימת הלועזיות. ספר "לועזי רש"י" שבספרייה (אם קיים) נפתח מהחלון */
+  const UL = ["עברית", "ארמית", "לועזי רש\"י (צרפתית עתיקה)", "לועזית — שפה אחרת"];
+  function applyUserDefs() {
+    for (const [t, u] of Object.entries(ST.userDefs || {})) { if (!u || !u.d) continue; const n = KK.norm(t), sense = ["", u.d, "הוספה שלך" + (u.src ? " · " + u.src : "")];
+      const e = D.map.get(n); if (e) { if (!e.s.some(x => x[1] === u.d)) e.s.unshift(sense); } else { D.map.set(n, { title: t, n, s: [sense], l: [] }); D.keys.push(n); }
+      if (/לועז/.test(u.lang || "")) { window.KK_LOAZ = window.KK_LOAZ || {}; KK_LOAZ[t] = /רש/.test(u.lang) ? "צרפתית עתיקה (לועזי רש\"י)" : (u.lang2 || "לועזית"); LZN = null; } }
+  }
+  function addEntry(w) {
+    const old = (ST.userDefs || {})[w] || {}, m = document.createElement("div"); m.className = "modal";
+    m.innerHTML = `<div class="box"><h3>הוספת ערך: ${esc(w || "")}</h3>
+      <label>מילה: <input id="aw" value="${esc(w || "")}"></label>
+      <label>שפה: <select id="al">${UL.map(x => `<option${x === old.lang ? " selected" : ""}>${esc(x)}</option>`).join("")}</select></label>
+      <label id="al2w" hidden>שפת המקור: <input id="al2" value="${esc(old.lang2 || "")}" placeholder="למשל: יוונית"></label>
+      <textarea id="ad" rows="3" placeholder="הפירוש">${esc(old.d || "")}</textarea>
+      <label>מקור (שם ספר / קישור): <input id="as" value="${esc(old.src || "")}" placeholder="למשל: רש&quot;י שמות כח, יא"></label>
+      <textarea id="ax" rows="2" placeholder="הסבר למפתחת (לא חובה)">${esc(old.why || "")}</textarea>
+      <p class="chips"><button class="chip" data-lt="לועזי רש&quot;י" data-lq="${esc(w || "")}">חיפוש בספר "לועזי רש"י" שבספרייה</button></p>
+      <p class="note" id="am">הערך נשמר אצלך מיד ומופיע בתוסף. הוא גם יישלח למפתחת לבדיקה ולהוספה לכולם — לאחר אישור שלך בחלון של אוצריא.</p>
+      <div class="pager"><button class="chip" id="ac">סגירה</button>${old.d ? `<button class="chip" id="adel">מחיקת ההוספה שלי</button>` : ""}<button class="chip pri" id="aok">שמירה ושליחה</button></div></div>`;
+    document.body.appendChild(m); const $m = x => m.querySelector(x), lang2 = () => { $m("#al2w").hidden = $m("#al").value !== UL[3]; }; lang2(); $m("#al").onchange = lang2;
+    $m("#ac").onclick = () => m.remove(); m.onclick = e => { if (e.target === m) m.remove(); };
+    if ($m("#adel")) $m("#adel").onclick = () => { const u = { ...(ST.userDefs || {}) }; delete u[w]; ST.userDefs = u; save(); m.remove(); call("ui.showMessage", { message: "ההוספה נמחקה (תוסר לגמרי אחרי פתיחה מחדש של התוסף)." }); };
+    $m("#aok").onclick = async () => {
+      const t = $m("#aw").value.trim(), d = $m("#ad").value.trim(); if (!t || !d) { $m("#am").textContent = "יש למלא מילה ופירוש."; return; }
+      const u = { d, src: $m("#as").value.trim(), lang: $m("#al").value, lang2: $m("#al2").value.trim(), why: $m("#ax").value.trim(), ts: Date.now() };
+      ST.userDefs = { ...(ST.userDefs || {}), [t]: u }; save(); applyUserDefs(); RIX = null; RIXP = null;
+      const details = `הוספת ערך: ${t}\nשפה: ${u.lang}${u.lang2 ? " (" + u.lang2 + ")" : ""}\nפירוש: ${d}${u.src ? "\nמקור: " + u.src : ""}${u.why ? "\nהסבר: " + u.why : ""}\nתוסף: לשון הקודש ${window.KK_VERSION || ""}`;
+      const res = await call("feedback.report", { details, reportType: "content" }), st = res && res.success ? res.data : null;
+      $m("#am").textContent = "נשמר אצלך. " + (st === "sent" ? "נשלח למפתחת — תודה!" : st === "queued" ? "יישלח למפתחת כשיהיה חיבור." : "לא נשלח למפתחת (אפשר לשלוח שוב מאוחר יותר).");
+      setTimeout(() => { m.remove(); const r = D.get(KK.norm(t)); if (r) open(r, !!cur); }, 1300);
+    };
+  }
+  /* 2.8.0 (#54): ערכים קשורים — מילים שיש להן ערך ומוזכרות בפירוש הערך, ומילים שבפירושן מוזכר הערך הזה (אלקטרון ← אטום). מילים נפוצות מדי מסוננות */
+  let INV = null;
+  function invIndex() { if (INV) return INV; INV = new Map();
+    const put = (k, txt) => { const seen = new Set(); for (const w of KK.norm(String(txt || "")).split(" ")) if (w.length > 2 && w !== k && !seen.has(w)) { seen.add(w); const a = INV.get(w) || INV.set(w, []).get(w); if (a.length < 400) a.push(k); } };
+    for (const k of D.keys) { const e = D.map.get(k); if (e) put(k, (e.s || []).map(x => x[1]).join(" ")); }
+    for (const [w, d] of Object.entries(window.KK_LOAZDEF || {})) put(KK.norm(w), d);
+    return INV; }
+  const relText = r => [...(r.s || []).map(x => x[1]), (window.KK_LOAZDEF || {})[r.title] || ""].join(" ");
+  function relWords(r) { const I = invIndex(), out = [], LD = window.KK_LOAZDEF || {}, has = k => { const e = D.map.get(k); return e && (e.s || []).length ? e.title : (LD[k] ? k : ""); };
+    const add = k => { const t = has(k); if (k !== r.n && t && !out.includes(t)) out.push(t); };
+    for (const w0 of KK.norm(relText(r)).split(" ")) { const w = [w0, /^[והבכלמש]/.test(w0) ? w0.slice(1) : "", /^[והבכלמש]{2}/.test(w0) ? w0.slice(2) : ""].find(x => x.length > 2 && has(x)); /* גם עם אותיות שימוש: "האטום" ← אטום */
+      if (w && (I.get(w) || []).length < 120) add(w); }
+    const back = I.get(r.n) || []; if (back.length && back.length < 60) back.forEach(add);
+    return out.slice(0, 18); }
+  function relMark(r) { setTimeout(() => { if (!cur || cur !== r || mode !== "word" || $("#relw")) return; const a = relWords(r).filter(t => KK.norm(t) !== r.n); if (!a.length) return;
+    const html = `<div class="row" id="relw"><b>ערכים קשורים</b><div class="chips">${a.map(t => `<button class="chip" data-go="${esc(t)}">${esc(t)}</button>`).join("")}</div><span class="note">מילים שמוזכרות בפירוש הערך, ומילים שבפירושן מוזכר הערך.</span></div>`;
+    const at = $("#out .senses") || $("#libhits"); if (at) at.insertAdjacentHTML("afterend", html); }, 30); }
   function report(r, i) {
     if (!r || (i >= 0 && !r.s[i])) return; const [nk, d, src] = i >= 0 ? r.s[i] : ["", "הוספת פירוש חדש או תיקון לערך", ""];
     const m = document.createElement("div"); m.className = "modal";
@@ -721,6 +806,7 @@
       (!v.length && !others.length ? '<p class="hint">לא נמצאו תוצאות, או שהחיפוש אינו זמין כרגע.</p>' : "");
   }
   function tabs() {
+    $("#out").classList.toggle("entryv", mode === "word" || mode === "root");
     if (mode !== "all") $("#out").classList.remove("wide"); document.querySelectorAll("#modes button").forEach(b => b.classList.toggle("on", b.dataset.m === mode)); }
 
   /* חיפוש תוך כדי הקלדה */
@@ -757,8 +843,10 @@
 
   document.addEventListener("click", e => {
     if (!e.target.closest(".search")) { sugList = []; renderSug(); }
-    const t = e.target.closest("[data-go],[data-rconc],[data-root],[data-i],[data-mhg],[data-rep],[data-copy],[data-like],[data-open],[data-unfav],[data-comb],[data-lib],[data-book],[data-delbook],[data-delgram],[data-libopen],[data-libw],[data-syn],[data-gram],[data-ext],[data-ext2],[data-url],[data-m2],[data-srch],[data-lib2],[data-even],[data-lt],[data-cf],[data-gsec],[data-psk],[data-mhs],#genrep,#oconc,#ofirst,#libchk,#oeven,#favexp,#osearch,#orel,#ftog,[data-letter],#more,#back,#clrh,#modes button,#clr,#allback"); if (!t) return;
+    const t = e.target.closest("[data-go],[data-rconc],[data-root],[data-i],[data-mhg],[data-rep],[data-copy],[data-like],[data-open],[data-unfav],[data-comb],[data-lib],[data-book],[data-delbook],[data-delgram],[data-libopen],[data-libw],[data-syn],[data-gram],[data-ext],[data-ext2],[data-url],[data-m2],[data-srch],[data-lib2],[data-rdk],[data-addw],[data-rel],[data-even],[data-lt],[data-cf],[data-gsec],[data-psk],[data-mhs],#genrep,#oconc,#ofirst,#libchk,#oeven,#favexp,#osearch,#orel,#ftog,[data-letter],#more,#back,#clrh,#modes button,#clr,#allback"); if (!t) return;
     if (t.dataset.mhg) openMh(t.dataset.mhg, t.dataset.mhn);
+    else if (t.dataset.rdk) openLibTerm("radak", KK.refinal(t.dataset.rdk));
+    else if (t.dataset.addw !== undefined) addEntry(t.dataset.addw);
     else if (t.dataset.rep !== undefined) report(cur, +t.dataset.rep);
     else if (t.dataset.copy !== undefined) { const s = cur.s[+t.dataset.copy]; copyText(`${cur.title}: ${s[1]}`); }
     else if (t.dataset.like !== undefined) { const k = cur.n + "#" + t.dataset.like; ST.likes = ST.likes.includes(k) ? ST.likes.filter(x => x !== k) : [...ST.likes, k]; save(); t.classList.toggle("on"); }

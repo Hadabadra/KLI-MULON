@@ -362,3 +362,11 @@ details.rootfix{margin:.5em 0}details.rootfix input{font:inherit;width:6em}
 .synpv:empty{display:none}.pvhead{display:flex;justify-content:space-between;align-items:center}.pvtxt{line-height:1.8}
 .welc.out{opacity:0;transition:opacity .4s}
 @media (max-width:700px){.synwrap.pvon{grid-template-columns:1fr}}
+/* 2.8.0 (#52): נרדפות — אריחים צרים, תצוגה מקדימה צמודה בגלילה; (#54) כפתורי הערך כאליפסות כמו תגית השפה */
+.synwrap.pvon{grid-template-columns:minmax(0,.75fr) minmax(0,1.25fr)}
+.synwrap .tiles.one .tile{padding:.4em .7em}.synwrap .tiles.one .tile small{max-height:3.9em;font-size:.82em}
+section.card:has(.synwrap){overflow:visible}
+.synpv{position:sticky;top:.5em;max-height:calc(100vh - 1.5em)}
+.synpv .hero h2{margin:.2em 0}.synpv h4{margin:.8em 0 .3em;color:var(--color-on-surface-variant)}
+#out.entryv .chip:not(.pri):not(.zero){border-color:transparent;background:var(--color-primary-subtle);color:var(--color-primary)}
+#out.entryv .chip:not(.pri):not(.zero):hover{background:color-mix(in srgb,var(--color-primary-subtle) 70%,var(--color-primary))}
