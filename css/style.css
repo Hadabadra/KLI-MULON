@@ -393,3 +393,4 @@ a.res b{color:var(--color-primary)}
 .tiles.bk3{grid-template-columns:repeat(auto-fill,minmax(15em,1fr))}
 .synbooks>p.note{margin:.2em 0}
 .allhead{display:flex;flex-wrap:wrap;align-items:center;gap:.5em}
+.sense.bio{max-width:none}.sense.bio .mrow{font-size:.92em}

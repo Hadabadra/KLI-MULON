@@ -149,7 +149,7 @@
        <span class="note">זיהוי השורש והבניין הוא הערכה אוטומטית ועלול לטעות.</span></div>`) +
       (same.length ? chipRow("מאותו שורש", same.map(x => x.title)).replace(/<\/div><\/div>$/, `<button class="chip pri" data-root="${esc(root)}">כל המילים מהשורש ←</button></div></div>`) : "") + chipRow("מילים דומות", sim.map(x => x.title)) +
       `<div class="pager">${nb.prev ? chip(nb.prev.title, "", "") .replace(">", ">→ ") : "<span></span>"}${nb.next ? chip(nb.next.title).replace(">", ">← ") : ""}</div>`;
-    if (!isAcr) fillLibHits(r.title.replace(/[^\u05D0-\u05EA ]/g, ""), $("#libhits")); radakMark(); relMark(r); { const nw = KK.norm(r.title); if (isAcr || isAram || !(r.s || []).length) otzDict(nw, $("#otzd")); if (isName(r.n)) otzBio(nw, $("#otzb")); } /* 2.9.0 */
+    if (!isAcr) fillLibHits(r.title.replace(/[^\u05D0-\u05EA ]/g, ""), $("#libhits")); radakMark(); relMark(r); { const nw = KK.norm(r.title); if (isAcr || isAram || !(r.s || []).length) otzDict(nw, $("#otzd")); if (isName(r.n)) otzBio(nw, $("#otzb")); else if (isAcr || D.get(r.n) && (r.s || []).some(x => /אישים|ראשי תיבות/.test(x[2] || ""))) otzBio(r.title, $("#otzb"), true); /* 2.9.2: גם ר"ת של אדם (רמב"ם) — רק בהתאמה מדויקת לכינוי */ } /* 2.9.0 */
     document.querySelectorAll("[data-vq]").forEach(verseQuote);
     $("#out").scrollTop = 0; window.scrollTo(0, 0);
   }
@@ -1164,8 +1164,26 @@
     if (!ac.length && !ar.length) return;
     el.innerHTML = `<div class="row"><b>במילוני העזר של אוצריא</b><div class="senses">${ac.map(x => `<div class="sense"><div class="sbody">${esc((x.meanings || []).join(" · "))}</div><small class="note">ראשי תיבות</small></div>`).join("")}${ar.map(x => `<div class="sense"><div class="sbody">${esc(plain(String(x.hebrew || x.meaning || "")))}</div><small class="note">${esc(x.dictionary || "מילון ארמית")}</small></div>`).join("")}</div></div>`; }
   /* 2.9.0 (0.9.98.3): לשם של אדם — ערך קצר מ"תולדות גדולי ישראל" שבאוצריא, עם הקרדיט והמקורות כנדרש */
-  async function otzBio(w, el) { if (!el) return; const r = await call("tools.biographies", { query: w, formatVersion: 2, limit: 2 }); const d = r && r.success !== false ? (r.data || r) : null, x = d && (d.results || [])[0]; if (!x || !el.isConnected) return;
-    el.innerHTML = `<div class="row"><b>תולדות גדולי ישראל</b><div class="sense"><div class="sbody"><b>${esc(x.name || "")}${x.honorific ? " " + esc(x.honorific) : ""}</b>${x.eraLabel ? ` · ${esc(x.eraLabel)}` : ""}<br>${esc(x.summary || "")}</div><small class="note">${esc(x.attribution || "")}${(x.sources || []).length ? " · מקורות: " + esc(x.sources.map(y => y.title || y.credit).join(", ")) : ""}</small></div></div>`; }
+  /* 2.9.0 (0.9.98.3): לשם של אדם — "תולדות גדולי ישראל" שבאוצריא, עם הקרדיט והמקורות כנדרש.
+     2.9.2: ביוגרפיה מלאה בלחיצה (שנים, מקום, תפקידים, חיבורים), רבותיו/תלמידיו/משפחתו כקישורים לביוגרפיה שלהם, מקורות (כשמחוברים),
+     וכפתור למסך הכלים של אוצריא (שם מסך "ביוגרפיות"). אין ב-SDK פתיחה ישירה של מסך הביוגרפיות על אדם מסוים. */
+  const BIOC = new Map();
+  async function bioGet(q) { const k = JSON.stringify(q); if (BIOC.has(k)) return BIOC.get(k); const r = await call("tools.biographies", { ...q, formatVersion: 2, limit: 3 }); const d = r && r.success !== false ? (r.data || r) : null; const res = (d && d.results) || []; BIOC.set(k, res); return res; }
+  function bioHtml(x, full) {
+    const rel = (t, a) => a && a.length ? `<div class="mrow"><span class="mlab">${t}</span><span class="chips">${a.slice(0, 14).map(y => y.ref ? `<button class="chip" data-bio="${esc(y.ref)}">${esc(y.name)}${y.relation ? ` <small>(${esc(y.relation)})</small>` : ""}</button>` : `<span class="chip zero">${esc(y.name)}</span>`).join("")}</span></div>` : "";
+    const line = (t, v) => v ? `<div class="mrow"><span class="mlab">${t}</span><span>${esc(Array.isArray(v) ? v.join(" · ") : v)}</span></div>` : "";
+    return `<div class="sense bio"><div class="sbody"><b>${esc(x.name || "")}${x.honorific ? " " + esc(x.honorific) : ""}</b>${x.eraLabel ? ` · ${esc(x.eraLabel)}` : ""}${(x.appelations || []).length ? `<br><small>${esc(x.appelations.join(" · "))}</small>` : ""}<br>${esc(plain(x.summary || ""))}` +
+      (full ? line("נולד", x.birth) + line("נפטר", x.death) + line("מקום קבורה", x.buried) + line("ארצות", x.countries) + line("תפקידים", x.roles) + rel("רבותיו", x.teachers) + rel("תלמידיו", x.students) + rel("משפחה", x.family) +
+        ((x.works || []).length ? `<div class="mrow"><span class="mlab">חיבורים</span><span class="chips">${x.works.slice(0, 16).map(w => `<button class="chip" data-srch="${esc(w.title)}" title="${esc(plain(w.description || ""))} — חיפוש באוצריא">${esc(w.title)}</button>`).join("")}</span></div>` : "") +
+        (x.remember ? `<p>${esc(plain(x.remember))}</p>` : "") : "") +
+      `</div><p class="chips">${full ? "" : `<button class="chip pri" data-biofull="${esc(x.id)}">ביוגרפיה מלאה</button>`}<button class="chip" data-srch="${esc(x.name || "")}">חפש באוצריא</button><button class="chip" data-biotools="1" title="מסך הכלים של אוצריא — שם נמצא מסך הביוגרפיות">ביוגרפיות באוצריא ↗</button>${online ? (x.sources || []).filter(y => y.url).map(y => `<button class="chip" data-url="${esc(y.url)}">${esc(y.title || y.credit)} ↗</button>`).join("") : ""}</p>` +
+      `<small class="note">${esc(x.attribution || "")}${(x.sources || []).length ? " · מקורות: " + esc(x.sources.map(y => y.title || y.credit).join(", ")) : ""}</small></div>`; }
+  async function otzBio(w, el, strict) { if (!el) return; const nn = t => KK.norm(String(t || "")).replace(/[^\u05D0-\u05EA]/g, ""), res = await bioGet({ query: w }), x = strict ? res.find(y => [y.name, ...(y.appelations || [])].some(a => nn(a) === nn(w) || nn(a) === "ה" + nn(w))) : res[0]; if (!x || !el.isConnected) return;
+    el.innerHTML = `<div class="row"><b>תולדות גדולי ישראל</b><div class="biobox">${bioHtml(x, false)}</div></div>`; }
+  document.addEventListener("click", async e => { const b = e.target.closest("[data-biofull],[data-bio],[data-biotools]"); if (!b) return; e.preventDefault();
+    if (b.dataset.biotools) return void call("navigation.goTo", { target: "more" });
+    const x = (await bioGet({ id: b.dataset.biofull || b.dataset.bio }))[0], box = b.closest(".biobox"); if (!x) return void call("ui.showMessage", { message: "לא נמצאה ביוגרפיה" });
+    if (box) { box.innerHTML = bioHtml(x, true); box.scrollIntoView({ behavior: "smooth", block: "nearest" }); } });
   window.KKA = Object.assign(window.KKA || {}, { D, call, esc, plain, TNK, bookOf, copyText, LINKS, PARTICLES, save, getST: () => ST }); /* 2.0: חיבור ל-js/ideas-a.js */
   window.KKAPP = Object.assign(window.KKAPP || {}, { st: () => ST, D, save, call, esc, chip, showPractice }); /* 2.0: ממשק לקבצי ההרחבה (js/ideas-*.js) */
   var RESTORE = null; /* 2.9.1 */
