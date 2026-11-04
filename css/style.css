@@ -388,3 +388,8 @@ a.res b{color:var(--color-primary)}
 .synbooks{display:grid;gap:.9em}.synbook h4{margin:.2em 0 .45em;color:var(--color-primary)}.synbook h4 small{color:var(--color-on-surface-variant);font-weight:400}
 .tiles.syn{grid-template-columns:repeat(auto-fill,minmax(16em,1fr))}.tiles.syn .tile small{max-height:5.4em;white-space:normal;font-size:.84em;line-height:1.5}
 .synwrap.pvon .tiles.syn{grid-template-columns:1fr}
+/* 2.9.1: נרדפות — ספרים ונרדפים כאריחים ברשת */
+.tile.static{cursor:default;display:flex;flex-direction:column;gap:.35em}.tile.static:hover{transform:none}.tile.static small{max-height:none}
+.tiles.bk3{grid-template-columns:repeat(auto-fill,minmax(15em,1fr))}
+.synbooks>p.note{margin:.2em 0}
+.allhead{display:flex;flex-wrap:wrap;align-items:center;gap:.5em}

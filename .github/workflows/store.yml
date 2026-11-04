@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: תיקיית התוסף בלבד
         run: |
-          for f in achat-promo.js achat-promo.css README.md; do curl -fsSL "https://raw.githubusercontent.com/Hadabadra/Mikvaot/main/shared/promo/$f" -o "shared/promo/$f"; done  # פרסומת "אחת שאלתי" — מקור יחיד ב-Mikvaot
+          mkdir -p /tmp/promo && for f in achat-promo.js achat-promo.css README.md; do curl -fsSL "https://raw.githubusercontent.com/Hadabadra/Mikvaot/main/shared/promo/$f" -o "/tmp/promo/$f"; done; python3 -c "import re,sys;v=lambda p:tuple(map(int,re.search(r'VERSION = \"([0-9.]+)',open(p,encoding='utf-8').read()).group(1).split('.')));sys.exit(0 if v('/tmp/promo/achat-promo.js')>=v('shared/promo/achat-promo.js') else 1)" && cp /tmp/promo/* shared/promo/ || echo "promo: העותק המקומי חדש יותר — נשאר"  # פרסומת "אחת שאלתי" — מקור יחיד ב-Mikvaot (אלא אם העותק כאן חדש יותר)
           python3 tools/build_roadmap.py docs/ROADMAP.md data/roadmap.js && python3 tools/build_roadmap.py CHANGELOG.md data/changelog.js KK_CHANGELOG
           mkdir -p dist/plugin
           cp -r manifest.json index.html background.html css js data icon shared dist/plugin/

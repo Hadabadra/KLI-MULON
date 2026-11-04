@@ -2,7 +2,7 @@
 (function () {
   const O = window.Otzaria; if (!O) return;
   const D = new KK.Dict(window.KK_DICT).useLex(new KK.Lex({ forms: window.KK_FORMS, hs: window.KK_HS, milog: window.KK_MILOG, wikt: window.KK_WIKT, academy: window.KK_ACADEMY })), MH = new KK.MhIndex(window.MH_INDEX);
-  const DEF = { auto: true, mode: "toast", maxWords: 8, tLen: "normal", nakdan: true };
+  const DEF = { auto: true, mode: "toast", maxWords: 8, tLen: "normal", nakdan: true, noAcr: true }; /* 2.9.1: ראשי תיבות מושמטים מההודעה כברירת מחדל */
   let S = { ...DEF }, last = "", lastAt = 0, timer = null;
   const call = async (m, p) => { try { return await O.call(m, p || {}); } catch (e) { return { success: false }; } };
   async function loadSettings() {
