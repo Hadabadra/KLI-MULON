@@ -88,6 +88,30 @@
     "התפעל": { past: pastOf("הiת01a2*a3", ["הiת01a2*E3", "הiת01a2*:3Aה", "הiת01a2*:3ו."], "הiת01a2*a3"), fut: futOf(pre("אeת0", "iת0"), "1a2*E3", "1a2*:3iי", "1a2*:3ו.", "1a2*E30נAה"),
       imp: ["הiת01a2*E3", "הiת01a2*:3iי", "הiת01a2*:3ו.", "הiת01a2*E30נAה"], ben: ["מiת01a2*E3", "מiת01a2*e3eת", "מiת01a2*:3iים", "מiת01a2*:3וoת"], mak: [["מקור", "הiת01a2*E3"], ["", "ל:הiת01a2*E3"]] }
   };
+  /* 2.8.0 (#39): גזרות בבניין קל — ל"ה (בנה), חסרי פ"נ (נפל), ע"ו / ע"י (קום, שים). נבדקו מול טבלאות הגזרות בספר הדקדוק, חלק ה */
+  const GZ = {
+    'ל"ה': { past: ["1A2iיתiי", "1A2iיתA", "1A2iית", "1A2Aה", "1A2:תAה", "1A2iינו.", "1:2iיתeם", "1:2iיתeן", "1A2ו."], fut: futOf(pre("אe", "i"), "102eה", "102iי", "102ו.", "102eינAה"),
+      imp: ["1:2Eה", "1:2iי", "1:2ו.", "1:2eינAה"], ben: ["1וo2eה", "1וo2Aה", "1וo2iים", "1וo2וoת"], ben2: ["בינוני פעול", "1A2ו.י"], mak: [["מקור", "1:2וoת"], ["", "לi102וoת"], ["מקור מוחלט", "1A2oה"]],
+      note: "גזרת ל\"ה: הה' שבסוף השורש נעלמת או מתחלפת בי' לפני סיומות." },
+    'פ"נ': { past: pastOf("1A2a3", ["1A2a3", "1A2:3Aה", "1A2:3ו."], "1:2a3"), fut: futOf(pre("אe", "i"), "2*o3", "2*:3iי", "2*:3ו.", "2*o30נAה"),
+      imp: ["1:2o3", "1i2:3iי", "1i2:3ו.", "1:2o30נAה"], ben: ["1וo2E3", "1וo2e3eת", "1וo2:3iים", "1וo2:3וoת"], ben2: ["בינוני פעול", "1A2ו.3"], mak: [["מקור", "1:2o3"], ["", "לi102o3"]],
+      note: "חסרי פ\"נ: הנ' נטמעת בעתיד (דגש חזק באות שאחריה). יש פעלים שבאים בפתח בעתיד (יִסַּע, יִגַּע), ויש שהציווי בלי נ' (גַּשׁ, סַע) — הטבלה אינה מבחינה בהם." },
+    'ע"ו': { past: ["1a30תiי", "1a30תA", "1a30ת:", "1A3", "1A3Aה", "1a30נו.", "1a30תeם", "1a30תeן", "1A3ו."], fut: futOf(pre("אA", "A"), "1ו.3", "1ו.3iי", "1ו.3ו.", "1o30נAה"),
+      imp: ["1ו.3", "1ו.3iי", "1ו.3ו.", "1o30נAה"], ben: ["1A3", "1A3Aה", "1A3iים", "1A3וoת"], mak: [["מקור", "1ו.3"], ["", "לA1ו.3"]],
+      note: "גזרת ע\"ו: הו' שבאמצע השורש אינה נשמעת בעבר ובבינוני." },
+    'ע"י': { past: ["1a30תiי", "1a30תA", "1a30ת:", "1A3", "1A3Aה", "1a30נו.", "1a30תeם", "1a30תeן", "1A3ו."], fut: futOf(pre("אA", "A"), "1iי3", "1iי3iי", "1iי3ו.", "1E30נAה"),
+      imp: ["1iי3", "1iי3iי", "1iי3ו.", "1E30נAה"], ben: ["1A3", "1A3Aה", "1A3iים", "1A3וoת"], mak: [["מקור", "1iי3"], ["", "לA1iי3"]],
+      note: "גזרת ע\"י: הי' שבאמצע השורש נשמעת בעתיד, בציווי ובמקור בלבד." }
+  };
+  function gzOf(root) { /* מחזיר את הגזרה הנתמכת, או "" */
+    const [a, b, c] = root, gut = x => /[אהחע]/.test(x), weak = x => "יו".includes(x);
+    if (c === "ה" && !gut(a) && !gut(b) && !weak(a) && !weak(b) && a !== "נ") return 'ל"ה';
+    if (a === "נ" && !gut(b) && !gut(c) && !weak(b) && !weak(c) && b !== c && b !== "ר" && !"נת".includes(c)) return 'פ"נ';
+    if ((b === "ו" || b === "י") && !gut(a) && !gut(c) && !weak(a) && !weak(c) && a !== "נ") return b === "ו" ? 'ע"ו' : 'ע"י';
+    return "";
+  }
+  A.gzTable = (gz, R) => { const T = GZ[gz], f = t => conj(t, R);
+    return { past: T.past.map(f), fut: T.fut.map(f), imp: T.imp.map(f), ben: T.ben.map(f), ben2: T.ben2 ? [T.ben2[0], f(T.ben2[1])] : null, mak: T.mak.map(([l, t]) => [l, f(t)]), note: T.note }; };
   /* התפעל: ת' ההתפעל מתחלפת לפני שורקות (הִשְׁתַּמֵּר, הִצְטַדֵּק, הִזְדַּכֵּךְ) ונטמעת בדטת (הִטַּהֵר) — לפי ספר הדקדוק */
   const metath = (tpl, R) => { const c = R[0].ch; return "סש".includes(c) ? tpl.replace("ת01", "10ת") : c === "צ" ? tpl.replace("ת01", "10ט") : c === "ז" ? tpl.replace("ת01", "10ד") : "דטת".includes(c) ? tpl.replace("ת01", "1*") : tpl; };
   A.conjTable = (bin, R) => { const T = CJ[bin], f = t => conj(bin === "התפעל" ? metath(t, R) : t, R);
@@ -114,16 +138,20 @@
   const BINS = ["קל", "נפעל", "פיעל", "פועל", "הפעיל", "הופעל", "התפעל"];
   const binOf = b => /התפעל/.test(b) ? "התפעל" : /הופעל/.test(b) ? "הופעל" : /הפעיל/.test(b) ? "הפעיל" : /נפעל/.test(b) ? "נפעל" : /^פיעל/.test(b) ? "פיעל" : "קל";
   A.conjBtn = (r, an) => an && an.ok && an.root && an.root.length === 3 && !/^שם/.test(an.binyan || "") && !/[ '"]/.test(r.n) ? `<button class="chip" id="conjbtn" data-cjr="${esc(an.root)}" data-cjb="${esc(binOf(an.binyan || ""))}"><i class=oi data-i=clip></i> טבלת נטייה</button>` : "";
+  function tblHtml(T) { return `<div class="tblw"><table><tr><th>גוף</th><th>עבר</th><th>עתיד</th>${T.imp ? "<th>ציווי</th>" : ""}</tr>${P.map((p, i) => `<tr><td>${p}</td><td>${esc(T.past[i])}</td><td>${esc(i === 8 ? T.fut[8] + " / " + T.fut[9] : T.fut[i])}</td>${T.imp ? `<td>${esc({ 1: T.imp[0], 2: T.imp[1], 6: T.imp[2], 7: T.imp[3] }[i] || "")}</td>` : ""}</tr>`).join("")}</table></div>` +
+      `<p><b>בינוני:</b> ${esc(T.ben.join(", "))}${T.ben2 ? ` · <b>${T.ben2[0]}:</b> ${esc(T.ben2[1])}` : ""}${T.mak.length ? ` · <b>מקור:</b> ${T.mak.map(([l, f]) => (l && l !== "מקור" ? l + ": " : "") + esc(f)).join(", ")}` : (T.imp ? "" : " · בבניין סביל אין ציווי")}</p>`; }
   function conjHtml(root, bin) {
     const why = strong(root), head = `<h4 class="gh">טבלת נטייה: שורש ${esc(KK.refinal(root))}</h4>`;
-    if (why) return head + `<p class="hint">הטבלה האוטומטית תומכת כרגע רק בשלמים (${esc(why)}). <a href="#" class="blink" data-gsec="טבלאות נטייה של הגזרות">טבלאות הגזרות בספר הדקדוק</a></p>`;
+    const gz = why ? gzOf(root) : "", gsec = `<a href="#" class="blink" data-gsec="טבלאות נטייה של הגזרות">טבלאות הגזרות בספר הדקדוק</a>`;
+    if (why && !gz) return head + `<p class="hint">הטבלה האוטומטית תומכת בשלמים ובגזרות ל"ה, חסרי פ"נ, ע"ו וע"י (בבניין קל); לשורש הזה (${esc(why)}) — ${gsec}</p>`;
     const dot = root.includes("ש") ? shinDot(root) : "";
     if (dot === null) return head + `<p class="hint">לא ידוע מהמילון אם הש' בשורש היא שׁ ימנית או שׂ שמאלית, ולכן הטבלה אינה מוצגת.</p>`;
-    const R = [...root].map(ch => ({ ch, dot: ch === "ש" ? dot : "" })), T = A.conjTable(bin, R);
+    const R = [...root].map(ch => ({ ch, dot: ch === "ש" ? dot : "" }));
+    if (gz) { bin = "קל"; } const T = gz ? A.gzTable(gz, R) : A.conjTable(bin, R);
+    if (gz) return head + `<p class="note"><b><i class=oi data-i=warn></i> נוצר אוטומטית — עלול לטעות.</b> גזרת ${esc(gz)}, בניין קל בלבד (שאר הבניינים — ${gsec}). ${esc(T.note)}</p>` + tblHtml(T) + `<p class="note">${gsec}</p>`;
     return head + `<div class="chips">${BINS.map(b => `<button class="chip${b === bin ? " pri" : ""}" data-cjr="${esc(root)}" data-cjb="${b}">${b}</button>`).join("")}</div>` +
       `<p class="note"><b><i class=oi data-i=warn></i> נוצר אוטומטית — עלול לטעות.</b> הבניין שזוהה הוא הערכה; ייתכן שהפועל אינו בא בבניין הזה כלל. ${esc(T.note)}</p>` +
-      `<div class="tblw"><table><tr><th>גוף</th><th>עבר</th><th>עתיד</th>${T.imp ? "<th>ציווי</th>" : ""}</tr>${P.map((p, i) => `<tr><td>${p}</td><td>${esc(T.past[i])}</td><td>${esc(i === 8 ? T.fut[8] + " / " + T.fut[9] : T.fut[i])}</td>${T.imp ? `<td>${esc({ 1: T.imp[0], 2: T.imp[1], 6: T.imp[2], 7: T.imp[3] }[i] || "")}</td>` : ""}</tr>`).join("")}</table></div>` +
-      `<p><b>בינוני:</b> ${esc(T.ben.join(", "))}${T.ben2 ? ` · <b>${T.ben2[0]}:</b> ${esc(T.ben2[1])}` : ""}${T.mak.length ? ` · <b>מקור:</b> ${T.mak.map(([l, f]) => (l && l !== "מקור" ? l + ": " : "") + esc(f)).join(", ")}` : (T.imp ? "" : " · בבניין סביל אין ציווי")}</p>` +
+      tblHtml(T) +
       `<p class="note"><a href="#" class="blink" data-gsec="${bin === "קל" ? "טבלת נטייה מלאה: בניין קל" : "טבלאות נטייה מלאות: שאר הבניינים"}">הטבלאות בספר הדקדוק</a></p>`;
   }
   document.addEventListener("click", e => { const b = e.target.closest("[data-cjr]"); if (!b) return;
