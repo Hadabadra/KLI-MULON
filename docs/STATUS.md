@@ -1,5 +1,11 @@
 # מצב הפרויקט — לשון הקודש (id: milon-klei-kodesh)
 
+## ⏸ 2.9.0 (04.11.2026) — מושהה עד ~מאי 2027
+- 2.9.0 דורש אוצריא 0.9.98.3 (`minAppVersion`); משתמשי 0.9.98 מקבלים מהחנות את 2.8.2.
+- חדש בקוד: `otzDict`/`otzBio` ב-js/app.js (מילוני העזר והביוגרפיות של אוצריא, הרשאה `tools.read`); `search.fieldAction.invoked` ב-js/bg.js (הרשאה `search.field_actions`); `GHELP` + MutationObserver — קישור לכללי הדקדוק בראש כל לשונית; `AF` הפך ל-Set (בחירה מרובה, `data-afk/afv`) + `isAcrW`; `pleneAlts` מציע גם ר"ת; עיצוב אחיד — אסימוני `--kk-*` בסוף css/style.css (לשנות שם בלבד).
+- פתוח: ראו docs/ROADMAP.md (עמודת ר"ת, פרסומת 1.4.0 שממתינה להחלה ב-Mikvaot, #55, גזרות, מילים חדשות של האקדמיה).
+
+
 ## 2.8.2 (04.11.2026)
 - #56: הפרסומת המשותפת עודכנה במקור (Hadabadra/Mikvaot shared/promo 1.3.0: "מאת חד בדרא ויאיר דניאל" + הפוסט הרשמי של יאיר בדף ההסבר). release.yml/store.yml מושכים את המקור בכל אריזה.
 

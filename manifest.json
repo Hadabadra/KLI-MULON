@@ -2,12 +2,12 @@
   "schemaVersion": 1,
   "id": "milon-klei-kodesh",
   "name": "לשון הקודש",
-  "version": "2.8.2",
+  "version": "2.9.0",
   "stability": "beta",
   "author": "מילון כליקודש",
-  "description": "פירוש וניתוח לשון הקודש: מילון, שורשים מכל המאגרים, ניתוח משפט, כללי הדקדוק, ניקוד וטעמים, וקונקורדנציה לתנ\"ך",
+  "description": "מילון, שורשים, נרדפות ולועזיות; ניתוח משפט, ניקוד וטעמים, כללי הדקדוק וקונקורדנציה לתנ\"ך — פירוש לכל מילה מסומנת",
   "entrypoint": "index.html",
-  "minAppVersion": "0.9.98",
+  "minAppVersion": "0.9.98.3",
   "sdkVersion": "1.x",
   "icon": "icon/icon.png",
   "permissions": [
@@ -32,7 +32,9 @@
     "app.open_url",
     "app.info.read",
     "library.books.provide",
-    "search.dialog"
+    "search.dialog",
+    "tools.read",
+    "search.field_actions"
   ],
   "contributes": {
     "toolTab": {
@@ -89,14 +91,36 @@
       "searchDialogItems": [
         {
           "id": "kk-search",
-          "type": "checkbox",
+          "type": "switch",
           "title": "חפש גם בלשון הקודש (מילון וספר הדקדוק)",
           "defaultValue": false,
+          "persist": false,
           "openPluginOnSubmit": true,
+          "resultsAction": "פירוש וניתוח בלשון הקודש",
           "visibleInModes": [
             "exact",
             "advanced"
           ]
+        }
+      ],
+      "searchFieldActions": [
+        {
+          "id": "kk-field",
+          "title": "פירוש המילה בלשון הקודש",
+          "icon": "book_open_24_regular",
+          "fields": [
+            "fullText",
+            "inBook"
+          ],
+          "visibleWhen": "nonEmptyText"
+        },
+        {
+          "id": "kk-books",
+          "title": "ספרי הדקדוק של לשון הקודש / ספרי הספרייה",
+          "icon": "library_24_regular",
+          "activeIcon": "library_24_filled",
+          "libraryOnlyIcon": "book_24_regular",
+          "mode": "providerBooksFilter"
         }
       ]
     }

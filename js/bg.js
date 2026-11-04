@@ -54,4 +54,9 @@
   }
   O.on("plugin.boot", loadSettings);
   O.on("reader.selection_changed", onSel);
+  /* 2.9.0 (0.9.98.3): כפתור "פירוש המילה בלשון הקודש" בתוך שדה החיפוש — פותח את התוסף על הטקסט שבשדה (או המסומן בו) */
+  O.on("search.fieldAction.invoked", async d => { const sid = d && d.sessionId; let t = String((d && d.text) || "");
+    if (d && d.selectionEnd > d.selectionStart) t = t.slice(d.selectionStart, d.selectionEnd);
+    t = KK.norm(t).trim(); if (sid) call("search.endFieldSession", { sessionId: sid });
+    if (t) call("plugin.openSelf", { param: { word: t, words: [], raw: t } }); });
 })();

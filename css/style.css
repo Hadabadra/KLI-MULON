@@ -370,3 +370,21 @@ section.card:has(.synwrap){overflow:visible}
 .synpv .hero h2{margin:.2em 0}.synpv h4{margin:.8em 0 .3em;color:var(--color-on-surface-variant)}
 #out.entryv .chip:not(.pri):not(.zero){border-color:transparent;background:var(--color-primary-subtle);color:var(--color-primary)}
 #out.entryv .chip:not(.pri):not(.zero):hover{background:color-mix(in srgb,var(--color-primary-subtle) 70%,var(--color-primary))}
+/* ===== 2.9.0: עיצוב אחיד — מקור יחיד לכל האריחים והכפתורים בתוסף. לשינוי המראה משנים רק את האסימונים כאן ===== */
+:root{--kk-tile-bg:var(--color-surface-container-low);--kk-tile-radius:var(--radius-md);--kk-tile-pad:.6em .8em;--kk-tile-sh:0 .08em .35em var(--color-shadow);--kk-tile-sh-hover:0 .5em 1.2em var(--color-shadow);
+  --kk-btn-bg:var(--color-primary-subtle);--kk-btn-fg:var(--color-primary);--kk-btn-radius:var(--radius-pill)}
+.tile,a.res,.sense,.ltile,section.card,.synpv{background:var(--kk-tile-bg);border:1px solid transparent!important;border-radius:var(--kk-tile-radius);box-shadow:var(--kk-tile-sh);transition:transform .2s,box-shadow .2s}
+.tile,a.res,.ltile{padding:var(--kk-tile-pad)}
+.tile:hover,a.res:hover,.sense:hover,.ltile:hover{transform:translateY(-.12em);box-shadow:var(--kk-tile-sh-hover)}
+.sense.best{background:linear-gradient(160deg,var(--color-primary-subtle),var(--kk-tile-bg))}
+a.res b{color:var(--color-primary)}
+.chip{border-radius:var(--kk-btn-radius)}
+.chip:not(.pri):not(.zero):not(.bad){border-color:transparent;background:var(--kk-btn-bg);color:var(--kk-btn-fg)}
+.chip:not(.pri):not(.zero):not(.bad):hover{background:color-mix(in srgb,var(--kk-btn-bg) 70%,var(--color-primary))}
+.az .chip:not(.pri){background:transparent;color:var(--color-on-surface)}
+.ftoggle,#modes button{border-radius:var(--kk-btn-radius)}
+.ghelp{margin:0 0 .5em}.ghelp .chip{font-size:.8em}
+.mrow{display:flex;gap:.6em;align-items:flex-start;margin:.35em 0}.mlab{min-width:7.5em;font-size:.82em;color:var(--color-on-surface-variant);padding-top:.35em}
+.synbooks{display:grid;gap:.9em}.synbook h4{margin:.2em 0 .45em;color:var(--color-primary)}.synbook h4 small{color:var(--color-on-surface-variant);font-weight:400}
+.tiles.syn{grid-template-columns:repeat(auto-fill,minmax(16em,1fr))}.tiles.syn .tile small{max-height:5.4em;white-space:normal;font-size:.84em;line-height:1.5}
+.synwrap.pvon .tiles.syn{grid-template-columns:1fr}
