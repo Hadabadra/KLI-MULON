@@ -1,11 +1,11 @@
-/* רכיב משותף: המלצה על "אחת שאלתי" — גרסה 1.1.0
+/* רכיב משותף: המלצה על "אחת שאלתי" — גרסה 1.2.0
  * מקור יחיד: Hadabadra/Mikvaot shared/promo/ — כל תוסף מעתיק את שני הקבצים כמו שהם (ראו README.md).
  * אין לשנות את הקובץ בתוך תוסף; שינוי נעשה כאן, ומועתק לכל התוספים.
  * צבעים רק דרך אסימוני :root של אוצריא, מידות ב-em בלבד (achat-promo.css).
  */
 (function (root) {
   "use strict";
-  var VERSION = "1.1.0";
+  var VERSION = "1.2.0";
   var KEY = "achatPromo";                 /* מפתח ב-storage של התוסף */
   var WEEK = 7 * 24 * 3600 * 1000, DAY = 24 * 3600 * 1000;
   var DEF = {
@@ -16,7 +16,25 @@
     downloadUrl: "https://github.com/achat-shaalti/achat-shaalti/releases",
     author: "רובע היהודי"
   };
-  var cfg = null, st = { show: true, first: 0, last: 0, opens: 0 }, loaded = false, online = null;
+  var cfg = null, st = { show: true, first: 0, last: 0, opens: 0 }, loaded = false, online = null, inst = null;
+  /* 1.2.0: זיהוי "אחת שאלתי" מותקן — בדיקת /health של הגשר (127.0.0.1:47917-47921).
+     עובד רק בתוסף עם הרשאת network.localhost ו-127.0.0.1/localhost ב-network.allowlist; אחרת "לא ידוע" ולא קורה כלום. */
+  async function installed() {
+    if (inst !== null) return inst;
+    if (cfg.isInstalled) { try { return (inst = !!(await cfg.isInstalled())); } catch (e) { return (inst = false); } }
+    var O = root.Otzaria, isIt = function (x) { return x && typeof x[Symbol.asyncIterator] === "function"; };
+    if (!O || !O.call) return (inst = false);
+    for (var p = 47917; p <= 47921; p++) {
+      try {
+        var it = O.call("network.fetchStream", { url: "http://127.0.0.1:" + p + "/health", method: "GET", headers: { "X-Otzaria-Bridge": "1" }, timeoutMs: 1200 });
+        if (!isIt(it) && it && it.then) it = await it; if (!isIt(it) && it && isIt(it.data)) it = it.data; if (!isIt(it)) continue;
+        var t = ""; for await (var c of it) { if (c && typeof c.body === "string" && c.type !== "response") t += c.body; }
+        var j = JSON.parse(t); if (j && j.ok && j.data && j.data.name === "otzaria-bridge") return (inst = true);
+      } catch (e) {}
+    }
+    return (inst = false);
+  }
+  var HAPPY = '<p class="ap-happy">אשריך! "אחת שאלתי" כבר מותקן במחשב הזה.</p>';
 
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
   async function call(m, p) { try { var r = await cfg.call(m, p || {}); return r || { success: false }; } catch (e) { return { success: false }; } }
@@ -49,11 +67,19 @@
     return '<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>אחת שאלתי – הסבר והורדה</title>'
       + "<style>body{font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:40em;margin:2em auto;padding:0 1em;line-height:1.7;color:#2b2622;background:#faf7f2}h1{font-size:1.6em;margin:.2em 0}"
       + ".card{background:#fff;border-radius:1em;padding:1.2em 1.4em;box-shadow:0 .2em 1em rgba(0,0,0,.08);margin:1em 0}a.btn{display:inline-block;margin:.3em 0 .3em .6em;padding:.6em 1.2em;border-radius:2em;background:#8a5a2b;color:#fff;text-decoration:none;font-weight:700}"
-      + "a.btn.sec{background:#efe6da;color:#5a3d1e}ol{padding-inline-start:1.3em}small{color:#776c62}</style></head><body>"
+      + "a.btn.sec{background:#efe6da;color:#5a3d1e}ol,ul{padding-inline-start:1.3em}li{margin:.25em 0}small{color:#776c62}</style></head><body>"
       + "<h1>אחת שאלתי – ללמוד בלי להתפזר</h1><p><small>מאת " + esc(cfg.author) + "</small></p>"
-      + '<div class="card"><p>"אחת שאלתי" הוא כלי חינמי למחשב (Windows) שהופך את המחשב לאוצריא ו-Word בלבד: מצב נעילה בסיסמה ששומר את המחשב בתוך אוצריא, עם Word ותוכנות תורניות שבוחרים — בלי הסחות דעת.</p>'
+      + '<div class="card"><p>"אחת שאלתי" היא תוכנה חינמית ל-Windows שהופכת מחשב רגיל לעמדת לימוד: אוצריא, Word ותוכנות תורניות שבוחרים — בלי גלישה, משחקים והסחות דעת. מתאימה לבית המדרש, לבית הכנסת ולבית.</p>'
       + '<p><a class="btn" href="' + esc(cfg.downloadUrl) + '">להורדת קובץ ההתקנה ↗</a><a class="btn sec" href="' + esc(cfg.forumUrl) + '">להסבר המלא בפורום אוצריא ↗</a></p></div>'
-      + '<div class="card"><b>איך מתקינים</b><ol><li>פותחים את הקובץ הזה במחשב מחובר לאינטרנט ולוחצים על "להורדת קובץ ההתקנה".</li><li>מעבירים את קובץ ההתקנה בדיסק און קי למחשב הלימוד.</li><li>מריצים אותו ופועלים לפי ההוראות.</li></ol></div>'
+      + '<div class="card"><b>מה יש בה</b><ul>'
+      + '<li><b>מצב נעילה בסיסמה</b> — חוסם מעבר בין חלונות ומנהל המשימות, וסייר הקבצים מוגבל לתיקיות מאושרות. אפשר גם נעילה מוקשחת שרצה כשירות מערכת.</li>'
+      + '<li><b>זמני נעילה</b> לפי שעות, כמה חלונות ביום, ופתיחה זמנית בסיסמה נפרדת לזמן קצוב.</li>'
+      + '<li><b>תוכנות מותרות</b> — Word ותוכנות תורניות (בר-אילן, אוצר החכמה ועוד) נפתחות גם בזמן נעילה.</li>'
+      + '<li><b>שומר מסך</b> עם פסוק, תאריך עברי, זמני היום או הקדשה.</li>'
+      + '<li><b>שני תוספים לאוצריא</b>: סייר קבצים והגדרות מערכת (כולל שליטה בנעילה).</li>'
+      + '<li><b>גשר מקומי</b> שרץ ברקע, מאזין רק למחשב עצמו ולא שולח מידע החוצה.</li></ul></div>'
+      + '<div class="card"><b>איך מתקינים</b><ol><li>פותחים את הקובץ הזה במחשב מחובר לאינטרנט ולוחצים על "להורדת קובץ ההתקנה".</li><li>מעבירים את קובץ ההתקנה (בדיסק און קי) למחשב הלימוד ומריצים אותו. ההתקנה מגדירה את הגשר לעלות עם Windows ופותחת את אוצריא להתקנת שני התוספים.</li><li>בפעם הראשונה שתוסף מתחבר לגשר — מאשרים את בקשת החיבור.</li></ol>'
+      + '<p><small>שום הגנה בתוכנה לבד אינה מושלמת: מומלץ חשבון Windows רגיל (לא מנהל), נעילה מוקשחת, נעילת BIOS/UEFI ו-Windows Hello. רישיון: שימוש אישי לא מסחרי.</small></p></div>'
       + '<p><small>נשמר מתוך התוסף "' + esc(cfg.plugin || "") + '" לאוצריא' + (L.gh ? " · " + a(L.gh, "הורדת התוסף מ-GitHub") : "") + (L.store ? " · " + a(L.store, "בחנות התוספים של אוצריא") : "") + "</small></p></body></html>";
   }
   function saveFile() {
@@ -66,7 +92,7 @@
   var STAMP = '<svg class="ap-stamp" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.2" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="12" cy="12" r="7.6" fill="none" stroke="currentColor" stroke-width=".8" stroke-dasharray="1.2 1.1"/><path d="M8.6 8.2h6.8M9.4 8.4l5.4 7.6M14.6 8.4c.5 2.2-.3 3.6-2 4.2M9.6 15.8c-.4-1.9.2-3.1 1.5-3.6" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>';
   function actions(on, withNever) {
     return (on
-      ? '<button type="button" class="ap-btn ap-pri" data-ap="dl">להורדה ↗</button><button type="button" class="ap-btn" data-ap="forum">להסבר בפורום ↗</button>'
+      ? '<button type="button" class="ap-btn ap-pri" data-ap="dl">להורדה ↗</button><button type="button" class="ap-btn" data-ap="forum">להסבר בפורום ↗</button><button type="button" class="ap-btn" data-ap="file">שמור דף הסבר</button>'
       : '<button type="button" class="ap-btn ap-pri" data-ap="file">שמור דף הסבר וקישורים</button>')
       + (withNever ? '<button type="button" class="ap-link" data-ap="never">אל תציג שוב</button>' : "");
   }
@@ -95,16 +121,17 @@
       st.opens = (st.opens || 0) + 1; if (!st.first) st.first = now;
       var due = st.show !== false && now - st.first >= DAY && st.opens >= 2 && now - (st.last || 0) >= WEEK && !document.querySelector(".ap-pop");
       if (due) st.last = now; save();
+      if (due && await installed()) due = false;   /* 1.2.0: מותקן — לא מציקים בהמלצה */
       if (due) AchatPromo.show();
       return due;
     },
     show: async function () {
       if (!cfg || document.querySelector(".ap-pop")) return;
-      var on = await isOnline(), el = document.createElement("aside");
+      var on = await isOnline(), has = await installed(), el = document.createElement("aside");
       el.className = "ap-pop"; el.setAttribute("role", "dialog"); el.setAttribute("aria-label", cfg.title);
       el.innerHTML = '<button type="button" class="ap-x" data-ap="close" aria-label="סגירה">✕</button>'
         + '<div class="ap-head">' + STAMP + '<b>' + esc(cfg.title) + '</b><span class="ap-tag">המלצה</span></div>'
-        + '<p class="ap-text">' + esc(cfg.text) + '</p><p class="ap-by">מאת ' + esc(cfg.author) + '</p>'
+        + (has ? HAPPY : '<p class="ap-text">' + esc(cfg.text) + '</p>') + '<p class="ap-by">מאת ' + esc(cfg.author) + '</p>'
         + (on ? "" : '<p class="ap-note">אוצריא במצב "ללא גישה לאינטרנט" — אפשר לשמור קובץ קצר עם ההסבר והקישורים ולהעבירו למחשב מחובר.</p>')
         + '<div class="ap-acts">' + actions(on, true) + '</div>';
       var close = function () { el.classList.add("ap-out"); setTimeout(function () { el.remove(); }, 220); document.removeEventListener("keydown", key); };
@@ -124,8 +151,9 @@
       var sw = container.querySelector("#ap-sw");
       if (sw) { sw.checked = st.show !== false; sw.onchange = function () { st.show = sw.checked; if (sw.checked) st.last = Date.now(); save(); }; }
       var ab = container.querySelector("[data-ap-acts]");
-      if (ab && !ab.dataset.wired) { ab.dataset.wired = "1"; ab.innerHTML = actions(await isOnline(), false); wire(ab); }
+      if (ab && !ab.dataset.wired) { ab.dataset.wired = "1"; ab.innerHTML = (await installed() ? HAPPY : "") + actions(await isOnline(), false); wire(ab); }
     },
+    isInstalled: function () { return cfg ? installed() : Promise.resolve(false); },
     isEnabled: function () { return st.show !== false; },
     fileText: function () { return cfg ? fileText() : ""; },
     fileHtml: function () { return cfg ? fileHtml() : ""; }
