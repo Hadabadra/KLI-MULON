@@ -122,6 +122,7 @@
     parts.push(`<div class="row inl"><b>תיקון</b><div class="chips"><button class="chip" data-rep="-1"><i class=oi data-i=edit></i> הוספת פירוש או תיקון לערך</button></div><span class="note">גם לערך שאין לו פירוש במילון</span></div>`);
     return parts.join("");
   }
+  try { window.KK_LOAZ = Object.assign(window.KK_LOAZ || {}, { "אבולוציה": "לטינית" }); } catch (e) {} /* 2.7.2: #47 */
   let LZN = null; function lzOf(r) { const L = window.KK_LOAZ || {}; if (!LZN) { LZN = new Map(); for (const [w, l] of Object.entries(L)) LZN.set(KK.unfinal(KK.norm(w)), l); } return L[r.title] || LZN.get(KK.unfinal(KK.norm(r.title))) || LZN.get(KK.unfinal(r.n)) || ""; } /* 2.7.0 */
   function open(r, push = true) {
     if (!r) return; if (push && cur) stack.push(cur.n); cur = r; mode = "word"; tabs();
@@ -796,7 +797,7 @@
     else if (t.dataset.go) { if (!t.closest(".selrow")) clearSel(); $("#sug").classList.add("hid"); lookup(t.dataset.go); }
     else if (t.dataset.rconc) { const rt = KK.unfinal(KK.norm(t.dataset.rconc)); showConc({ n: rt, title: KK.refinal(rt), form: { root: rt }, s: [], l: [] }, true); }
     else if (t.dataset.root) showRoot(t.dataset.root);
-    else if (t.dataset.i) { clearSel(); const r = sugList[+t.dataset.i]; picked = Date.now(); $("#q").value = r.title; sugList = []; renderSug(); open(r); }
+    else if (t.dataset.i) { clearSel(); const r = sugList[+t.dataset.i]; if (!r) return; /* 2.7.2: #50 */ picked = Date.now(); $("#q").value = r.title; sugList = []; renderSug(); open(r); }
     else if (t.id === "allback") { $("#q").value = ""; showAll(); }
     else if (t.id === "back") { const n = stack.pop(); if (n) open(D.get(n), false); }
     else if (t.id === "favexp") exportFav();
