@@ -3,7 +3,7 @@
 ## ⏸ 2.9.2 (04.11.2026, לילה) — מושהה עד ~מאי 2027
 - 2.9.2: ביוגרפיה מלאה (`bioGet` עם מטמון, `bioHtml(x, full)`, לחיצות `data-biofull`/`data-bio`/`data-biotools` → `navigation.goTo {target:"more"}`). אין API לפתוח את מסך הביוגרפיות על אדם — ב-ROADMAP.
 - 2.9.1 = תיקונים ל-2.9.0: שדה `aramaic` ב-`otzDict`; ראשי תיבות עם גרשיים נכנסים ל-`allWords` (קודם נדחו); `ST.noAcr` דולק כברירת מחדל (גם `DEF` ב-js/bg.js) ו-`AF.acr` מתחיל ב-"0" לפיו (`AF.acrInit`); `keepView()` → `plugin.setRestoreState({mode, word})` + `applyRestore()` (מ-`plugin.boot` → `p.restore.state`, גם אם הגיע אחרי הטעינה); נרדפות — `tiles bk3` / `tile static`.
-- פרסומת: release.yml/store.yml מורידים את shared/promo מ-Mikvaot ל-/tmp/promo ומעתיקים רק אם `VERSION` שם ≥ המקומי (ב-2.9.0 הדריסה החזירה 1.3.1 לחבילה). להעתיק 1.4.0 ל-Mikvaot ואז הכל חוזר למקור אחד.
+- פרסומת: release.yml/store.yml מורידים את shared/promo מ-Mikvaot ל-/tmp/promo ומעתיקים רק אם `VERSION` שם ≥ המקומי (ב-2.9.0 הדריסה החזירה 1.3.1 לחבילה). 1.4.0 הועתק ל-Mikvaot ב-05.11.2026 — המקור אחד שוב.
 - לא נבדק באוצריא אמיתית (סימולציה בדפדפן בלבד): כפתורי שדה החיפוש, שחזור המסך, מבנה תשובת `tools.dictionary`.
 
 ## 2.9.0 (04.11.2026)
