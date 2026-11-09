@@ -1,5 +1,10 @@
 # מצב הפרויקט — לשון הקודש (id: milon-klei-kodesh)
 
+## ⏸ 3.0.0 יציבה (09.11.2026) — מושהה עד ~מאי 2027
+- **גרסה אחרונה: 3.0.0** (stability: stable). 0 issues פתוחים, 0 PRs. כל הדיווחים #57–#78 טופלו ונסגרו (פירוט ב-CHANGELOG).
+- טכני 3.0.0: `linkDef` (קישורי [[ערך]] בפירוש), `userOnly`/`nearRow`, `ST.userDefs[word]` הוא עכשיו מערך (תואם לאחור לאובייקט), שדה `#ar` תיקון שורש ב-`addEntry`, `openBookTerm` + שמות חלופיים ב-`openTitle`, `nikudOnly`, `BLOCKW`, `WELC1`, `LIB.shivim`, צופה MutationObserver לשמות הקודש (`app.getDivineNamesDisplay`). תוכן: `ADD_DEF`/`FIX_DEF`/`IRREG` ב-js/core.js; בדיקות שורשים tests/roots.json (219/220).
+- **נושאים פתוחים:** docs/ROADMAP.md ("נשאר פתוח אחרי 3.0.0") ומעליו.
+
 ## ⏸ 2.9.2 (04.11.2026, לילה) — מושהה עד ~מאי 2027
 - 2.9.2: ביוגרפיה מלאה (`bioGet` עם מטמון, `bioHtml(x, full)`, לחיצות `data-biofull`/`data-bio`/`data-biotools` → `navigation.goTo {target:"more"}`). אין API לפתוח את מסך הביוגרפיות על אדם — ב-ROADMAP.
 - 2.9.1 = תיקונים ל-2.9.0: שדה `aramaic` ב-`otzDict`; ראשי תיבות עם גרשיים נכנסים ל-`allWords` (קודם נדחו); `ST.noAcr` דולק כברירת מחדל (גם `DEF` ב-js/bg.js) ו-`AF.acr` מתחיל ב-"0" לפיו (`AF.acrInit`); `keepView()` → `plugin.setRestoreState({mode, word})` + `applyRestore()` (מ-`plugin.boot` → `p.restore.state`, גם אם הגיע אחרי הטעינה); נרדפות — `tiles bk3` / `tile static`.
