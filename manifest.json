@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "id": "milon-klei-kodesh",
   "name": "לשון הקודש",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "stability": "stable",
-  "author": "מילון כליקודש",
+  "author": "Hadabadra",
   "description": "מילון, שורשים, נרדפות ולועזיות; ניתוח משפט וניקוד; כללי הדקדוק וקונקורדנציה לתנ\"ך. פועל במלואו ללא אינטרנט",
   "entrypoint": "index.html",
   "minAppVersion": "0.9.98.3",
@@ -56,7 +56,15 @@
           "contexts": [
             "reader-selection",
             "reader-page-shape-selection"
-          ]
+          ],
+          "when": {
+            "not": {
+              "storage": {
+                "key": "hb.hide.kk-lookup",
+                "equals": true
+              }
+            }
+          }
         }
       ],
       "activationEvents": [
@@ -69,7 +77,15 @@
           "id": "kk-toolbar",
           "title": "פירוש וניתוח לשון הקודש",
           "icon": "book_open_24_regular",
-          "openPlugin": true
+          "openPlugin": true,
+          "when": {
+            "not": {
+              "storage": {
+                "key": "hb.hide.kk-toolbar",
+                "equals": true
+              }
+            }
+          }
         }
       ],
       "shortcuts": [
@@ -100,7 +116,15 @@
           "visibleInModes": [
             "exact",
             "advanced"
-          ]
+          ],
+          "when": {
+            "not": {
+              "storage": {
+                "key": "hb.hide.kk-search",
+                "equals": true
+              }
+            }
+          }
         }
       ],
       "searchFieldActions": [

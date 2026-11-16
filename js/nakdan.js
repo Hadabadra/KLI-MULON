@@ -26,12 +26,16 @@
     for (const p of PORTS) { try { const r = await req(`http://127.0.0.1:${p}/api/status`, { timeoutMs: 400 }); if (r.ok) return (port = p); } catch (e) {} }
     return (port = null);
   }
+  /* 3.1.0 (#86): ההגדרות הראו "מחובר" אבל ניקוד נכשל — כשל אחד איפס את החיבור ל-60 שניות. עכשיו: סריקה מחדש וניסיון נוסף, וזמן המתנה לפי אורך הטקסט */
+  async function post(text) {
+    const r = await req(`http://127.0.0.1:${port}/api/nikud`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }), timeoutMs: Math.min(60000, 8000 + text.length * 20) });
+    if (!r.ok) throw new Error("nikud http"); const d = JSON.parse(r.body); return typeof d.vocalized === "string" ? d.vocalized : null;
+  }
   async function vocalize(text) {
-    if (!text || !text.trim() || !(await scan())) return null;
-    try {
-      const r = await req(`http://127.0.0.1:${port}/api/nikud`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }), timeoutMs: 8000 });
-      if (!r.ok) return null; const d = JSON.parse(r.body); return typeof d.vocalized === "string" ? d.vocalized : null;
-    } catch (e) { port = null; return null; }
+    if (!text || !text.trim()) return null;
+    if (!(await scan()) && !(await scan(true))) return null;
+    try { return await post(text); }
+    catch (e) { port = null; if (!(await scan(true))) return null; try { return await post(text); } catch (e2) { return null; } }
   }
   /* מחזיר את הטקסט מנוקד כשאין בו ניקוד והנקדן מחובר; אחרת את המקור כמות שהוא */
   async function voc(raw, enabled) { if (enabled === false || !raw || VOW.test(raw)) return raw; return (await vocalize(raw)) || raw; }
