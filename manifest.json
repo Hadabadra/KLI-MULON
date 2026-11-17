@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "milon-klei-kodesh",
   "name": "לשון הקודש",
-  "version": "3.1.0",
+  "version": "4.0.0",
   "stability": "stable",
   "author": "Hadabadra",
   "description": "מילון, שורשים, נרדפות ולועזיות; ניתוח משפט וניקוד; כללי הדקדוק וקונקורדנציה לתנ\"ך. פועל במלואו ללא אינטרנט",
