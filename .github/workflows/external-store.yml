@@ -40,6 +40,10 @@ jobs:
             repo: Hadabadra/Prayer-pointA
             ref: ברכת-המזון
             dir: src
+          - name: שומר מסך
+            repo: achat-shaalti/achat-shaalti
+            ref: screensaver
+            dir: screensaver/src
     steps:
       - uses: actions/checkout@v4
         with:
