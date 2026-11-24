@@ -575,7 +575,9 @@
     for (const w of BLOCKW) m.delete(w); /* 3.0.0 (#62) */
     ALLW = [...m].sort((a, b) => a[0].localeCompare(b[0], "he")); return ALLW;
   }
-  let DEFS = null; const defSrcs = () => DEFS || (DEFS = [...new Set(D.keys.flatMap(k => D.get(k).s.map(x => String(x[2] || "").split(" · ")[0])))].filter(Boolean).sort());
+  // 4.1: מקור אחד לכל קבוצה — כל לעזי רש"י תחת כפתור אחד, וכל ההגדרות מדיווחים בגיטהאב תחת כפתור אחד
+  const srcGroup = x => { x = String(x || "").split(" · ")[0].split(" — ")[0].trim(); return /לעזי רש"י/.test(x) ? 'לעזי רש"י' : /דיווח|#\d|github|issue/i.test(x) ? "דיווחים בגיט" : x; };
+  let DEFS = null; const defSrcs = () => DEFS || (DEFS = [...new Set(D.keys.flatMap(k => D.get(k).s.map(x => srcGroup(x[2]))))].filter(Boolean).sort());
   function showAll(letter, more) {
     if (!AF.acrInit) { AF.acrInit = 1; if (ST.noAcr && !AF.acr.size) AF.acr = new Set(["0"]); } /* 2.9.1: "השמטת ראשי תיבות" (דולקת כברירת מחדל) — ברירת המחדל של הסינון; הבחירה בסינון גוברת */
     mode = "word"; tabs(); cur = null; if (letter) { allLetter = letter; allShown = 0; } if (!more) allShown = Math.max(allShown, PAGE);
@@ -585,7 +587,7 @@
     if (AF.acr.size === 1) list = list.filter(([w]) => isAcrW(w) === AF.acr.has("1"));
     if (AF.tnk) list = list.filter(([w]) => !!(T && T.tnkGet(w)) === (AF.tnk === "1"));
     if (AF.name) list = list.filter(([w]) => isName(w) === (AF.name === "p"));
-    if (AF.def.size) list = list.filter(([w, c]) => c.includes("d") && D.get(w) && D.get(w).s.some(x => [...AF.def].some(d => String(x[2] || "").startsWith(d))));
+    if (AF.def.size) list = list.filter(([w, c]) => c.includes("d") && D.get(w) && D.get(w).s.some(x => AF.def.has(srcGroup(x[2]))));
     const part = list.slice(0, allShown);
     const sel = (id, opts, v) => `<select id="${id}">${opts.map(([k, t]) => `<option value="${esc(k)}"${k === v ? " selected" : ""}>${esc(t)}</option>`).join("")}</select>`;
     const ms = (k, t, opts) => `<div class="mrow"><span class="mlab">${t}</span><div class="chips">${opts.map(([v, x]) => `<button class="chip tg${AF[k].has(v) ? " pri" : ""}" data-afk="${k}" data-afv="${esc(v)}">${esc(x)}</button>`).join("")}</div></div>`;
@@ -883,7 +885,7 @@
     else if (t.id === "ofirst") firstSource(cur);
     else if (t.id === "oeven") openEven();
     else if (t.dataset.ext) openExt(t.dataset.ext);
-    else if (t.dataset.url) call("app.openUrl", { url: t.dataset.url });
+    else if (t.dataset.url) { const u = t.dataset.url; Promise.resolve(call("app.openUrl", { url: u })).then(r => { if (!r || r.success === false) { copyText(u); call("ui.showMessage", { message: "לא ניתן לפתוח עכשיו — הכתובת הועתקה: " + u }); } }); }
     else if (t.dataset.m2 === "rules") { mode = "rules"; readBook(1); }
     else if (t.dataset.m2 === "taam") showTaam("");
     else if (t.dataset.m2 === "terms") showTerms();

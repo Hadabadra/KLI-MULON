@@ -6,7 +6,8 @@ def inline(t):
     t = html.escape(t)
     t = re.sub(r'`([^`]+)`', r'<code>\1</code>', t)
     t = re.sub(r'\*\*([^*]+)\*\*', r'<b>\1</b>', t)
-    t = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', t)
+    # קישור לחיץ (נפתח בדפדפן דרך data-url); בלי רשת — הכתובת מועתקת
+    t = re.sub(r'\[([^\]]+)\]\((https?://[^)]+)\)', lambda m: '<a href="#" data-url="' + m.group(2).replace('&amp;', '&') + '">' + m.group(1) + '</a>', t)
     return t
 
 def convert(md):
