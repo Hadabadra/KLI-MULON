@@ -48,10 +48,12 @@ jobs:
             repo: achat-shaalti/achat-shaalti
             ref: next
             dir: system-settings
+            shots: ext/system-settings-screenshots/01.png,ext/system-settings-screenshots/02.png
           - name: סייר קבצים
             repo: achat-shaalti/achat-shaalti
             ref: next
             dir: file-explorer
+            shots: ext/file-explorer-screenshots/01.png
     steps:
       - uses: actions/checkout@v4
         with:
@@ -70,3 +72,4 @@ jobs:
           publish: 'auto'
           force: ${{ github.event.inputs.force || false }}
           reports-consent: 'true'
+          screenshots: ${{ matrix.shots || '' }}
