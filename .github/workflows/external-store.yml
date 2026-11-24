@@ -44,6 +44,14 @@ jobs:
             repo: achat-shaalti/achat-shaalti
             ref: screensaver
             dir: screensaver/src
+          - name: הגדרות מערכת
+            repo: achat-shaalti/achat-shaalti
+            ref: next
+            dir: system-settings
+          - name: סייר קבצים
+            repo: achat-shaalti/achat-shaalti
+            ref: next
+            dir: file-explorer
     steps:
       - uses: actions/checkout@v4
         with:
