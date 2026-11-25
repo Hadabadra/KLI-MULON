@@ -1,0 +1,25 @@
+# קישורי החנות לכל התוספים: מתחבר עם סודות החנות ומדפיס את כתובת העמוד של כל תוסף (לא סודי)
+name: קישורי חנות
+on: workflow_dispatch
+jobs:
+  links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { repository: Otzaria/otzaria-plugin-validator, path: opv }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: cd opv && npm ci --omit=dev --silent || npm i --omit=dev --silent
+      - env:
+          U: ${{ secrets.OTZARIA_USER }}
+          P: ${{ secrets.OTZARIA_PASSWORD }}
+        run: |
+          cat > links.js <<'JS'
+          const { StoreClient } = require('./opv/src/publish.js')
+          const ids = ['milon-klei-kodesh','reading-mode-plugin','com.chadbedera.siach-rina','com.shiachrina.kivuntefila','com.hadabadra.mikvaot','com.hadabadra.gvulot-eruv','com.hadabadra.tahorat-kohanim','com.chadbedera.madaeihatanach','com.chadbedera.pdfviewer','com.chadbedera.pdfocrlibrary','com.chadbedera.systemsettings','com.chadbedera.fileexplorer','com.hadbedara.otzaria-screensaver']
+          ;(async () => {
+            const c = new StoreClient('https://otzaria.org'); await c.login(process.env.U, process.env.P)
+            for (const uid of ids) { try { const r = await c.resolveId(uid); console.log('LINK', uid, r.id ? 'https://otzaria.org/plugins/' + r.id : JSON.stringify(r)) } catch (e) { console.log('LINK', uid, 'ERR ' + e.message) } }
+          })()
+          JS
+          node links.js
