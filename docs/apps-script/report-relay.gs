@@ -1,6 +1,6 @@
 /**
  * ממסר דיווחים: מייל "📩 דיווח חדש על התוסף" מאוצריא → Issue בריפו של התוסף בגיטהאב.
- * גרסה 2.3 (25.11.2026) — מחליף את כל הסקריפט הקודם. רץ כל 15 דקות.
+ * גרסה 2.4 (25.11.2026) — מחליף את כל הסקריפט הקודם. רץ כל 15 דקות.
  *
  * התקנה (פעם אחת):
  *  1. script.google.com → הפרויקט הקיים → מוחקים את כל הקוד ומדביקים את הקובץ הזה.
@@ -105,7 +105,7 @@ function relay() {
       try { const n = createIssue_(target, r); any = true; ids.push(m.getId()); Logger.log(r.plugin + ' → ' + target.repo + ' #' + n); }
       catch (e) { ok = false; Logger.log('שגיאה: ' + e.message); }
     });
-    if (ok && any) { th.addLabel(done); th.removeLabel(unmapped); th.moveToArchive(); }
+    if (ok && any) { th.addLabel(done); th.removeLabel(unmapped); th.moveToTrash(); /* מייל שהועבר נמחק (נשאר באשפה 30 יום) */ }
     else if (!ok) th.addLabel(unmapped);
   });
   saveDone_(ids);
