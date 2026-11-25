@@ -18,7 +18,7 @@ jobs:
           const { StoreClient } = require('./opv/src/publish.js')
           const ids = ['milon-klei-kodesh','reading-mode-plugin','com.chadbedera.siach-rina','com.shiachrina.kivuntefila','com.hadabadra.mikvaot','com.hadabadra.gvulot-eruv','com.hadabadra.tahorat-kohanim','com.chadbedera.madaeihatanach','com.chadbedera.pdfviewer','com.chadbedera.pdfocrlibrary','com.chadbedera.systemsettings','com.chadbedera.fileexplorer','com.hadbedara.otzaria-screensaver']
           ;(async () => {
-            const c = new StoreClient('https://otzaria.org'); await c.login(process.env.U, process.env.P)
+            const c = new StoreClient('https://otzaria.org'); await c.login(process.env.U.trim(), process.env.P.trim())
             for (const uid of ids) { try { const r = await c.resolveId(uid); console.log('LINK', uid, r.id ? 'https://otzaria.org/plugins/' + r.id : JSON.stringify(r)) } catch (e) { console.log('LINK', uid, 'ERR ' + e.message) } }
           })()
           JS
