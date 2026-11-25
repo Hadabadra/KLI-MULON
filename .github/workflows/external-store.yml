@@ -44,6 +44,10 @@ jobs:
             repo: achat-shaalti/achat-shaalti
             ref: screensaver
             dir: screensaver/src
+          - name: ספריית PDF+OCR
+            repo: Hadabadra/pdf-ocr-library
+            ref: main
+            dir: .
           - name: הגדרות מערכת
             repo: achat-shaalti/achat-shaalti
             ref: next
