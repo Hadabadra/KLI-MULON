@@ -49,6 +49,7 @@
   /* 2.1.0: השמעה בתוך ספר הדקדוק — בסעיפי הטעמים, ליד הטעמים שנזכרים בסעיף */
   const base = t => t.replace(/\s*\(.*\)$/, "");
   async function inline(root) {
+    if (!root) return; // #87: הספר נסגר לפני שההשמעה נטענה
     const boxes = [...root.querySelectorAll(".ainl")]; if (!boxes.length) return;
     let have = []; try { have = await keys(); } catch (e) { return; }
     for (const bx of boxes) {
