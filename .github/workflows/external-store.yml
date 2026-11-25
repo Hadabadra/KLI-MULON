@@ -30,6 +30,8 @@ jobs:
     timeout-minutes: 15
     strategy:
       fail-fast: false
+      # התחברויות במקביל לחנות נכשלות ("session ריק") — אחד אחרי השני
+      max-parallel: 1
       matrix:
         include:
           - name: מצב קריאה
