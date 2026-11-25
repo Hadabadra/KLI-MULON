@@ -1,6 +1,6 @@
 /**
  * ממסר דיווחים: מייל "📩 דיווח חדש על התוסף" מאוצריא → Issue בריפו של התוסף בגיטהאב.
- * גרסה 2.1 (25.11.2026) — מחליף את כל הסקריפט הקודם. רץ כל 15 דקות.
+ * גרסה 2.2 (25.11.2026) — מחליף את כל הסקריפט הקודם. רץ כל 15 דקות.
  *
  * התקנה (פעם אחת):
  *  1. script.google.com → הפרויקט הקיים → מוחקים את כל הקוד ומדביקים את הקובץ הזה.
@@ -59,13 +59,15 @@ function findRepo_(plugin) {
 }
 
 function parse_(msg) {
-  const text = msg.getPlainBody().replace(/\r/g, '');
+  // המייל מסמן שדות בכוכביות (*שם התוסף:* …); כתובת המדווח לא נכנסת ל-Issue הציבורי
+  const text = msg.getPlainBody().replace(/\r/g, '').replace(/\*/g, '')
+    .replace(/^.*(כתובת למענה|דוא"ל|אימייל|email)\s*:.*$/gim, '').replace(/[\w.+-]+@[\w-]+\.[\w.]+/g, '[כתובת הוסרה]');
   const plugin = field_(text, 'שם התוסף') || msg.getSubject().replace(/^.*התוסף:\s*/, '').trim();
   const version = field_(text, 'גרסת התוסף'), kind = field_(text, 'סוג הדיווח'), otz = field_(text, 'גרסת אוצריא');
   let body = text;
-  const start = body.search(/(תוכן הדיווח|פרטי הדיווח|הדיווח)\s*:/);
+  const start = body.search(/(תוכן הדיווח|פרטי הדיווח)\s*:/);
   if (start >= 0) body = body.slice(start);
-  body = body.replace(/\n*(אין להשיב למייל זה|ספריית אוצריא ©)[\s\S]*$/, '').trim();
+  body = body.replace(/\n*(אין להשיב למייל זה|ספריית אוצריא ©|מעבר לדף התוסף|הדיווח נשלח על ידי משתמש)[\s\S]*$/, '').replace(/^(תוכן הדיווח|פרטי הדיווח)\s*:\s*/, '').replace(/\n{3,}/g, '\n\n').trim();
   return { plugin: plugin, version: version, kind: kind, otz: otz, body: body, date: msg.getDate() };
 }
 
