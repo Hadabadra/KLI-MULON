@@ -1,6 +1,6 @@
 /**
  * ממסר דיווחים: מייל "📩 דיווח חדש על התוסף" מאוצריא → Issue בריפו של התוסף בגיטהאב.
- * גרסה 2.0 (17.11.2026) — מחליף את כל הסקריפט הקודם. רץ כל 15 דקות.
+ * גרסה 2.1 (25.11.2026) — מחליף את כל הסקריפט הקודם. רץ כל 15 דקות.
  *
  * התקנה (פעם אחת):
  *  1. script.google.com → הפרויקט הקיים → מוחקים את כל הקוד ומדביקים את הקובץ הזה.
@@ -29,8 +29,8 @@ const REPOS = {
   'הגדרות מערכת':      { repo: 'achat-shaalti/achat-shaalti' },
   'אחת שאלתי':         { repo: 'achat-shaalti/achat-shaalti' }
 };
-// in:inbox — שרשור שכבר הועבר חוזר לתיבה כשמגיע אליו דיווח חדש; הודעות שכבר הועברו מזוהות לפי המזהה שלהן
-const QUERY = 'in:inbox from:community@otzaria.org subject:"דיווח חדש על התוסף" newer_than:30d';
+// לא in:inbox: מסנן בג'ימייל מעביר את הדיווחים לתווית "אוצריא" בלי תיבת הדואר. כפילויות נמנעות ב-DONE_IDS ובתווית הועבר-לגיט
+const QUERY = 'from:community@otzaria.org subject:"דיווח חדש על התוסף" -label:הועבר-לגיט after:2026/11/15';
 const DONE = 'הועבר-לגיט', UNMAPPED = 'דיווח-לא-מופה';
 
 function setup() {
@@ -102,7 +102,7 @@ function relay() {
       try { const n = createIssue_(target, r); any = true; ids.push(m.getId()); Logger.log(r.plugin + ' → ' + target.repo + ' #' + n); }
       catch (e) { ok = false; Logger.log('שגיאה: ' + e.message); }
     });
-    if (ok && any) { th.addLabel(done); th.moveToArchive(); }
+    if (ok && any) { th.addLabel(done); th.removeLabel(unmapped); th.moveToArchive(); }
     else if (!ok) th.addLabel(unmapped);
   });
   saveDone_(ids);
