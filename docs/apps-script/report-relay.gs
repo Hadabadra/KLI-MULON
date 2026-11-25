@@ -1,6 +1,6 @@
 /**
  * ממסר דיווחים: מייל "📩 דיווח חדש על התוסף" מאוצריא → Issue בריפו של התוסף בגיטהאב.
- * גרסה 2.2 (25.11.2026) — מחליף את כל הסקריפט הקודם. רץ כל 15 דקות.
+ * גרסה 2.3 (25.11.2026) — מחליף את כל הסקריפט הקודם. רץ כל 15 דקות.
  *
  * התקנה (פעם אחת):
  *  1. script.google.com → הפרויקט הקיים → מוחקים את כל הקוד ומדביקים את הקובץ הזה.
@@ -59,23 +59,24 @@ function findRepo_(plugin) {
 }
 
 function parse_(msg) {
-  // המייל מסמן שדות בכוכביות (*שם התוסף:* …); כתובת המדווח לא נכנסת ל-Issue הציבורי
-  const text = msg.getPlainBody().replace(/\r/g, '').replace(/\*/g, '')
-    .replace(/^.*(כתובת למענה|דוא"ל|אימייל|email)\s*:.*$/gim, '').replace(/[\w.+-]+@[\w-]+\.[\w.]+/g, '[כתובת הוסרה]');
+  // המייל מסמן שדות בכוכביות (*שם התוסף:* …). כתובת המדווח נשמרת ב-Issue כדי שאפשר יהיה לחזור אליו (Issue ציבורי)
+  const text = msg.getPlainBody().replace(/\r/g, '').replace(/\*/g, '');
+  const reporter = field_(text, 'כתובת למענה');
   const plugin = field_(text, 'שם התוסף') || msg.getSubject().replace(/^.*התוסף:\s*/, '').trim();
   const version = field_(text, 'גרסת התוסף'), kind = field_(text, 'סוג הדיווח'), otz = field_(text, 'גרסת אוצריא');
   let body = text;
   const start = body.search(/(תוכן הדיווח|פרטי הדיווח)\s*:/);
   if (start >= 0) body = body.slice(start);
   body = body.replace(/\n*(אין להשיב למייל זה|ספריית אוצריא ©|מעבר לדף התוסף|הדיווח נשלח על ידי משתמש)[\s\S]*$/, '').replace(/^(תוכן הדיווח|פרטי הדיווח)\s*:\s*/, '').replace(/\n{3,}/g, '\n\n').trim();
-  return { plugin: plugin, version: version, kind: kind, otz: otz, body: body, date: msg.getDate() };
+  return { plugin: plugin, version: version, kind: kind, otz: otz, body: body, date: msg.getDate(), reporter: reporter };
 }
 
 function createIssue_(target, r) {
   const first = (r.body.split('\n').filter(function (l) { return l.trim() && !/:\s*$/.test(l); })[0] || '').replace(/^[^:]*:\s*/, '').slice(0, 70);
   const title = '[דיווח] ' + r.plugin + (r.version ? ' ' + r.version : '') + (r.kind ? ' · ' + r.kind : '') + (first ? ': ' + first : '');
   const md = '**דיווח ממשתמש דרך אוצריא** (' + Utilities.formatDate(r.date, 'Asia/Jerusalem', 'dd.MM.yyyy HH:mm') + ', הועבר אוטומטית מהמייל)\n' +
-    '- תוסף: ' + r.plugin + (r.version ? ' ' + r.version : '') + ' · סוג: ' + (r.kind || '—') + ' · אוצריא: ' + (r.otz || '—') + '\n\n### תוכן הדיווח\n' + r.body;
+    '- תוסף: ' + r.plugin + (r.version ? ' ' + r.version : '') + ' · סוג: ' + (r.kind || '—') + ' · אוצריא: ' + (r.otz || '—') + '\n' +
+    (r.reporter ? '- למענה: ' + r.reporter + '\n' : '') + '\n### תוכן הדיווח\n' + r.body;
   const payload = { title: title, body: md };
   if (target.label) payload.labels = [target.label];
   const res = UrlFetchApp.fetch('https://api.github.com/repos/' + target.repo + '/issues', {
