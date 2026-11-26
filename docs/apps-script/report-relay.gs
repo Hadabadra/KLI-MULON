@@ -1,6 +1,6 @@
 /**
  * ממסר דיווחים: מייל "📩 דיווח חדש על התוסף" מאוצריא → Issue בריפו של התוסף בגיטהאב.
- * גרסה 2.4 (25.11.2026) — מחליף את כל הסקריפט הקודם. רץ כל 15 דקות.
+ * גרסה 2.5 (26.11.2026) — מחליף את כל הסקריפט הקודם. רץ כל 15 דקות.
  *
  * התקנה (פעם אחת):
  *  1. script.google.com → הפרויקט הקיים → מוחקים את כל הקוד ומדביקים את הקובץ הזה.
@@ -29,8 +29,9 @@ const REPOS = {
   'הגדרות מערכת':      { repo: 'achat-shaalti/achat-shaalti' },
   'אחת שאלתי':         { repo: 'achat-shaalti/achat-shaalti' }
 };
-// לא in:inbox: מסנן בג'ימייל מעביר את הדיווחים לתווית "אוצריא" בלי תיבת הדואר. כפילויות נמנעות ב-DONE_IDS ובתווית הועבר-לגיט
-const QUERY = 'from:community@otzaria.org subject:"דיווח חדש על התוסף" -label:הועבר-לגיט after:2026/11/15';
+// לא in:inbox (מסנן מעביר לתווית "אוצריא"). בלי -label: ג'ימייל מצרף דיווח חדש לשרשור קיים עם אותו נושא,
+// ולכן כל הודעה נבדקת לבד: כפילויות נמנעות ב-DONE_IDS, והודעה שהועברה נמחקת לבד.
+const QUERY = 'from:community@otzaria.org subject:"דיווח חדש על התוסף" after:2026/11/15';
 const DONE = 'הועבר-לגיט', UNMAPPED = 'דיווח-לא-מופה';
 
 function setup() {
@@ -95,18 +96,20 @@ function relay() {
   const ids = doneIds_();
   const done = GmailApp.getUserLabelByName(DONE) || GmailApp.createLabel(DONE);
   const unmapped = GmailApp.getUserLabelByName(UNMAPPED) || GmailApp.createLabel(UNMAPPED);
-  const threads = GmailApp.search(QUERY, 0, 30);
+  const threads = GmailApp.search(QUERY, 0, 50);
   threads.forEach(function (th) {
-    let ok = true, any = false;
+    let ok = true;
     th.getMessages().forEach(function (m) {
-      if (m.getFrom().indexOf('community@otzaria.org') < 0 || ids.indexOf(m.getId()) >= 0) return;
+      if (m.isInTrash() || m.getFrom().indexOf('community@otzaria.org') < 0) return;
+      if (ids.indexOf(m.getId()) >= 0) { m.moveToTrash(); return; }   // הועבר כבר: רק מוחקים
       const r = parse_(m), target = findRepo_(r.plugin);
       if (!target) { ok = false; return; }
-      try { const n = createIssue_(target, r); any = true; ids.push(m.getId()); Logger.log(r.plugin + ' → ' + target.repo + ' #' + n); }
-      catch (e) { ok = false; Logger.log('שגיאה: ' + e.message); }
+      try {
+        const n = createIssue_(target, r); ids.push(m.getId()); m.moveToTrash();   // נשאר באשפה 30 יום
+        Logger.log(r.plugin + ' → ' + target.repo + ' #' + n);
+      } catch (e) { ok = false; Logger.log('שגיאה: ' + e.message); }
     });
-    if (ok && any) { th.addLabel(done); th.removeLabel(unmapped); th.moveToTrash(); /* מייל שהועבר נמחק (נשאר באשפה 30 יום) */ }
-    else if (!ok) th.addLabel(unmapped);
+    if (ok) { th.addLabel(done); th.removeLabel(unmapped); } else th.addLabel(unmapped);
   });
   saveDone_(ids);
 }
